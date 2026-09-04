@@ -1,6 +1,7 @@
 {
   "phase": 0,
-  "capturedAt": "2026-09-04T15:42:00Z",
+  "capturedAt": "2026-09-05T00:00:00Z",
+  "specification": "STANDING — BUILD SPECIFICATION v3",
   "status": "BLOCKED",
   "rules": {
     "source": "https://hack.sibyllabs.org/rules",
@@ -42,6 +43,33 @@
       "archiveResult": "archive_entity returned archived_id and original_id. get_entity then correctly reported not found. list_entities(status='archived') returned an empty list, and no restore method appears on MemoryClient 0.8.0."
     },
     "blocker": "The published API does not expose a documented archive read or restore operation, despite the docs describing archive as recoverable. Phase 1 cannot claim archive-and-resurrect until Sibyl documents a supported retrieval/restore path or the team confirms an acceptable implementation using the real local store."
+  },
+  "virtualsAcp": {
+    "package": "virtuals-acp==0.3.23",
+    "pythonRequirement": ">=3.10, <3.13",
+    "verifiedSources": [
+      "https://pypi.org/project/virtuals-acp/",
+      "https://whitepaper.virtuals.io/acp-product-resources/acp-dev-onboarding-guide/customize-agent/simulate-agent-with-code/acp-sdk/python/quick-start",
+      "https://whitepaper.virtuals.io/acp-product-resources/acp-onboarding-guide/customize-agent/simulate-agent-with-code/acp-sdk/python/usage"
+    ],
+    "installedInterface": {
+      "client": "VirtualsACP(acp_contract_clients, on_new_task=None, on_evaluate=None, custom_rpc_url=None, skip_socket_connection=False)",
+      "requiredEnvironmentNames": [
+        "WHITELISTED_WALLET_PRIVATE_KEY",
+        "BUYER_AGENT_WALLET_ADDRESS",
+        "BUYER_ENTITY_ID",
+        "SELLER_AGENT_WALLET_ADDRESS",
+        "SELLER_ENTITY_ID"
+      ]
+    },
+    "requiredSandboxSequence": [
+      "Register buyer and seller agents with the Service Registry.",
+      "Create their smart wallets and whitelist the developer wallet.",
+      "Fund the buyer agent with test USDC.",
+      "Run the published self-evaluation example unchanged through a completed lifecycle."
+    ],
+    "status": "BLOCKED",
+    "blocker": "No Virtuals sandbox buyer/seller registrations, agent wallet addresses, entity IDs, whitelisted developer wallet secret, or buyer USDC funding have been supplied. No ACP account, job, or payment was created."
   },
   "baseEas": {
     "chainId": 8453,
@@ -87,6 +115,8 @@
     "status": "NOT COMPLETED. Posting publicly is an external communication and requires the registered team's Discord access and approval."
   },
   "blockers": [
+    "Confirm hackathon team registration and obtain Virtuals sandbox access for a buyer and seller agent before the v3 ACP gate can run.",
+    "Register the two Virtuals sandbox agents, create their wallets, whitelist a developer wallet, and fund the buyer with test USDC; keep private keys in secret storage only.",
     "Fund and identify a dedicated low-balance Base mainnet signing wallet before any on-chain write.",
     "Choose and provide access to an extraction model; verify its exact production identifier.",
     "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
