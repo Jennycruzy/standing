@@ -1,0 +1,96 @@
+{
+  "phase": 0,
+  "capturedAt": "2026-09-04T15:42:00Z",
+  "status": "BLOCKED",
+  "rules": {
+    "source": "https://hack.sibyllabs.org/rules",
+    "submissionDeadlineUtc": "2026-09-10T23:59:00Z",
+    "buildWindow": "2026-09-01 through 2026-09-10 UTC",
+    "daysRemainingAtCapture": 6,
+    "memoryDeletionGate": "Deleting Sibyl Memory must cause the claimed core function to fail or materially degrade. The video must show fresh-session recall, the README must point to critical reads and writes, and a deletion test must demonstrate the break.",
+    "rubric": {
+      "memoryLoadBearing": 40,
+      "innovationAndOriginality": 25,
+      "technicalExecution": 20,
+      "pitchAndPresentation": 15
+    },
+    "pmfBonus": "Up to 10 points; nonzero requires a publicly verifiable artifact showing a named audience and validated pain point, usage, pilot, waitlist, or design partner.",
+    "partnerMultiplier": "Base or Virtuals count only when doing real product work in the demo. Base deployment is the eligibility floor; an executed on-chain action earns its bonus. First partner +15%, second +10%, capped at 1.25x.",
+    "mainnetRequirement": "The rules require an executed on-chain action for the Base bonus; they do not expressly say that it must be on mainnet. This project specification independently requires Base mainnet attestations.",
+    "submissionRequirements": "Public OSI-licensed GitHub repository with real commit history; 2–5 minute demo including fresh-session recall; README; two public posts."
+  },
+  "sibylMemory": {
+    "verifiedSource": "https://docs.sibyllabs.org/memory/concepts",
+    "languageDecision": "Python 3.12 with mypy --strict. The official direct SDK is Python-first; installed package sibyl-memory-client 0.8.0 in a Python 3.12.13 preflight virtual environment.",
+    "install": "uv pip install --python .preflight-venv/bin/python sibyl-memory-client",
+    "auth": "MemoryClient.local() works locally without credentials. CLI activation is sibyl init and writes credentials to ~/.sibyl-memory/credentials.json; it is not required for the local SDK test.",
+    "client": "from sibyl_memory_client import MemoryClient; MemoryClient.local(path, tenant_id=...)",
+    "methods": {
+      "state": ["set_state(key, body)", "get_state(key)"],
+      "entities": ["set_entity(category, name, body, status=None)", "get_entity(category, name)", "list_entities(category=None, status=None, limit=100)"],
+      "journal": ["write_event(evaluated=None, acted=None, forward=None, extra=None, ts=None)", "read_events(limit=50, since=None, until=None)"],
+      "reference": ["set_reference(key, body, metadata=None)", "get_reference(key)"],
+      "archive": ["archive_entity(category, name, reason=None)"],
+      "search": ["search_entities(query, limit=20, prefix=False, category=None)", "search(query, limit=20, prefix=False, tiers=None)"]
+    },
+    "uniqueness": "Verified by the documentation: UNIQUE (tenant_id, category, name).",
+    "searchBehaviour": "SQLite FTS5 across entity, state, reference, and journal data.",
+    "tierAndSizeLimits": "Free plan documentation reports a 5,242,880-byte cap. Actual project cap remains to be checked after activation if it will exceed this.",
+    "helloWorld": {
+      "command": ".preflight-venv/bin/python - (using MemoryClient.local('.preflight-memory.db'))",
+      "verified": ["state write/read", "entity write/read", "journal write/read", "reference write/read", "full-text search"],
+      "archiveResult": "archive_entity returned archived_id and original_id. get_entity then correctly reported not found. list_entities(status='archived') returned an empty list, and no restore method appears on MemoryClient 0.8.0."
+    },
+    "blocker": "The published API does not expose a documented archive read or restore operation, despite the docs describing archive as recoverable. Phase 1 cannot claim archive-and-resurrect until Sibyl documents a supported retrieval/restore path or the team confirms an acceptable implementation using the real local store."
+  },
+  "baseEas": {
+    "chainId": 8453,
+    "deploymentArtifactSource": "https://github.com/ethereum-attestation-service/eas-contracts/tree/master/deployments/base",
+    "eas": "0x4200000000000000000000000000000000000021",
+    "schemaRegistry": "0x4200000000000000000000000000000000000020",
+    "explorerSources": [
+      "https://basescan.org/address/0x4200000000000000000000000000000000000021",
+      "https://basescan.org/address/0x4200000000000000000000000000000000000020"
+    ],
+    "schemas": {"conditionDefinitionUid": null, "observationUid": null},
+    "throwawaySchema": null,
+    "attestation": null,
+    "referenceChain": null,
+    "gas": {"attestationNative": null, "attestationUsd": null, "maximumDemoSpend": null},
+    "blocker": "The available Base wallet has a $0.00 balance. No signing key was supplied for a dedicated low-balance demo wallet. No schema registration or attestation can be responsibly attempted, so the required live EAS and reference-chain tests are incomplete."
+  },
+  "erc8004": {
+    "identityRegistry": {
+      "address": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      "explorer": "https://basescan.org/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      "status": "Explorer search result identifies this address as 8004 Identity Registry."
+    },
+    "reputationRegistry": {
+      "address": "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
+      "explorer": "https://basescan.org/address/0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
+      "status": "UNVERIFIED: direct explorer access returned 403 and no successful live contract-interface read was possible."
+    },
+    "identityRegistration": null,
+    "reputationSignal": null,
+    "decision": "UNDECIDED. Do not build the Reputation Registry route until a funded dedicated wallet can perform a verified write and read. The specified EAS-observer-attestation fallback remains the contingency."
+  },
+  "wallet": {
+    "status": "A logged-in wallet account exists, but its Base balance was verified as $0.00. Account identifiers, email, and addresses are intentionally omitted from this record.",
+    "dedicatedSigningKey": "NOT PROVIDED",
+    "funding": null
+  },
+  "model": {
+    "extractionModelId": null,
+    "status": "BLOCKED. No configured extraction-provider credential or verified model identifier was supplied. Do not select a model identifier by assumption."
+  },
+  "discord": {
+    "status": "NOT COMPLETED. Posting publicly is an external communication and requires the registered team's Discord access and approval."
+  },
+  "blockers": [
+    "Fund and identify a dedicated low-balance Base mainnet signing wallet before any on-chain write.",
+    "Choose and provide access to an extraction model; verify its exact production identifier.",
+    "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
+    "Verify ERC-8004 Reputation Registry by live contract interaction, or record the EAS fallback after funded testing.",
+    "Send the specified Discord question from the team's account."
+  ]
+}
