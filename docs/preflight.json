@@ -93,6 +93,20 @@
         }
       ]
     },
+    "fundingVerification": {
+      "capturedAt": "2026-09-05T16:20:00Z",
+      "rpc": "https://mainnet.base.org",
+      "blockNumber": 50917915,
+      "usdcContract": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "usdcContractSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+      "buyerUsdc": {
+        "rawUnits": "100000",
+        "display": "0.100000 USDC"
+      },
+      "buyerNativeEth": "0 ETH",
+      "sellerFunding": "Not required for the planned service-only test unless the live SDK reports otherwise.",
+      "method": "Read-only eth_call balanceOf at the recorded block; no transaction signed."
+    },
     "officialCli": {
       "package": "@virtuals-protocol/acp-cli",
       "officialRepository": "https://github.com/Virtual-Protocol/acp-cli",
