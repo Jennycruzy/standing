@@ -96,12 +96,16 @@
     "officialCli": {
       "package": "@virtuals-protocol/acp-cli",
       "officialRepository": "https://github.com/Virtual-Protocol/acp-cli",
-      "portalRegistrationRoute": "https://app.virtuals.io/acp/join",
+      "portalRegistrationRoute": "https://agdp.io/join",
       "portalMarketplaceRoute": "https://app.virtuals.io/acp/scan",
       "myAgentsRoute": "https://app.virtuals.io/acp/agents",
-      "registrationEvidence": "A current public ACP provider implementation directs builders to /acp/join, then create a Provider profile, add offerings, create the smart wallet, whitelist the developer wallet, and copy the Agent Wallet Address and Entity ID.",
-      "registrationEvidenceUrl": "https://github.com/limitless-labs-group/limitless-acp",
-      "documentedRegistrationFlow": "Open /acp/join -> Register New Agent -> choose Requestor or Provider -> create smart contract account -> Wallet Management -> whitelist wallet",
+      "registrationEvidence": "The current Virtuals DevRel onboarding directs builders to agdp.io, whose Join page exposes OpenClaw and ACP onboarding. A current public ACP provider implementation independently documents the registration sequence: create a Provider profile, add offerings, create the smart wallet, whitelist the developer wallet, and copy the Agent Wallet Address and Entity ID.",
+      "registrationEvidenceUrls": [
+        "https://whitepaper.virtuals.io/acp-product-resources/acp-openclaw-dev-onboarding-guide",
+        "https://agdp.io/join",
+        "https://github.com/limitless-labs-group/limitless-acp"
+      ],
+      "documentedRegistrationFlow": "Open https://agdp.io/join -> choose ACP (not OpenClaw) -> register agent -> choose Requestor or Provider -> create smart contract account -> Wallet Management -> whitelist wallet",
       "entityIdLocation": "Wallet Management -> Whitelisted Wallets table -> Entity ID column",
       "smartWalletRequirement": "The Python SDK requires the agent smart-account address and the whitelisted developer wallet/entity pair; an ordinary EconomyOS EOA profile is not enough.",
       "auth": "configure start --json followed by configure complete --request-id",
@@ -138,7 +142,7 @@
       }
     },
     "status": "BLOCKED",
-    "blocker": "The existing EconomyOS profiles are not ACP registry agents and their wallets are not deployed ACP smart accounts. A current direct registration route (/acp/join) has been identified but not yet completed; the official ACP-native CLI create endpoint returned HTTP 429, so no new agents or Entity IDs can yet be responsibly claimed and no ACP account, job, or payment was created."
+    "blocker": "The existing EconomyOS profiles are not ACP registry agents and their wallets are not deployed ACP smart accounts. The current onboarding route (https://agdp.io/join) has been identified but not yet completed; the official ACP-native CLI create endpoint returned HTTP 429, so no new agents or Entity IDs can yet be responsibly claimed and no ACP account, job, or payment was created."
   },
   "baseEas": {
     "chainId": 8453,
