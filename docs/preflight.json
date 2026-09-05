@@ -68,6 +68,15 @@
       "Fund the buyer agent with test USDC.",
       "Run the published self-evaluation example unchanged through a completed lifecycle."
     ],
+    "registryLookup": {
+      "endpoint": "https://acpx.virtuals.io/api/agents?filters[walletAddress]=<public-agent-wallet-address>",
+      "queriedAt": "2026-09-05T14:30:00Z",
+      "buyerHttpStatus": 200,
+      "buyerMatches": 0,
+      "sellerHttpStatus": 200,
+      "sellerMatches": 0,
+      "interpretation": "The two EconomyOS agent wallets are not yet registered in the ACP service registry; no Entity IDs can be retrieved yet."
+    },
     "status": "BLOCKED",
     "blocker": "No Virtuals sandbox buyer/seller registrations, agent wallet addresses, entity IDs, whitelisted developer wallet secret, or buyer USDC funding have been supplied. No ACP account, job, or payment was created."
   },
