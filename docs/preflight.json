@@ -45,7 +45,11 @@
     "blocker": "The published API does not expose a documented archive read or restore operation, despite the docs describing archive as recoverable. Phase 1 cannot claim archive-and-resurrect until Sibyl documents a supported retrieval/restore path or the team confirms an acceptable implementation using the real local store."
   },
   "virtualsAcp": {
-    "package": "virtuals-acp==0.3.23",
+    "package": "virtuals-acp==0.3.23 (legacy Python); @virtuals-protocol/acp-node-v2@0.1.12 (current ACP v2)",
+    "currentV2Sources": [
+      "https://github.com/Virtual-Protocol/acp-node-v2",
+      "https://api.acp.virtuals.io"
+    ],
     "pythonRequirement": ">=3.10, <3.13",
     "verifiedSources": [
       "https://pypi.org/project/virtuals-acp/",
@@ -62,6 +66,25 @@
         "SELLER_ENTITY_ID"
       ]
     },
+    "currentV2Interface": {
+      "client": "AcpAgent.create({ evmProvider: PrivyAlchemyEvmProviderAdapter.create({ walletAddress, walletId, signerPrivateKey, chains: [base] }) })",
+      "server": "https://api.acp.virtuals.io",
+      "walletCredentialShape": "walletAddress plus Privy walletId plus P-256 signerPrivateKey",
+      "readOnlyCheck": {
+        "capturedAt": "2026-09-05T21:39:00Z",
+        "buyerAddress": "0xa036...d4c5",
+        "sellerAddress": "0x3449...b735",
+        "buyerCanReadSeller": true,
+        "sellerCanReadBuyer": true,
+        "sellerOffering": {
+          "name": "published_condition_check",
+          "priceUsd": 0.01,
+          "slaMinutes": 30,
+          "requiredFunds": false,
+          "hidden": false
+        }
+      }
+    },
     "requiredSandboxSequence": [
       "Register buyer and seller agents with the Service Registry.",
       "Create their smart wallets and whitelist the developer wallet.",
@@ -69,13 +92,13 @@
       "Run the published self-evaluation example unchanged through a completed lifecycle."
     ],
     "registryLookup": {
-      "endpoint": "https://acpx.virtuals.io/api/agents?filters[walletAddress]=<public-agent-wallet-address>",
-      "queriedAt": "2026-09-05T14:16:23Z",
+      "endpoint": "https://api.acp.virtuals.io/agents/wallet/<public-agent-wallet-address>",
+      "queriedAt": "2026-09-05T21:39:00Z",
       "buyerHttpStatus": 200,
-      "buyerMatches": 0,
+      "buyerMatches": 1,
       "sellerHttpStatus": 200,
-      "sellerMatches": 0,
-      "interpretation": "The two EconomyOS agent wallets are not yet registered in the ACP service registry; no Entity IDs can be retrieved yet. Read-only Base checks also found no deployed smart-account code at either wallet address.",
+      "sellerMatches": 1,
+      "interpretation": "The current ACP v2 registry recognizes both EconomyOS profiles. The legacy Entity-ID registry route is not the source of truth for these profiles.",
       "existingProfiles": [
         {
           "name": "Standing Verifier",
@@ -93,6 +116,25 @@
         }
       ]
     },
+    "completedLifecycle": {
+      "capturedAt": "2026-09-05T21:42:01Z",
+      "chainId": 8453,
+      "jobId": "76580",
+      "jobRecord": "https://api.acp.virtuals.io/jobs/8453/76580",
+      "offering": "published_condition_check",
+      "budgetUsd": 0.01,
+      "finalStatus": "COMPLETED",
+      "history": ["job.created", "requirement", "budget.set", "job.funded", "job.submitted", "job.completed"],
+      "contract": "0x238E541BfefD82238730D00a2208E5497F1832E0",
+      "transactionLinks": {
+        "jobCreated": "https://basescan.org/tx/0x1a7a1022cb2005716c383bfbded22fd649f2a7ed0a37d261eb2800b30bf4ce0e",
+        "budgetSet": "https://basescan.org/tx/0x1dfc7e2659247f88ff7e0a520557d74ea9e3bbb60f5bfab2a871e7f1d0ea7f8e",
+        "funded": "https://basescan.org/tx/0x24d6daa54161e5360edd0ce7254dd997fb67c79fe8032782e319c3cd67640247",
+        "submitted": "https://basescan.org/tx/0x9440db7a9c576ce28d9b0311d63737f353ef28bd1c52ae90760efaed95c33b05",
+        "completed": "https://basescan.org/tx/0x3dea100ecba5a9ae114e9cd979b0a1fbdcf90b38fb197d06c058c652a4401afd"
+      },
+      "note": "All five transaction hashes were read from Base logs for ACP contract 0x238E541BfefD82238730D00a2208E5497F1832E0."
+    },
     "fundingVerification": {
       "capturedAt": "2026-09-05T16:20:00Z",
       "rpc": "https://mainnet.base.org",
@@ -104,7 +146,7 @@
         "display": "0.100000 USDC"
       },
       "buyerNativeEth": "0 ETH",
-      "sellerFunding": "Not required for the planned service-only test unless the live SDK reports otherwise.",
+      "sellerFunding": "Not required: the service-only ACP job completed without seller USDC.",
       "method": "Read-only eth_call balanceOf at the recorded block; no transaction signed."
     },
     "officialCli": {
@@ -165,8 +207,8 @@
         "summary": "Agent creation returns an opaque HTTP 429 with no reset or quota guidance; the report describes the same pattern of an authenticated account with two existing agents and no new agent created."
       }
     },
-    "status": "BLOCKED",
-    "blocker": "The aGDP ACP button is stale: it opens https://app.virtuals.io/acp/join, which currently returns the Virtuals app's Page not found screen. The supported current creation route is https://app.virtuals.io/acp/new, and two EconomyOS profiles were created there, but their ACP v2 identifiers, deployed smart-account status, and numeric Entity IDs are not yet established. The official ACP-native CLI create endpoint also returned HTTP 429. Do not create duplicates, use virtualAgentId as Entity ID, or fund another wallet until the existing profiles' Upgrade/Migrate/ACP v2 path is verified."
+    "status": "PASS_WITH_DEVIATION",
+    "blocker": "The current ACP v2 read-only check and one real 0.01 USDC self-evaluation completed. However, the v3 Python-throughout requirement is incompatible with the current ACP v2 credentials: the legacy Python client expects a hexadecimal EOA key and numeric Entity ID, while the current profiles use wallet IDs and P-256 signer keys. A small isolated TypeScript ACP adapter is required unless Virtuals publishes a Python v2 client. Do not use virtualAgentId as an Entity ID."
   },
   "baseEas": {
     "chainId": 8453,
@@ -211,9 +253,9 @@
   "discord": {
     "status": "NOT COMPLETED. Posting publicly is an external communication and requires the registered team's Discord access and approval."
   },
-  "blockers": [
-    "Confirm hackathon team registration and obtain Virtuals sandbox access for a buyer and seller agent before the v3 ACP gate can run.",
-    "Inspect the existing Standing Requestor and Standing Verifier detail pages at https://app.virtuals.io/acp/agents for Upgrade, Migrate, ACP v2, Wallet, or Signers controls; only after the resulting ACP identifiers and signer mapping are verified should the published lifecycle run.",
+    "blockers": [
+    "Confirm hackathon team registration.",
+    "Record the explicit architecture decision: strict Python-only implementation is incompatible with the current official ACP v2 client, so either obtain a Python v2 client or authorize a small TypeScript ACP adapter.",
     "Verify the dedicated Base signer public address and balance before any on-chain write.",
     "Choose and provide access to an extraction model; verify its exact production identifier.",
     "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
