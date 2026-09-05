@@ -70,15 +70,61 @@
     ],
     "registryLookup": {
       "endpoint": "https://acpx.virtuals.io/api/agents?filters[walletAddress]=<public-agent-wallet-address>",
-      "queriedAt": "2026-09-05T14:30:00Z",
+      "queriedAt": "2026-09-05T14:16:23Z",
       "buyerHttpStatus": 200,
       "buyerMatches": 0,
       "sellerHttpStatus": 200,
       "sellerMatches": 0,
-      "interpretation": "The two EconomyOS agent wallets are not yet registered in the ACP service registry; no Entity IDs can be retrieved yet."
+      "interpretation": "The two EconomyOS agent wallets are not yet registered in the ACP service registry; no Entity IDs can be retrieved yet. Read-only Base checks also found no deployed smart-account code at either wallet address.",
+      "existingProfiles": [
+        {
+          "name": "Standing Verifier",
+          "internalId": "01a071ad-193b-7d20-bd12-f25afc81e962",
+          "virtualAgentId": 139452,
+          "acpV2AgentId": null,
+          "role": "HYBRID"
+        },
+        {
+          "name": "Standing Requestor",
+          "internalId": "01a0719d-a434-78ef-a637-7431a857cffd",
+          "virtualAgentId": 139450,
+          "acpV2AgentId": null,
+          "role": "HYBRID"
+        }
+      ]
+    },
+    "officialCli": {
+      "package": "@virtuals-protocol/acp-cli",
+      "auth": "configure start --json followed by configure complete --request-id",
+      "authenticatedOwnerWallet": "0x5ff4041c477a60d171f707df6908b29148ebe0b",
+      "createAttempts": [
+        {
+          "agent": "Standing Requestor ACP",
+          "commandShape": "agent create --name --description --json",
+          "attemptedAt": null,
+          "httpStatus": 429,
+          "response": "Rate limit exceeded",
+          "timestampNote": "Initial tool output was captured before a timestamp command was run."
+        },
+        {
+          "agent": "Standing Requestor ACP",
+          "commandShape": "agent create --name --description --json",
+          "attemptedAt": "2026-09-05T14:10:00Z",
+          "httpStatus": 429,
+          "response": "Rate limit exceeded"
+        },
+        {
+          "agent": "Standing Requestor ACP",
+          "commandShape": "agent create --name --description --json",
+          "attemptedAt": "2026-09-05T14:16:23Z",
+          "httpStatus": 429,
+          "response": "Rate limit exceeded"
+        }
+      ],
+      "result": "No ACP-native agent was created. The official CLI list remained at the two existing EconomyOS profiles."
     },
     "status": "BLOCKED",
-    "blocker": "No Virtuals sandbox buyer/seller registrations, agent wallet addresses, entity IDs, whitelisted developer wallet secret, or buyer USDC funding have been supplied. No ACP account, job, or payment was created."
+    "blocker": "The existing EconomyOS profiles are not ACP registry agents and their wallets are not deployed ACP smart accounts. The official ACP-native create endpoint returned HTTP 429 twice, so no new agents or Entity IDs can be responsibly claimed and no ACP account, job, or payment was created."
   },
   "baseEas": {
     "chainId": 8453,
@@ -94,7 +140,7 @@
     "attestation": null,
     "referenceChain": null,
     "gas": {"attestationNative": null, "attestationUsd": null, "maximumDemoSpend": null},
-    "blocker": "The available Base wallet has a $0.00 balance. No signing key was supplied for a dedicated low-balance demo wallet. No schema registration or attestation can be responsibly attempted, so the required live EAS and reference-chain tests are incomplete."
+    "blocker": "A dedicated Base signing key is now present in local secret storage, but its public address and balance have not yet been verified. No schema registration or attestation has been attempted, so the required live EAS and reference-chain tests remain incomplete."
   },
   "erc8004": {
     "identityRegistry": {
@@ -112,8 +158,8 @@
     "decision": "UNDECIDED. Do not build the Reputation Registry route until a funded dedicated wallet can perform a verified write and read. The specified EAS-observer-attestation fallback remains the contingency."
   },
   "wallet": {
-    "status": "A logged-in wallet account exists, but its Base balance was verified as $0.00. Account identifiers, email, and addresses are intentionally omitted from this record.",
-    "dedicatedSigningKey": "NOT PROVIDED",
+    "status": "A dedicated Base signing key is present in local secret storage. Public address and Base balance are not yet recorded; no transaction has been signed.",
+    "dedicatedSigningKey": "PRESENT_IN_LOCAL_ENV_ONLY",
     "funding": null
   },
   "model": {
@@ -125,8 +171,8 @@
   },
   "blockers": [
     "Confirm hackathon team registration and obtain Virtuals sandbox access for a buyer and seller agent before the v3 ACP gate can run.",
-    "Register the two Virtuals sandbox agents, create their wallets, whitelist a developer wallet, and fund the buyer with test USDC; keep private keys in secret storage only.",
-    "Fund and identify a dedicated low-balance Base mainnet signing wallet before any on-chain write.",
+    "Wait for or resolve the Virtuals ACP-native agent-create rate limit, then register two ACP agents, add their signers, and run the published lifecycle; keep private keys in secret storage only.",
+    "Verify the dedicated Base signer public address and balance before any on-chain write.",
     "Choose and provide access to an extraction model; verify its exact production identifier.",
     "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
     "Verify ERC-8004 Reputation Registry by live contract interaction, or record the EAS fallback after funded testing.",
