@@ -96,8 +96,9 @@
     "officialCli": {
       "package": "@virtuals-protocol/acp-cli",
       "officialRepository": "https://github.com/Virtual-Protocol/acp-cli",
-      "portalRegistryRoute": "https://app.virtuals.io/acp/agents",
-      "documentedLegacyRoute": "Connect Wallet -> Join ACP/Build -> Register New Agent -> create smart contract account -> Wallet Management -> whitelist wallet",
+      "portalRegistryRoute": "https://app.virtuals.io/acp/scan",
+      "myAgentsRoute": "https://app.virtuals.io/acp/agents",
+      "documentedLegacyRoute": "Agentic Commerce -> ACP (/acp/scan) -> Join ACP/Register New Agent -> create smart contract account -> Wallet Management -> whitelist wallet",
       "entityIdLocation": "Wallet Management -> Whitelisted Wallets table -> Entity ID column",
       "smartWalletRequirement": "The Python SDK requires the agent smart-account address and the whitelisted developer wallet/entity pair; an ordinary EconomyOS EOA profile is not enough.",
       "auth": "configure start --json followed by configure complete --request-id",
