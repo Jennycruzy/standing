@@ -85,6 +85,14 @@
         }
       }
     },
+    "architectureDecision": {
+      "record": "docs/decisions/0001-acp-adapter.md",
+      "acceptedAt": "2026-09-05T21:50:00Z",
+      "choice": "Python Standing core plus an isolated official TypeScript ACP adapter",
+      "scope": "Virtuals ACP boundary only",
+      "reason": "Current ACP v2 uses wallet IDs and P-256 signer keys; the legacy Python client expects an EOA key and numeric Entity ID and rejects the current signer format.",
+      "secretBoundary": "Each process loads its own environment-injected secrets. Private keys never cross the boundary or appear in logs."
+    },
     "requiredSandboxSequence": [
       "Register buyer and seller agents with the Service Registry.",
       "Create their smart wallets and whitelist the developer wallet.",
@@ -208,7 +216,7 @@
       }
     },
     "status": "PASS_WITH_DEVIATION",
-    "blocker": "The current ACP v2 read-only check and one real 0.01 USDC self-evaluation completed. However, the v3 Python-throughout requirement is incompatible with the current ACP v2 credentials: the legacy Python client expects a hexadecimal EOA key and numeric Entity ID, while the current profiles use wallet IDs and P-256 signer keys. A small isolated TypeScript ACP adapter is required unless Virtuals publishes a Python v2 client. Do not use virtualAgentId as an Entity ID."
+    "blocker": "The ACP v2 path is verified and the language decision is recorded. Remaining Phase 0 blockers are listed at the top-level blockers array. Do not use virtualAgentId as an Entity ID."
   },
   "baseEas": {
     "chainId": 8453,
@@ -255,7 +263,6 @@
   },
     "blockers": [
     "Confirm hackathon team registration.",
-    "Record the explicit architecture decision: strict Python-only implementation is incompatible with the current official ACP v2 client, so either obtain a Python v2 client or authorize a small TypeScript ACP adapter.",
     "Verify the dedicated Base signer public address and balance before any on-chain write.",
     "Choose and provide access to an extraction model; verify its exact production identifier.",
     "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
