@@ -95,6 +95,11 @@
     },
     "officialCli": {
       "package": "@virtuals-protocol/acp-cli",
+      "officialRepository": "https://github.com/Virtual-Protocol/acp-cli",
+      "portalRegistryRoute": "https://app.virtuals.io/acp/agents",
+      "documentedLegacyRoute": "Connect Wallet -> Join ACP/Build -> Register New Agent -> create smart contract account -> Wallet Management -> whitelist wallet",
+      "entityIdLocation": "Wallet Management -> Whitelisted Wallets table -> Entity ID column",
+      "smartWalletRequirement": "The Python SDK requires the agent smart-account address and the whitelisted developer wallet/entity pair; an ordinary EconomyOS EOA profile is not enough.",
       "auth": "configure start --json followed by configure complete --request-id",
       "authenticatedOwnerWallet": "0x5ff4041c477a60d171f707df6908b29148ebe0b",
       "createAttempts": [
@@ -121,7 +126,12 @@
           "response": "Rate limit exceeded"
         }
       ],
-      "result": "No ACP-native agent was created. The official CLI list remained at the two existing EconomyOS profiles."
+      "result": "No ACP-native agent was created. The official CLI list remained at the two existing EconomyOS profiles.",
+      "knownUpstreamIssue": {
+        "url": "https://github.com/Virtual-Protocol/acp-cli/issues/92",
+        "status": "OPEN",
+        "summary": "Agent creation returns an opaque HTTP 429 with no reset or quota guidance; the report describes the same pattern of an authenticated account with two existing agents and no new agent created."
+      }
     },
     "status": "BLOCKED",
     "blocker": "The existing EconomyOS profiles are not ACP registry agents and their wallets are not deployed ACP smart accounts. The official ACP-native create endpoint returned HTTP 429 twice, so no new agents or Entity IDs can be responsibly claimed and no ACP account, job, or payment was created."
