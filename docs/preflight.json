@@ -227,12 +227,41 @@
       "https://basescan.org/address/0x4200000000000000000000000000000000000021",
       "https://basescan.org/address/0x4200000000000000000000000000000000000020"
     ],
-    "schemas": {"conditionDefinitionUid": null, "observationUid": null},
-    "throwawaySchema": null,
-    "attestation": null,
+    "schemas": {
+      "conditionDefinitionUid": "0x5c48ce51fcaa872494adb9d7db5f18b0c9d49a85a17f66987f2a5ef2fa5c45f9",
+      "observationUid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637"
+    },
+    "throwawaySchema": {
+      "definition": "string preflightValue",
+      "uid": "0x5c48ce51fcaa872494adb9d7db5f18b0c9d49a85a17f66987f2a5ef2fa5c45f9",
+      "transaction": "https://basescan.org/tx/0x6b4e022001b85ef119b288d8feb892aa862d0d6898b008bd587ba8a87369324e",
+      "block": 50929589,
+      "resolver": "0x0000000000000000000000000000000000000000",
+      "revocable": true,
+      "readback": "SchemaRegistry.getSchema returned the matching UID, resolver, revocability, and definition."
+    },
+    "attestation": {
+      "uid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637",
+      "transaction": "https://basescan.org/tx/0xb8ee7e4e7959d0292b06ad1350e16d4958d8e11d6a733ac6eba756ad919e0355",
+      "block": 50929920,
+      "status": "Broadcast succeeded and the Attested event yielded this UID. getAttestation readback is unresolved: the current ABI decode returned zero fields, so this is not claimed as a complete readback."
+    },
     "referenceChain": null,
-    "gas": {"attestationNative": null, "attestationUsd": null, "maximumDemoSpend": null},
-    "blocker": "A dedicated Base signing key is now present in local secret storage, but its public address and balance have not yet been verified. No schema registration or attestation has been attempted, so the required live EAS and reference-chain tests remain incomplete."
+    "gas": {
+      "priceSource": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
+      "ethUsdAtCapture": 2480.61,
+      "schemaWeiIncludingL1": "581156062707",
+      "schemaEthIncludingL1": "0.000000581156062707",
+      "schemaUsdAtCapture": 0.00144162154,
+      "attestationWeiIncludingL1": "1409378162123",
+      "attestationEthIncludingL1": "0.000001409378162123",
+      "attestationUsdAtCapture": 0.00349611756,
+      "twoWriteTotalWeiIncludingL1": "1990534224830",
+      "twoWriteTotalEthIncludingL1": "0.000001990534224830",
+      "twoWriteTotalUsdAtCapture": 0.00493773910,
+      "maximumDemoSpend": "Not set; no public signing button is implemented."
+    },
+    "blocker": "EAS schema registration and one attestation succeeded. The schema readback passed, but getAttestation readback is unresolved and no reference-chain attestation has been attempted. Do not claim complete EAS preflight until the readback decoder is corrected and a second attestation is safely executed."
   },
   "erc8004": {
     "identityRegistry": {
@@ -250,9 +279,17 @@
     "decision": "UNDECIDED. Do not build the Reputation Registry route until a funded dedicated wallet can perform a verified write and read. The specified EAS-observer-attestation fallback remains the contingency."
   },
   "wallet": {
-    "status": "A dedicated Base signing key is present in local secret storage. Public address and Base balance are not yet recorded; no transaction has been signed.",
+    "status": "A dedicated Base signing key is present in local secret storage. Its public address and read-only Base balance were verified before the Phase 0 writes.",
     "dedicatedSigningKey": "PRESENT_IN_LOCAL_ENV_ONLY",
-    "funding": null
+    "funding": {
+      "address": "0x39Dd06180B445B3215FD093a3bF7A3Bf42dfbe96",
+      "capturedAt": "2026-09-05T22:00:00Z",
+      "rpc": "https://mainnet.base.org",
+      "blockNumber": 50929920,
+      "nativeEthWeiBeforeWrites": "199399942691646",
+      "nativeEthBeforeWrites": "0.000199399942691646",
+      "note": "Balance was read only before signing. The two recorded EAS writes consumed part of it; do not attempt further writes without checking the current balance."
+    }
   },
   "model": {
     "extractionModelId": null,
@@ -263,7 +300,8 @@
   },
     "blockers": [
     "Confirm hackathon team registration.",
-    "Verify the dedicated Base signer public address and balance before any on-chain write.",
+    "Correct the EAS getAttestation readback decoder and verify the returned UID, schema, timestamps, refUID, attester, and data before the reference-chain test.",
+    "Do not run further Base writes until the remaining signer balance is checked and the user approves the spend.",
     "Choose and provide access to an extraction model; verify its exact production identifier.",
     "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
     "Verify ERC-8004 Reputation Registry by live contract interaction, or record the EAS fallback after funded testing.",

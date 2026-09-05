@@ -1,0 +1,19 @@
+{
+  "base": {
+    "chainId": 8453,
+    "rpcUrl": "https://mainnet.base.org",
+    "eas": "0x4200000000000000000000000000000000000021",
+    "schemaRegistry": "0x4200000000000000000000000000000000000020",
+    "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+    "explorers": {
+      "address": "https://basescan.org/address/",
+      "transaction": "https://basescan.org/tx/"
+    },
+    "phase0Preflight": {
+      "schemaUid": "0x5c48ce51fcaa872494adb9d7db5f18b0c9d49a85a17f66987f2a5ef2fa5c45f9",
+      "schemaTransaction": "0x6b4e022001b85ef119b288d8feb892aa862d0d6898b008bd587ba8a87369324e",
+      "attestationUid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637",
+      "attestationTransaction": "0xb8ee7e4e7959d0292b06ad1350e16d4958d8e11d6a733ac6eba756ad919e0355"
+    }
+  }
+}
