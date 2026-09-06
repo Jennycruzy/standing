@@ -1,1 +1,5 @@
 .env
+acp-adapter/node_modules/
+acp-adapter/dist/
+__pycache__/
+*.py[cod]
