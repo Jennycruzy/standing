@@ -8,8 +8,11 @@ class FakeAgent implements AcpAgent {
   listener?: AcpEntryListener;
   started = false;
   stopped = false;
+  addressLookups = 0;
+  creations = 0;
   fundedWith: unknown[] = [];
   completedWith: string[] = [];
+  resumedSession?: AcpSession;
 
   on(_event: "entry", listener: AcpEntryListener): void {
     this.listener = listener;
@@ -24,11 +27,17 @@ class FakeAgent implements AcpAgent {
   }
 
   async getAddress(): Promise<string> {
+    this.addressLookups += 1;
     return "0x1111111111111111111111111111111111111111";
   }
 
   async createJobByOfferingName(): Promise<string> {
+    this.creations += 1;
     return "76580";
+  }
+
+  getSession(_chainId: number, _jobId: string): AcpSession | undefined {
+    return this.resumedSession;
   }
 
   async emit(session: AcpSession, entry: Parameters<AcpEntryListener>[1]): Promise<void> {
@@ -104,6 +113,23 @@ test("surfaces ACP rejection instead of returning success", async () => {
     assert.equal(error.eventType, "job.rejected");
     return true;
   });
+  assert.equal(agent.stopped, true);
+});
+
+test("resumes a hydrated job without creating another job", async () => {
+  const agent = new FakeAgent();
+  const session = fakeSession(agent);
+  agent.resumedSession = session;
+  const adapter = new StandingAcpAdapter(fakeRuntime(agent));
+  const resultPromise = adapter.runJob({ ...request, jobId: "76580" });
+
+  await new Promise((resolve) => setImmediate(resolve));
+  await agent.emit(session, { kind: "system", event: { type: "job.completed" } });
+
+  const result = await resultPromise;
+  assert.equal(result.jobId, "76580");
+  assert.equal(agent.addressLookups, 0);
+  assert.equal(agent.creations, 0);
   assert.equal(agent.stopped, true);
 });
 

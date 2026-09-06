@@ -12,8 +12,15 @@
     "phase0Preflight": {
       "schemaUid": "0x5c48ce51fcaa872494adb9d7db5f18b0c9d49a85a17f66987f2a5ef2fa5c45f9",
       "schemaTransaction": "0x6b4e022001b85ef119b288d8feb892aa862d0d6898b008bd587ba8a87369324e",
-      "attestationUid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637",
-      "attestationTransaction": "0xb8ee7e4e7959d0292b06ad1350e16d4958d8e11d6a733ac6eba756ad919e0355"
+      "attestationUid": "0x04802d72a1eb01ed02ed60ede8628bffbb93087fb6b8a458c8dc060849b2ca66",
+      "attestationTransaction": "0xe694167f0c040fe1953387630e8f321b8c30ac549b06c8981a1a2afcbb4cd19d",
+      "referenceUid": "0xbf2d3af512affd64dda8aea4ad8cabfe80755362e7838d9ba95764f1ccb375f9",
+      "referenceTransaction": "0xd3a3f312b5df97396247c1d54cfe2852171e4700242d92ac304b2380d73aea4c",
+      "historicalOrphanAttestation": {
+        "uid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637",
+        "transaction": "0xb8ee7e4e7959d0292b06ad1350e16d4958d8e11d6a733ac6eba756ad919e0355",
+        "status": "Event/indexer evidence only; direct getAttestation returned the empty/default record. Superseded by the fresh direct-readback chain above."
+      }
     }
   }
 }

@@ -10,6 +10,7 @@ import type {
 } from "./types.js";
 
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
+const SETUP_TIMEOUT_MS = 2 * 60 * 1000;
 
 export class AcpJobError extends Error {
   readonly entries: readonly AcpEntry[];
@@ -85,16 +86,39 @@ export class StandingAcpAdapter {
     agent.on("entry", onEntry);
 
     try {
-      await agent.start();
-      const evaluatorAddress = await agent.getAddress();
-      const jobId = await agent.createJobByOfferingName(
-        request.chainId,
-        request.offeringName,
-        request.providerAddress,
-        request.requirement,
-        { evaluatorAddress },
-      );
-      createdJobId = String(jobId);
+      const setupTimeout = Math.min(request.timeoutMs ?? DEFAULT_TIMEOUT_MS, SETUP_TIMEOUT_MS);
+      await withTimeout(agent.start(), setupTimeout, () => {
+        settled = true;
+        return new AcpJobError("ACP agent startup timed out", [...entries]);
+      });
+      if (request.jobId !== undefined) {
+        const session = agent.getSession(request.chainId, request.jobId);
+        if (session === undefined) {
+          throw new AcpJobError(
+            `ACP job ${request.jobId} was not hydrated as an active session`,
+            [...entries],
+          );
+        }
+        createdJobId = String(session.jobId);
+      } else {
+        const evaluatorAddress = await withTimeout(
+          agent.getAddress(),
+          setupTimeout,
+          () => new AcpJobError("ACP evaluator address lookup timed out", [...entries]),
+        );
+        const jobId = await withTimeout(
+          agent.createJobByOfferingName(
+            request.chainId,
+            request.offeringName,
+            request.providerAddress,
+            request.requirement,
+            { evaluatorAddress },
+          ),
+          setupTimeout,
+          () => new AcpJobError("ACP job creation timed out", [...entries]),
+        );
+        createdJobId = String(jobId);
+      }
 
       const result = await withTimeout(completion, request.timeoutMs ?? DEFAULT_TIMEOUT_MS, () => {
         settled = true;

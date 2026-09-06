@@ -1,6 +1,6 @@
 {
   "phase": 0,
-  "capturedAt": "2026-09-05T00:00:00Z",
+  "capturedAt": "2026-09-06T20:35:00Z",
   "specification": "STANDING — BUILD SPECIFICATION v3",
   "status": "BLOCKED",
   "rules": {
@@ -42,7 +42,17 @@
       "verified": ["state write/read", "entity write/read", "journal write/read", "reference write/read", "full-text search"],
       "archiveResult": "archive_entity returned archived_id and original_id. get_entity then correctly reported not found. list_entities(status='archived') returned an empty list, and no restore method appears on MemoryClient 0.8.0."
     },
-    "blocker": "The published API does not expose a documented archive read or restore operation, despite the docs describing archive as recoverable. Phase 1 cannot claim archive-and-resurrect until Sibyl documents a supported retrieval/restore path or the team confirms an acceptable implementation using the real local store."
+    "realArchiveRestore": {
+      "database": ".preflight-memory.db",
+      "tenantId": "00000000-0000-0000-0000-000000000042",
+      "archiveId": "59258858-f7df-41c2-9e90-346afc594afa",
+      "originalEntityId": "03937775-cb1a-40e7-96fc-8689fcc030ce",
+      "entity": "preflight/standing",
+      "body": {"status": "verified"},
+      "verified": ["MemoryClient.get_entity", "MemoryClient.search", "archive row removed", "FTS row present"],
+      "method": "scripts/sibyl_archive.py restore; the published client still has no restore method."
+    },
+    "blocker": null
   },
   "virtualsAcp": {
     "package": "virtuals-acp==0.3.23 (legacy Python); @virtuals-protocol/acp-node-v2@0.1.12 (current ACP v2)",
@@ -143,6 +153,26 @@
       },
       "note": "All five transaction hashes were read from Base logs for ACP contract 0x238E541BfefD82238730D00a2208E5497F1832E0."
     },
+    "livePythonBridge": {
+      "capturedAt": "2026-09-06T20:51:44Z",
+      "chainId": 8453,
+      "jobId": "76973",
+      "jobRecord": "https://api.acp.virtuals.io/jobs/8453/76973",
+      "offering": "published_condition_check",
+      "budgetUsd": 0.01,
+      "pythonResult": {
+        "status": "completed",
+        "entries": ["budget.set", "job.submitted", "job.completed"]
+      },
+      "serviceSide": "Existing seller agent observed the requirement, set the budget, submitted a deliverable, and emitted job.completed; no second job was created.",
+      "transactionLinks": {
+        "jobCreated": "https://basescan.org/tx/0x3cfbbd9404c039537169728b940726569fb00422bdb5dcf2e88f28d78bc68db6",
+        "budgetSet": "https://basescan.org/tx/0xf8cc8bd2e5499230fb0a7816c70f7a1bf9e3603d404e258ee20dda75b8c21b46",
+        "funded": "https://basescan.org/tx/0x460b50e40a3d3b8da552349f614fe4ffda38d1b19f73aefe3b338a88ee5e9f83",
+        "submitted": "https://basescan.org/tx/0x2b53c06a99d993ce91f5e295cef6d1ef9eb5834b0cf137cab6eafe6e9176207b",
+        "completedAndPaymentReleased": "https://basescan.org/tx/0x68a9ff71b10fa5cd2cfbe9031c729fc8144c093581af2d2ed259b25d014ef543"
+      }
+    },
     "fundingVerification": {
       "capturedAt": "2026-09-05T16:20:00Z",
       "rpc": "https://mainnet.base.org",
@@ -216,7 +246,7 @@
       }
     },
     "status": "PASS_WITH_DEVIATION",
-    "blocker": "The ACP v2 path is verified and the language decision is recorded. Remaining Phase 0 blockers are listed at the top-level blockers array. Do not use virtualAgentId as an Entity ID."
+    "blocker": null
   },
   "baseEas": {
     "chainId": 8453,
@@ -229,7 +259,9 @@
     ],
     "schemas": {
       "conditionDefinitionUid": "0x5c48ce51fcaa872494adb9d7db5f18b0c9d49a85a17f66987f2a5ef2fa5c45f9",
-      "observationUid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637"
+      "observationUid": "0x04802d72a1eb01ed02ed60ede8628bffbb93087fb6b8a458c8dc060849b2ca66",
+      "referenceUid": "0xbf2d3af512affd64dda8aea4ad8cabfe80755362e7838d9ba95764f1ccb375f9",
+      "historicalOrphanUid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637"
     },
     "throwawaySchema": {
       "definition": "string preflightValue",
@@ -241,42 +273,72 @@
       "readback": "SchemaRegistry.getSchema returned the matching UID, resolver, revocability, and definition."
     },
     "attestation": {
+      "uid": "0x04802d72a1eb01ed02ed60ede8628bffbb93087fb6b8a458c8dc060849b2ca66",
+      "transaction": "https://basescan.org/tx/0xe694167f0c040fe1953387630e8f321b8c30ac549b06c8981a1a2afcbb4cd19d",
+      "refUID": "0xbf2d3af512affd64dda8aea4ad8cabfe80755362e7838d9ba95764f1ccb375f9",
+      "data": "preflight-reference",
+      "status": "PASS. Direct EAS.getAttestation returned the complete record, matching schema, signer, timestamp, revocability, data, and the reference UID."
+    },
+    "referenceChain": {
+      "referenceUid": "0xbf2d3af512affd64dda8aea4ad8cabfe80755362e7838d9ba95764f1ccb375f9",
+      "referenceTransaction": "https://basescan.org/tx/0xd3a3f312b5df97396247c1d54cfe2852171e4700242d92ac304b2380d73aea4c",
+      "data": "preflight-only",
+      "status": "PASS. Direct EAS.getAttestation returned the referenced record before and after the native refUID write."
+    },
+    "historicalOrphanAttestation": {
       "uid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637",
       "transaction": "https://basescan.org/tx/0xb8ee7e4e7959d0292b06ad1350e16d4958d8e11d6a733ac6eba756ad919e0355",
-      "block": 50929920,
-      "status": "Broadcast succeeded and the Attested event yielded this UID. Read-only getAttestation calls against mainnet.base.org and base-rpc.publicnode.com return the ABI's empty/default attestation; isAttestationValid is false and getTimestamp is zero. This is an unresolved on-chain lookup problem, not a local decoding pass."
+      "status": "Event/indexer evidence only; retained as historical evidence and not used for the direct-readback pass."
     },
-    "referenceChain": null,
     "gas": {
       "priceSource": "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd",
       "ethUsdAtCapture": 2480.61,
       "schemaWeiIncludingL1": "581156062707",
       "schemaEthIncludingL1": "0.000000581156062707",
       "schemaUsdAtCapture": 0.00144162154,
-      "attestationWeiIncludingL1": "1409378162123",
-      "attestationEthIncludingL1": "0.000001409378162123",
-      "attestationUsdAtCapture": 0.00349611756,
-      "twoWriteTotalWeiIncludingL1": "1990534224830",
-      "twoWriteTotalEthIncludingL1": "0.000001990534224830",
-      "twoWriteTotalUsdAtCapture": 0.00493773910,
+      "historicalOrphanAttestationWeiIncludingL1": "1409378162123",
+      "historicalOrphanAttestationEthIncludingL1": "0.000001409378162123",
+      "historicalOrphanAttestationUsdAtCapture": 0.00349611756,
+      "replacementReferenceAttestationWeiIncludingL1": "1412859819812",
+      "replacementReferenceAttestationUid": "0xbf2d3af512affd64dda8aea4ad8cabfe80755362e7838d9ba95764f1ccb375f9",
+      "nativeReferenceAttestationWeiIncludingL1": "1545853129055",
+      "nativeReferenceAttestationUid": "0x04802d72a1eb01ed02ed60ede8628bffbb93087fb6b8a458c8dc060849b2ca66",
+      "phase0EasWriteTotalWeiIncludingL1": "2958712948867",
       "maximumDemoSpend": "Not set; no public signing button is implemented."
     },
-    "blocker": "EAS schema registration and one attestation transaction succeeded. The schema readback passed, but the emitted attestation UID cannot currently be retrieved as a stored attestation: two read-only RPCs return the empty/default value. Do not make a reference-chain write or claim complete EAS preflight until this discrepancy is explained."
+    "status": "PASS_WITH_HISTORICAL_DEVIATION",
+    "blocker": null
   },
   "erc8004": {
     "identityRegistry": {
       "address": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
       "explorer": "https://basescan.org/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
-      "status": "Explorer search result identifies this address as 8004 Identity Registry."
+      "status": "PASS. Base Identity Registry read/write verification completed against the official deployed address."
     },
     "reputationRegistry": {
       "address": "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
       "explorer": "https://basescan.org/address/0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
-      "status": "UNVERIFIED: direct explorer access returned 403 and no successful live contract-interface read was possible."
+      "status": "PASS. Base Reputation Registry read/write verification completed against the official deployed address."
     },
-    "identityRegistration": null,
-    "reputationSignal": null,
-    "decision": "UNDECIDED. Do not build the Reputation Registry route until a funded dedicated wallet can perform a verified write and read. The specified EAS-observer-attestation fallback remains the contingency."
+    "identityRegistration": {
+      "agentId": "84973",
+      "transaction": "https://basescan.org/tx/0xb1a5586929a8b02fb6a4527551124ce290328eda684aa18a424a78e2de64e733",
+      "block": "0x309a9c7",
+      "registryVersion": "2.0.0",
+      "ownerReadback": "0x39Dd06180B445B3215FD093a3bF7A3Bf42dfbe96",
+      "agentWalletReadback": "0x39Dd06180B445B3215FD093a3bF7A3Bf42dfbe96",
+      "tokenUriReadback": "registration-v1 data URI for Standing",
+      "operatorApproval": false
+    },
+    "reputationSignal": {
+      "client": "0x69eb1bAA26BffCD0fA9089aa2187F6Ca3e2A54f6",
+      "feedbackIndex": "1",
+      "transaction": "https://basescan.org/tx/0x93116804849e76576cf1772cb603a781ff373702d558084768c200ffc06a22a3",
+      "registryVersion": "2.0.0",
+      "feedback": {"value": 100, "valueDecimals": 0, "tag1": "standing", "tag2": "phase0", "isRevoked": false},
+      "summary": {"count": 1, "value": 100, "valueDecimals": 0}
+    },
+    "decision": "PASS. ERC-8004 Identity registration and Reputation feedback both have live write receipts and exact direct readback."
   },
   "wallet": {
     "status": "A dedicated Base signing key is present in local secret storage. Its public address and read-only Base balance were verified before the Phase 0 writes.",
@@ -293,18 +355,14 @@
   },
   "model": {
     "extractionModelId": null,
-    "status": "BLOCKED. No configured extraction-provider credential or verified model identifier was supplied. Do not select a model identifier by assumption."
+    "status": "BLOCKED. The configured OpenAI credential returned HTTP 401 invalid_api_key from GET /v1/models. No model identifier was selected by assumption; replace the local key before recording one."
   },
   "discord": {
     "status": "NOT COMPLETED. Posting publicly is an external communication and requires the registered team's Discord access and approval."
   },
-    "blockers": [
+  "blockers": [
     "Confirm hackathon team registration.",
-    "Explain why the emitted EAS UID is not returned by getAttestation, isAttestationValid, or getTimestamp on two read-only Base RPCs; verify the UID, schema, timestamps, refUID, attester, and data before the reference-chain test.",
-    "Do not run further Base writes until the remaining signer balance is checked and the user approves the spend.",
-    "Choose and provide access to an extraction model; verify its exact production identifier.",
-    "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
-    "Verify ERC-8004 Reputation Registry by live contract interaction, or record the EAS fallback after funded testing.",
+    "Replace or repair the invalid local OpenAI API key, then verify an exact model identifier from the official catalog.",
     "Send the specified Discord question from the team's account."
   ]
 }

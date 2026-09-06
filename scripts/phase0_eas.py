@@ -155,6 +155,25 @@ def attestation_uid(receipt_data: dict[str, Any], contract: str) -> str:
     raise RuntimeError("Attested event not found in receipt")
 
 
+def parse_attest_args() -> tuple[str, str]:
+    if len(sys.argv) < 3 or sys.argv[1] != "--attest-only":
+        raise RuntimeError("usage: phase0_eas.py --attest-only SCHEMA_UID [--ref-uid ATTESTATION_UID]")
+    schema_uid = sys.argv[2]
+    ref_uid = "0x" + "00" * 32
+    if len(sys.argv) == 5 and sys.argv[3] == "--ref-uid":
+        ref_uid = sys.argv[4]
+    elif len(sys.argv) != 3:
+        raise RuntimeError("usage: phase0_eas.py --attest-only SCHEMA_UID [--ref-uid ATTESTATION_UID]")
+    for label, value in (("schema UID", schema_uid), ("reference UID", ref_uid)):
+        if len(value) != 66 or not value.startswith("0x"):
+            raise RuntimeError(f"{label} must be a 32-byte 0x-prefixed hex value")
+        try:
+            bytes.fromhex(value[2:])
+        except ValueError as error:
+            raise RuntimeError(f"{label} must be a 32-byte 0x-prefixed hex value") from error
+    return schema_uid, ref_uid
+
+
 def main() -> None:
     config = load_config()
     env = load_env(ENV_PATH)
@@ -172,9 +191,11 @@ def main() -> None:
     schema_tx: str | None = None
     schema_receipt: dict[str, Any] | None = None
     schema_uid: str
-    if len(sys.argv) == 3 and sys.argv[1] == "--attest-only":
-        schema_uid = sys.argv[2]
+    reference_uid: str
+    if len(sys.argv) >= 3 and sys.argv[1] == "--attest-only":
+        schema_uid, reference_uid = parse_attest_args()
     else:
+        reference_uid = "0x" + "00" * 32
         register_data = keccak(text="register(string,address,bool)")[:4] + encode(
             ["string", "address", "bool"],
             [schema, "0x0000000000000000000000000000000000000000", True],
@@ -183,8 +204,10 @@ def main() -> None:
         # SchemaRegistry calculates UID with abi.encodePacked(schema, resolver, revocable).
         schema_uid = "0x" + keccak(schema.encode() + bytes(20) + b"\x01").hex()
 
-    attestation_data = encode(["string"], ["preflight-only"])
+    attestation_value = "preflight-reference" if reference_uid != "0x" + "00" * 32 else "preflight-only"
+    attestation_data = encode(["string"], [attestation_value])
     schema_uid_bytes = bytes.fromhex(schema_uid.removeprefix("0x"))
+    reference_uid_bytes = bytes.fromhex(reference_uid.removeprefix("0x"))
     request_data = encode(
         ["(bytes32,(address,uint64,bool,bytes32,bytes,uint256))"],
         [(
@@ -193,7 +216,7 @@ def main() -> None:
                 "0x0000000000000000000000000000000000000000",
                 0,
                 True,
-                bytes(32),
+                reference_uid_bytes,
                 attestation_data,
                 0,
             ),
@@ -225,7 +248,7 @@ def main() -> None:
             "gasWei": str(attestation_cost),
             "gasEth": attestation_cost / 10**18,
             "gasUsd": attestation_cost / 10**18 * price,
-            "refUID": "0x" + "00" * 32,
+            "refUID": reference_uid,
         },
         "ethUsd": price,
         "ethUsdSource": price_source,

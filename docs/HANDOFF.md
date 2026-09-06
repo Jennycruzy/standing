@@ -1,6 +1,6 @@
 # Standing v3 handoff
 
-This file is intentionally local and is not part of the commit. It records the state at the stop point on 6 September 2026.
+This file records the state at the 6 September 2026 Phase 0 continuation point.
 
 ## What is complete
 
@@ -9,32 +9,25 @@ This file is intentionally local and is not part of the commit. It records the s
 - The current ACP v2 credentials were shown to be incompatible with the legacy Python client. The approved decision is a Python Standing core with an isolated official TypeScript ACP adapter. The decision is in [`docs/decisions/0001-acp-adapter.md`](decisions/0001-acp-adapter.md).
 - A dedicated Base signer was read and its address recorded without exposing the key. The verified address and pre-write balance are in `docs/preflight.json`.
 - Base EAS deployment addresses were taken from the official deployment artifacts and stored in [`config/chain.json`](../config/chain.json).
-- One throwaway schema was registered and one attestation was broadcast on Base. Their UIDs, receipts, links, block numbers, and measured costs are recorded in `docs/preflight.json` and `config/chain.json`.
-- The schema readback succeeded. The attestation receipt emitted a UID. A 6 September read-only check still gets the ABI's empty/default record from `getAttestation` on `mainnet.base.org`; `isAttestationValid` is false and `getTimestamp` is zero. A separate older Base attestation UID also returns the empty/default record, so this is not unique to Standing's transaction. The Base EAS indexer reconstructs Standing's exact UID, transaction, timestamps, zero `refUID`, signer, revocability, recipient, and encoded `preflight-only` data. This confirms event/indexer evidence, not direct EAS storage readback.
-- The current read-only balance of the recorded Base signer is `0.000197409408466816 ETH`, consistent with the two recorded writes. No further transaction was made.
-- The local EAS helper scripts are in [`scripts/phase0_eas.py`](../scripts/phase0_eas.py) and [`scripts/read_preflight_eas.py`](../scripts/read_preflight_eas.py). They read the local environment and do not print private keys.
-- The isolated ACP adapter boundary is scaffolded in [`acp-adapter/`](../acp-adapter/). Its official-client wiring typechecks, and three offline tests cover a completed lifecycle, ACP rejection/expiry behavior, and unsafe configuration. It has not been run live or connected to the Python process yet; no spend or chain write occurred while adding it.
-- The Python-side ACP bridge is now in [`scripts/acp_bridge.py`](../scripts/acp_bridge.py). It maps the existing `BUYER_*` environment names into the adapter's `STANDING_ACP_*` names, loads the local ignored `.env` when called without an explicit environment, validates only completed typed results, and fails closed on adapter errors/timeouts. Six Python tests and the adapter's three TypeScript tests pass offline. It has not been run live; no spend or chain write occurred while adding it.
-- The Sibyl archive gap now has a tenant-scoped, atomic local workaround in [`scripts/sibyl_archive.py`](../scripts/sibyl_archive.py). The real preflight database was inspected read-only; its one archive row was restored successfully on a temporary copy using the actual schema, while the real evidence database remains unchanged. The workaround's tests pass.
+- One throwaway schema and two fresh attestations were broadcast on Base. The second attestation uses the first UID as its native `refUID`; direct EAS reads prove both records and the reference chain. Their UIDs, receipts, links, and measured costs are recorded in `docs/preflight.json` and `config/chain.json`. The original `0xd8f6…b637` event/indexer-only record is retained as historical evidence.
+- The ERC-8004 Base Identity and Reputation registries now have live proof: Standing identity `84973` was registered, the separate client wrote feedback index `1`, and owner, wallet, token URI, feedback, and summary read back exactly. The idempotent verifier is [`scripts/erc8004_preflight.py`](../scripts/erc8004_preflight.py).
+- The real Sibyl `preflight/standing` archive row was restored in `.preflight-memory.db` with its original entity ID and body `{"status":"verified"}`. `MemoryClient.get_entity`, search, and FTS were checked afterward; the archive row is gone from the archive table.
+- The isolated ACP adapter boundary is in [`acp-adapter/`](../acp-adapter/). Its official-client wiring typechecks, four offline tests pass, and it now supports resume-by-job-ID so a retry cannot create a duplicate job.
+- The Python-side ACP bridge is in [`scripts/acp_bridge.py`](../scripts/acp_bridge.py). It maps the existing `BUYER_*` environment names into the adapter's `STANDING_ACP_*` names, loads the local ignored `.env`, validates only completed typed results, and fails closed on adapter errors/timeouts. Six Python tests and four TypeScript tests pass offline.
 - The local environment is `/Users/user/.env` and remains ignored by git. It contains the ACP v2 wallet IDs, signer values, agent addresses, and Base signer value. It is not copied into this handoff.
-- No further chain write was made after the recorded schema and attestation. No vendor observation was published.
+- The first attempted live bridge diagnostic created only job `76958`; its requirement did not enter the ACP service index, and the on-chain job is now expired/open with zero budget. It is recorded as a failed diagnostic and will not be reused or duplicated. No registration or public vendor observation was performed.
+- A fresh capped job `76973` completed through the live Python bridge. Python received the typed completed result with `budget.set → job.submitted → job.completed`; Base logs prove the full lifecycle and payment release. The seller worker used the existing seller agent and did not create an agent.
 
 ## What remains blocked or unfinished
 
-1. Resolve the Base EAS readback discrepancy. The Base indexer confirms the UID, schema, transaction, timestamps, `refUID`, attester, recipient, revocability, and encoded data, but direct getters return empty/default for Standing's UID and a separate indexed Base UID. Do not treat the attestation as directly retrievable or make the reference-chain write until there is an accepted supported readback path.
-2. Only after that readback is correct and the user approves the spend, make the second attestation with `refUID` and prove the reference chain can be walked.
-3. Check the remaining Base signer balance before any new transaction. Do not assume the pre-write balance is still available.
-4. Decide whether to restore the existing preflight archive row in the real `.preflight-memory.db`. The restore path is implemented and verified on a temporary copy; performing it on the real evidence database is intentionally still an operator action.
-5. Verify ERC-8004 Identity and Reputation live interactions, or document the EAS fallback. No identity or reputation write was made.
-6. Confirm hackathon team registration and repair the model access. The configured OpenAI key was checked read-only and returned HTTP 401 from `GET /v1/models`; no exact model identifier is currently usable.
-7. Ask the required Virtuals graduation/sandbox questions from the team's account if still needed. Do not use the retired `/acp/join` route and do not create more agents or tokens.
-8. Prove the live adapter bridge: run one user-approved completed ACP job through `acp-adapter/` and prove the Python side receives the typed result; also prove a live ACP failure is surfaced rather than treated as success. The local bridge and offline adapter tests already cover the boundary mechanics without spending funds.
-9. Do not start Phase 1 product code until the remaining Phase 0 hard-stop items pass.
+1. Replace or repair the local OpenAI API key. The current read-only `GET /v1/models` check returns HTTP 401 `invalid_api_key`; only then select an exact model from the [official model catalog](https://developers.openai.com/api/docs/models).
+2. Registration and Discord remain external account actions outside this continuation; no public post has been made.
+3. Do not start Phase 1 product code until the remaining Phase 0 hard-stop items pass.
 
 ## Commits already present
 
-The repository does have real commits. The latest before the current local changes is `83e1097 docs: record EAS readback blocker`. Earlier commits record the v3 restart, secret-file ignore rule, ACP route investigation, funding verification, and completed ACP lifecycle. The EAS discrepancy documentation and adapter scaffold are currently uncommitted local changes. The handoff must remain untracked locally. No git remote is configured in this checkout, so a push requires the repository URL and credentials to be configured first.
+The repository does have real commits. The current base commit is `e59c83d fix: close local phase 0 gaps`; the EAS replacement/readback, ERC-8004 verifier, Sibyl restore evidence, adapter resume guard, and handoff updates are the current local changes to commit after verification. No git remote is configured in this checkout, so a push still requires the repository URL and credentials to be configured first.
 
 ## Safe next session order
 
-Read this file, inspect `git status`, validate the JSON, review the adapter tests, and investigate the EAS discrepancy before any transaction. Keep `.env` out of git. Do not treat the Virtuals `virtualAgentId` values as ACP Entity IDs. Do not claim Phase 0 passed while any item above remains unresolved.
+Read this file, inspect `git status`, validate the JSON, and repair the local OpenAI credential before selecting a model. Keep `.env` out of git. Do not treat the Virtuals `virtualAgentId` values as ACP Entity IDs. EAS, ERC-8004, Sibyl, and live ACP bridge evidence is already complete in this handoff.

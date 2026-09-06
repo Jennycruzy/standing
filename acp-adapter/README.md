@@ -36,4 +36,6 @@ Example request shape (do not run without explicit spend approval):
 }
 ```
 
-The current tests are offline and inject a fake ACP runtime. A live run remains a separate, user-approved external action.
+Set `jobId` to resume a known active ACP job. When `jobId` is present, the adapter never calls the job-creation endpoint, so retries cannot create duplicate jobs.
+
+The tests inject a fake ACP runtime; the live bridge proof is recorded in `../docs/preflight.json`.

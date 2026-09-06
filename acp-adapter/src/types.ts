@@ -14,6 +14,8 @@ export type AcpEventType = (typeof ACP_EVENT_TYPES)[number];
 
 export type AcpJobRequest = {
   chainId: number;
+  /** Resume an already-created job instead of creating a new one. */
+  jobId?: string;
   offeringName: string;
   providerAddress: Address;
   requirement: Record<string, unknown>;
@@ -68,6 +70,7 @@ export type AcpAgent = {
   on(event: "entry", listener: AcpEntryListener): unknown;
   start(): Promise<unknown>;
   stop(): Promise<unknown>;
+  getSession(chainId: number, jobId: string): AcpSession | undefined;
   getAddress(): Promise<string>;
   createJobByOfferingName(
     chainId: number,
