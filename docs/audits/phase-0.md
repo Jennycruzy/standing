@@ -11,8 +11,8 @@ Restarted 5 September 2026 against **STANDING — BUILD SPECIFICATION v3**. This
 | Sibyl SDK language and tier calls verified | Partial pass | `docs/preflight.json` → `sibylMemory`; Python package `sibyl-memory-client` 0.8.0 was installed under Python 3.12.13 and exercised against a local database. |
 | One entity written and read in each tier | Fail | State, entity, journal, reference, and search were exercised. Archive could be written but not read/restored through the documented client API. |
 | EAS Base addresses verified from artifacts | Pass | `docs/preflight.json` → `baseEas`; source is the official `eas-contracts` Base deployment artifacts. |
-| Throwaway schema and real attestation | Partial pass | Schema UID `0x5c48…45f9` and attestation UID `0xd8f6…b637` are recorded with BaseScan links in `docs/preflight.json`. The schema readback passed. The current `getAttestation` decoder returned zero fields, so attestation readback remains unresolved. |
-| Reference chain read back | Fail | Not attempted because the first attestation readback must be corrected before a second permanent write. |
+| Throwaway schema and real attestation | Partial pass | Schema UID `0x5c48…45f9` and attestation UID `0xd8f6…b637` are recorded with BaseScan links in `docs/preflight.json`. The schema readback passed. Two read-only Base RPCs return the ABI's empty/default attestation for the emitted UID; `isAttestationValid` is false and `getTimestamp` is zero. The record is unresolved, not claimed as a pass. |
+| Reference chain read back | Fail | Not attempted because the first attestation UID cannot yet be proven retrievable from EAS storage. |
 | Gas cost recorded in USD | Pass | Receipts include execution gas plus Base `l1Fee`; the two writes total `0.000001990534224830 ETH` or `$0.00493773910` at the captured ETH/USD price. |
 | Dedicated Base signer and balance | Pass with caution | Address `0x39Dd…be96` and the read-only balance before writes are recorded in `docs/preflight.json`. Remaining balance must be checked before any further write. |
 | ERC-8004 registries and live write/read | Fail | Identity address has an explorer result; Reputation Registry and both write/read tests remain unverified because no funded signing wallet is available. |
@@ -22,7 +22,7 @@ Restarted 5 September 2026 against **STANDING — BUILD SPECIFICATION v3**. This
 ## Gaps and blockers
 
 1. The current official Sibyl client exposes `archive_entity` but no documented archive retrieval or restore method. The product's archive-and-resurrect requirement therefore cannot be claimed yet.
-2. The EAS schema registration succeeded and emitted a real attestation. The schema can be read back, but the current `getAttestation` ABI decode returns zero fields; this must be corrected before a reference-chain write. The signer balance is finite and must be checked before any further transaction.
+2. The EAS schema registration succeeded and the receipt contains an `Attested` event, but the emitted UID currently behaves as an empty/default record under `getAttestation`, `isAttestationValid`, and `getTimestamp` on two public Base RPCs. This discrepancy must be explained before a reference-chain write. The signer balance is finite and must be checked before any further transaction.
 3. No model access was supplied, so choosing an extraction model would be an unsupported assumption.
 4. The required Discord post is an external communication that has not been authorized through a team account.
 5. Version 3 makes a completed ACP sandbox lifecycle the earliest hard gate. The lifecycle now passes through the current ACP v2 path, and the approved language decision is recorded in `docs/decisions/0001-acp-adapter.md`.

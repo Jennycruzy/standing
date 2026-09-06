@@ -244,7 +244,7 @@
       "uid": "0xd8f641a3c82af731e6021aa71fc572ecf4ad5ca4c223d66e984863b5d6acb637",
       "transaction": "https://basescan.org/tx/0xb8ee7e4e7959d0292b06ad1350e16d4958d8e11d6a733ac6eba756ad919e0355",
       "block": 50929920,
-      "status": "Broadcast succeeded and the Attested event yielded this UID. getAttestation readback is unresolved: the current ABI decode returned zero fields, so this is not claimed as a complete readback."
+      "status": "Broadcast succeeded and the Attested event yielded this UID. Read-only getAttestation calls against mainnet.base.org and base-rpc.publicnode.com return the ABI's empty/default attestation; isAttestationValid is false and getTimestamp is zero. This is an unresolved on-chain lookup problem, not a local decoding pass."
     },
     "referenceChain": null,
     "gas": {
@@ -261,7 +261,7 @@
       "twoWriteTotalUsdAtCapture": 0.00493773910,
       "maximumDemoSpend": "Not set; no public signing button is implemented."
     },
-    "blocker": "EAS schema registration and one attestation succeeded. The schema readback passed, but getAttestation readback is unresolved and no reference-chain attestation has been attempted. Do not claim complete EAS preflight until the readback decoder is corrected and a second attestation is safely executed."
+    "blocker": "EAS schema registration and one attestation transaction succeeded. The schema readback passed, but the emitted attestation UID cannot currently be retrieved as a stored attestation: two read-only RPCs return the empty/default value. Do not make a reference-chain write or claim complete EAS preflight until this discrepancy is explained."
   },
   "erc8004": {
     "identityRegistry": {
@@ -300,7 +300,7 @@
   },
     "blockers": [
     "Confirm hackathon team registration.",
-    "Correct the EAS getAttestation readback decoder and verify the returned UID, schema, timestamps, refUID, attester, and data before the reference-chain test.",
+    "Explain why the emitted EAS UID is not returned by getAttestation, isAttestationValid, or getTimestamp on two read-only Base RPCs; verify the UID, schema, timestamps, refUID, attester, and data before the reference-chain test.",
     "Do not run further Base writes until the remaining signer balance is checked and the user approves the spend.",
     "Choose and provide access to an extraction model; verify its exact production identifier.",
     "Resolve Sibyl archive restoration against the documented real SDK before Phase 1.",
