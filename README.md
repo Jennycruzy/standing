@@ -25,3 +25,15 @@ Run the Phase 1 tests with:
 ```
 
 The local memory database is ignored by Git. Secrets remain in the environment and are never written into memory records.
+
+## Decision evaluation
+
+The pure evaluator is [`standing/evaluator.py`](standing/evaluator.py#L101). It checks only the four supported rules, returns `STANDS`, `EXPIRED`, `UNKNOWN`, or `CONTESTED`, and produces a repeatable fingerprint for the result.
+
+Only `EXPLICIT` and `CONFIRMED` conditions can block. An `INFERRED` or `EXTERNAL` condition remains visible as a note but cannot stop a change. The evaluator never reads files, calls a model, or writes to memory.
+
+The complete test count is 18. Run it with:
+
+```sh
+.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'
+```
