@@ -53,23 +53,21 @@ def run_acp_job(
             timeout=timeout_seconds,
             check=False,
         )
-    except subprocess.TimeoutExpired as error:
-        raise AcpBridgeError("ACP adapter timed out") from error
-    except OSError as error:
-        raise AcpBridgeError("ACP adapter process could not be started") from error
+    except subprocess.TimeoutExpired as process_error:
+        raise AcpBridgeError("ACP adapter timed out") from process_error
+    except OSError as process_error:
+        raise AcpBridgeError("ACP adapter process could not be started") from process_error
     response = _parse_response(completed.stdout)
     if completed.returncode != 0 or response.get("ok") is not True:
-        error = response.get("error") if isinstance(response, dict) else None
-        if isinstance(error, dict):
+        response_error = response.get("error") if isinstance(response, dict) else None
+        if isinstance(response_error, dict):
             raise AcpBridgeError(
-                str(error.get("message", "ACP adapter failed")),
-                event_type=_optional_string(error.get("eventType")),
-                entries=error.get("entries"),
+                str(response_error.get("message", "ACP adapter failed")),
+                event_type=_optional_string(response_error.get("eventType")),
+                entries=response_error.get("entries"),
             )
         raise AcpBridgeError("ACP adapter exited without a successful response")
-    result = response.get("result")
-    _validate_result(result)
-    return result
+    return _validate_result(response.get("result"))
 
 
 def load_environment_file(path: str | Path) -> dict[str, str]:
@@ -123,13 +121,14 @@ def _parse_response(stdout: str) -> dict[str, Any]:
     return response
 
 
-def _validate_result(result: Any) -> None:
+def _validate_result(result: Any) -> dict[str, Any]:
     if not isinstance(result, dict) or not isinstance(result.get("jobId"), str):
         raise AcpBridgeError("ACP adapter returned an invalid job result")
     if result.get("status") != "completed":
         raise AcpBridgeError("ACP adapter returned a non-completed job")
     if not isinstance(result.get("entries"), list):
         raise AcpBridgeError("ACP adapter result is missing entries")
+    return result
 
 
 def _optional_string(value: Any) -> str | None:

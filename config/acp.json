@@ -1,0 +1,12 @@
+{
+  "acp": {
+    "chain_id": 8453,
+    "offering_name": "published_condition_check",
+    "source_type": "verifier",
+    "budget_usdc": 0.01,
+    "max_job_usdc": 0.01,
+    "daily_spend_usdc": 0.1,
+    "completion_reason": "condition verification delivered",
+    "timeout_seconds": 900
+  }
+}

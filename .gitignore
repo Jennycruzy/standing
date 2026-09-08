@@ -1,6 +1,7 @@
 .env
 .standing-memory.db
 .standing-memory.db-*
+.standing-eas-cache.json
 acp-adapter/node_modules/
 acp-adapter/dist/
 __pycache__/

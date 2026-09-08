@@ -16,6 +16,7 @@ from .acceptance import (
     check_acceptance as check_acceptance_policy,
     select_observer as choose_observer,
 )
+from .acp import AcpVerifierClient, VerifierObservation
 from .evaluator import StandingEvaluation, StandingState, evaluate_standing
 from .memory import MemoryStore
 
@@ -162,6 +163,24 @@ class ReviewerTools:
             observer_records,
             manual_approval=manual_approval,
             policy=policy,
+        )
+
+    def hire_verifier(
+        self,
+        client: AcpVerifierClient,
+        condition_key: str,
+        observer_address: str,
+        *,
+        acceptance: AcceptanceResult,
+        spent_today_usdc: float,
+    ) -> VerifierObservation:
+        """Hire the selected observer through ACP after policy failure."""
+
+        return client.hire_verifier(
+            condition_key,
+            observer_address,
+            acceptance=acceptance,
+            spent_today_usdc=spent_today_usdc,
         )
 
     def record_observer_outcome(self, address: str, *, confirmed: bool) -> ObserverHistory:
