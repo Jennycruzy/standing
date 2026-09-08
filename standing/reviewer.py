@@ -7,6 +7,15 @@ from typing import Any, Mapping, Sequence
 
 from sibyl_memory_client.exceptions import NotFoundError  # type: ignore[import-untyped]
 
+from .acceptance import (
+    AcceptancePolicy,
+    AcceptanceResult,
+    ObserverHistory,
+    ObserverSelectionError,
+    apply_observer_outcome,
+    check_acceptance as check_acceptance_policy,
+    select_observer as choose_observer,
+)
 from .evaluator import StandingEvaluation, StandingState, evaluate_standing
 from .memory import MemoryStore
 
@@ -101,6 +110,73 @@ class ReviewerTools:
 
         key = _required_string(address, "observer address")
         return self.memory.read_observer(key)
+
+    def select_observer(
+        self,
+        addresses: Sequence[str],
+        policy: AcceptancePolicy,
+    ) -> ObserverHistory:
+        """Choose an observer from the reliability records in memory."""
+
+        histories: list[ObserverHistory] = []
+        for address in sorted({_required_string(item, "observer address") for item in addresses}):
+            try:
+                entity = self.memory.read_observer(address)
+            except NotFoundError:
+                continue
+            histories.append(ObserverHistory.from_mapping(address, _body(entity, address)))
+        try:
+            return choose_observer(histories, policy)
+        except ObserverSelectionError as error:
+            raise ReviewerToolError(str(error)) from error
+
+    def check_acceptance(
+        self,
+        condition_key: str,
+        observations: Sequence[Mapping[str, Any]],
+        *,
+        manual_approval: bool,
+        policy: AcceptancePolicy,
+    ) -> AcceptanceResult:
+        """Apply the policy using observer records read from memory."""
+
+        key = _required_string(condition_key, "condition_key")
+        addresses: set[str] = set()
+        for observation in observations:
+            if not isinstance(observation, Mapping):
+                raise ReviewerToolError("each observation must be a mapping")
+            address = observation.get("observer_address")
+            if address is not None:
+                addresses.add(_required_string(address, "observer address"))
+
+        observer_records: dict[str, Mapping[str, Any]] = {}
+        for address in sorted(addresses):
+            try:
+                entity = self.memory.read_observer(address)
+            except NotFoundError:
+                continue
+            observer_records[address] = _body(entity, address)
+        return check_acceptance_policy(
+            key,
+            observations,
+            observer_records,
+            manual_approval=manual_approval,
+            policy=policy,
+        )
+
+    def record_observer_outcome(self, address: str, *, confirmed: bool) -> ObserverHistory:
+        """Update the local observer record after a checked reading."""
+
+        key = _required_string(address, "observer address")
+        if not isinstance(confirmed, bool):
+            raise ReviewerToolError("confirmed must be true or false")
+        entity = self.memory.read_observer(key)
+        body = _body(entity, key)
+        current = ObserverHistory.from_mapping(key, body)
+        updated = apply_observer_outcome(current, confirmed=confirmed)
+        body.update(updated.as_counts())
+        self.memory.save_observer(key, body)
+        return updated
 
     def evaluate_standing(self, decision_id: str) -> StandingEvaluation:
         """Read one decision and its current conditions, then evaluate it."""

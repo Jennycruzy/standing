@@ -44,4 +44,10 @@ The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/review
 
 The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
 
-The complete test count is 22.
+The complete test count is 32.
+
+## Acceptance and observer history
+
+The pure acceptance policy is [`standing/acceptance.py`](standing/acceptance.py#L176). Its thresholds live in [`config/policy.json`](config/policy.json), not in source. The configured policy requires a vendor-published observation, two independent observers with at least three confirmed readings and no contradictions, and human approval; otherwise the result is `CONTESTED`.
+
+Observer selection reads the reliability records from memory and favors fewer contradictions, then more confirmed readings. A checked outcome updates the local record through [`standing/reviewer.py`](standing/reviewer.py#L137). The matching public reputation write is still separate work.

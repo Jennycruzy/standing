@@ -1,0 +1,9 @@
+{
+  "acceptance": {
+    "vendor_primary_source_type": "vendor_primary",
+    "independent_observers": 2,
+    "min_observer_history": 3,
+    "max_observer_contradictions": 0,
+    "manual_approval_required": true
+  }
+}
