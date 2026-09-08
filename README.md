@@ -32,8 +32,16 @@ The pure evaluator is [`standing/evaluator.py`](standing/evaluator.py#L101). It 
 
 Only `EXPLICIT` and `CONFIRMED` conditions can block. An `INFERRED` or `EXTERNAL` condition remains visible as a note but cannot stop a change. The evaluator never reads files, calls a model, or writes to memory.
 
-The complete test count is 18. Run it with:
+Run the complete test suite with:
 
 ```sh
 .preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'
 ```
+
+## Reviewer tools
+
+The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/reviewer.py#L59). They search approved paths, read decisions and current condition values, run the evaluator, read the boot journal, and write a checked standing change.
+
+The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
+
+The complete test count is 22.

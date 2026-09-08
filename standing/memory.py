@@ -151,6 +151,11 @@ class MemoryStore:
             ),
         )
 
+    def read_standing_changes(self) -> list[dict[str, Any]]:
+        """Read the permanent standing-change journal for boot-time review."""
+
+        return cast(list[dict[str, Any]], self.client.read_events())
+
     def search_decisions(self, governed_paths: Sequence[str]) -> list[dict[str, Any]]:
         """Find decisions whose stored governed paths contain any requested path."""
 
