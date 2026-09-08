@@ -14,6 +14,18 @@ from .acceptance import (
     select_observer,
 )
 from .eas import EasAttestation, EasConfig, EasReadError, EasReader, decode_string_payload, load_eas_config
+from .eas_registry import (
+    EasSchemaError,
+    RegisteredSchema,
+    SchemaDefinition,
+    decode_registered_schema,
+    get_schema_calldata,
+    is_unregistered_schema,
+    register_calldata,
+    schema_definitions,
+    schema_matches,
+    schema_uid,
+)
 from .acp import (
     AcpVerifierClient,
     AcpVerifierConfig,
@@ -50,10 +62,13 @@ __all__ = [
     "EasConfig",
     "EasReadError",
     "EasReader",
+    "EasSchemaError",
     "MemoryStore",
     "ObserverHistory",
     "ObserverSelectionError",
     "ReviewItem",
+    "RegisteredSchema",
+    "SchemaDefinition",
     "StandingEvaluation",
     "StandingState",
     "VerifierObservation",
@@ -66,5 +81,12 @@ __all__ = [
     "load_acp_config",
     "load_eas_config",
     "parse_verifier_delivery",
+    "decode_registered_schema",
+    "get_schema_calldata",
+    "is_unregistered_schema",
+    "register_calldata",
+    "schema_definitions",
+    "schema_matches",
+    "schema_uid",
     "select_observer",
 ]

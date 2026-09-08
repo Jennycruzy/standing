@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import ssl
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
@@ -11,6 +12,7 @@ from typing import Any, Mapping, Protocol, Sequence
 from urllib.error import URLError
 from urllib.request import Request, urlopen
 
+import certifi
 from eth_abi import decode  # type: ignore[attr-defined]
 from eth_utils import keccak  # type: ignore[attr-defined]
 
@@ -69,11 +71,18 @@ class JsonRpcTransport:
         request = Request(
             self.endpoint,
             data=payload,
-            headers={"content-type": "application/json"},
+            headers={
+                "content-type": "application/json",
+                "user-agent": "standing/0.1 (+https://github.com/Jennycruzy/standing)",
+            },
             method="POST",
         )
         try:
-            with urlopen(request, timeout=self.timeout_seconds) as response:
+            with urlopen(
+                request,
+                timeout=self.timeout_seconds,
+                context=ssl.create_default_context(cafile=certifi.where()),
+            ) as response:
                 body = json.loads(response.read().decode("utf-8"))
         except (OSError, URLError, json.JSONDecodeError) as error:
             raise EasReadError("Base JSON-RPC request failed") from error

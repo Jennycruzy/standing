@@ -1,0 +1,33 @@
+{
+  "schemas": {
+    "condition_definition": {
+      "definition": "string conditionKey,string description,string valueType,string unit",
+      "resolver": "0x0000000000000000000000000000000000000000",
+      "revocable": false
+    },
+    "observation": {
+      "definition": "string conditionKey,string value,uint64 effectiveFrom,string sourceUrl,uint8 sourceType,string note",
+      "resolver": "0x0000000000000000000000000000000000000000",
+      "revocable": true
+    }
+  },
+  "source_types": {
+    "0": "vendor_primary",
+    "1": "changelog",
+    "2": "third_party",
+    "3": "observed",
+    "4": "verifier"
+  },
+  "registrations": {
+    "condition_definition": {
+      "uid": "0x23149c0983dd115883a770ef19de17b865bf571647a8fda25b465b05b676073a",
+      "transactionHash": "0x742943c8723f64f956e05331700a3e7ebb8c9c67a408a1b3f6a6b441fa3dc1f4",
+      "blockNumber": "0x30ab977"
+    },
+    "observation": {
+      "uid": "0x8d1de28d570f01bfa1850def6d96fa9df60fdb08d528de9e7ad591a806d2e53e",
+      "transactionHash": "0x0c9b5fd6f83ac4e3e63bcceabfd4ed613fea487b6b566172f5d85a77f092f74d",
+      "blockNumber": "0x30ab9f4"
+    }
+  }
+}

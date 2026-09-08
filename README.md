@@ -2,7 +2,7 @@
 
 Standing remembers why a code decision was made and checks whether the facts it depended on still hold.
 
-## Phase 1: memory
+## Memory
 
 Sibyl Memory is the local store behind Standing. It is a database file on the machine, not a separate service.
 
@@ -18,7 +18,7 @@ The direct Python client is installed with:
 uv pip install --python .preflight-venv/bin/python sibyl-memory-client==0.8.0
 ```
 
-Run the Phase 1 tests with:
+Run the tests with:
 
 ```sh
 .preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'
@@ -44,13 +44,25 @@ The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/review
 
 The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
 
-The complete test count is 40.
+The complete test count is 44.
 
 ## Acceptance and observer history
 
 The pure acceptance policy is [`standing/acceptance.py`](standing/acceptance.py#L176). Its thresholds live in [`config/policy.json`](config/policy.json), not in source. The configured policy requires a vendor-published observation, two independent observers with at least three confirmed readings and no contradictions, and human approval; otherwise the result is `CONTESTED`.
 
 Observer selection reads the reliability records from memory and favors fewer contradictions, then more confirmed readings. A checked outcome updates the local record through [`standing/reviewer.py`](standing/reviewer.py#L137). The matching public reputation write is still separate work.
+
+## Base product schemas
+
+Standing's condition-definition and observation schemas are registered in the configured Base SchemaRegistry. Their UIDs, registration transaction hashes, and definitions are recorded in [`config/eas.json`](config/eas.json); the live registration and readback evidence is [`docs/audits/schema-registration.md`](docs/audits/schema-registration.md).
+
+The idempotent command is:
+
+```sh
+.preflight-venv/bin/python scripts/register_product_schemas.py --write
+```
+
+It reads the registry first and writes only missing schemas. With both schemas present, it performs no transaction.
 
 ## Base and Virtuals adapters
 

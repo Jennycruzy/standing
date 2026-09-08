@@ -3,6 +3,12 @@
     "chainId": 8453,
     "rpcUrl": "https://mainnet.base.org",
     "rpcTimeoutSeconds": 30,
+    "transaction": {
+      "maxFeeMultiplier": 2,
+      "gasBufferPercent": 20,
+      "receiptPollSeconds": 2,
+      "receiptPollAttempts": 60
+    },
     "eas": "0x4200000000000000000000000000000000000021",
     "schemaRegistry": "0x4200000000000000000000000000000000000020",
     "usdc": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
