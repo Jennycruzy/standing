@@ -15,7 +15,7 @@ import sys
 import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any, Sequence
 
 
 ARCHIVE_COLUMNS = {
@@ -261,7 +261,7 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main(argv: Iterable[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
     try:
         connection = connect_database(args.db)

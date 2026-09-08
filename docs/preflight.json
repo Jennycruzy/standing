@@ -20,6 +20,11 @@
     "mainnetRequirement": "The rules require an executed on-chain action for the Base bonus; they do not expressly say that it must be on mainnet. This project specification independently requires Base mainnet attestations.",
     "submissionRequirements": "Public OSI-licensed GitHub repository with real commit history; 2–5 minute demo including fresh-session recall; README; two public posts."
   },
+  "teamRegistration": {
+    "status": "PASS",
+    "team": "Jenny builds",
+    "evidence": "Sibyl registration email received 2026-08-25; private build-page link confirmed. The edit link is intentionally not recorded here."
+  },
   "sibylMemory": {
     "verifiedSource": "https://docs.sibyllabs.org/memory/concepts",
     "languageDecision": "Python 3.12 with mypy --strict. The official direct SDK is Python-first; installed package sibyl-memory-client 0.8.0 in a Python 3.12.13 preflight virtual environment.",
@@ -354,15 +359,15 @@
     }
   },
   "model": {
-    "extractionModelId": null,
-    "status": "BLOCKED. The configured OpenAI credential returned HTTP 401 invalid_api_key from GET /v1/models. No model identifier was selected by assumption; replace the local key before recording one."
+    "extractionModelId": "gpt-5.4-mini",
+    "reviewerModelId": "gpt-5.4",
+    "verifiedAt": "2026-09-08T07:36:36Z",
+    "status": "PASS. GET /v1/models returned HTTP 200 with both selected model IDs available to the configured account."
   },
   "discord": {
     "status": "NOT COMPLETED. Posting publicly is an external communication and requires the registered team's Discord access and approval."
   },
   "blockers": [
-    "Confirm hackathon team registration.",
-    "Replace or repair the invalid local OpenAI API key, then verify an exact model identifier from the official catalog.",
     "Send the specified Discord question from the team's account."
   ]
 }

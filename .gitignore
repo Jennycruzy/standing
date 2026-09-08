@@ -1,5 +1,9 @@
 .env
+.standing-memory.db
+.standing-memory.db-*
 acp-adapter/node_modules/
 acp-adapter/dist/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.mypy_cache/
