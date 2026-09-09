@@ -8,6 +8,13 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from .approval import (
+    ApprovalCheck,
+    ManualApproval,
+    ManualApprovalError,
+    check_manual_approval,
+    evidence_fingerprint,
+)
 from .provenance import ObservationProvenance, ProvenanceError, SourceBinding
 from .freshness import check_freshness
 
@@ -159,6 +166,9 @@ class AcceptanceResult:
     manual_approval: bool
     observation_uids: tuple[str, ...]
     reasons: tuple[str, ...]
+    evidence_fingerprint: str = ""
+    manual_approval_id: str | None = None
+    manual_approval_valid: bool = False
     independent_operator_ids: tuple[str, ...] = ()
     independent_source_ids: tuple[str, ...] = ()
     independent_extractor_ids: tuple[str, ...] = ()
@@ -180,6 +190,9 @@ class AcceptanceResult:
             "manual_approval": self.manual_approval,
             "observation_uids": list(self.observation_uids),
             "reasons": list(self.reasons),
+            "evidence_fingerprint": self.evidence_fingerprint,
+            "manual_approval_id": self.manual_approval_id,
+            "manual_approval_valid": self.manual_approval_valid,
             "independent_operator_ids": list(self.independent_operator_ids),
             "independent_source_ids": list(self.independent_source_ids),
             "independent_extractor_ids": list(self.independent_extractor_ids),
@@ -206,6 +219,7 @@ def check_acceptance(
     observer_records: Mapping[str, Mapping[str, Any]],
     *,
     manual_approval: bool,
+    manual_approval_record: Mapping[str, Any] | None = None,
     policy: AcceptancePolicy,
     source_binding: Mapping[str, Any] | None = None,
     now_unix: int | None = None,
@@ -215,6 +229,21 @@ def check_acceptance(
     key = _required_string(condition_key, "condition_key")
     if not isinstance(manual_approval, bool):
         raise ValueError("manual_approval must be true or false")
+    try:
+        evidence_digest = evidence_fingerprint(key, observations)
+    except ManualApprovalError as error:
+        raise ValueError(str(error)) from error
+    approval_check = ApprovalCheck(False, None, "No explicit human approval record is present.")
+    if manual_approval_record is not None:
+        try:
+            approval = ManualApproval.from_mapping(manual_approval_record)
+            approval_check = check_manual_approval(
+                approval,
+                condition_key=key,
+                evidence_digest=evidence_digest,
+            )
+        except ManualApprovalError as error:
+            approval_check = ApprovalCheck(False, None, str(error))
     normalized = tuple(_observation(key, raw) for raw in observations)
     binding = SourceBinding.from_mapping(source_binding) if source_binding is not None else None
     reasons: list[str] = []
@@ -330,6 +359,10 @@ def check_acceptance(
             reasons.append("Independent observers share an extractor identity.")
     if policy.manual_approval_required and not manual_approval:
         reasons.append("A human approval is required before this value can be accepted.")
+    if policy.manual_approval_required and manual_approval_record is None:
+        reasons.append("The manual-approval flag must include a persisted human approval record.")
+    if policy.manual_approval_required and manual_approval_record is not None and not approval_check.valid:
+        reasons.append(approval_check.reason)
 
     for address in independent_addresses:
         record = observer_records.get(address)
@@ -360,6 +393,9 @@ def check_acceptance(
         manual_approval=manual_approval,
         observation_uids=tuple(sorted(item.observation_uid for item in normalized)),
         reasons=tuple(reasons),
+        evidence_fingerprint=evidence_digest,
+        manual_approval_id=approval_check.approval_id,
+        manual_approval_valid=approval_check.valid,
         independent_operator_ids=operator_ids,
         independent_source_ids=source_ids,
         independent_extractor_ids=extractor_ids,

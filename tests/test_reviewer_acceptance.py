@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from standing.approval import evidence_fingerprint, issue_manual_approval
 from standing.acceptance import load_acceptance_policy
 from standing.memory import create_memory_store
 from standing.reviewer import ReviewerTools
@@ -62,11 +63,21 @@ class ReviewerAcceptanceTests(unittest.TestCase):
                 },
             },
         ]
+        approval = issue_manual_approval(
+            "approval-1",
+            "vendor.acme.retention_days",
+            approved_by="alice",
+            approver_role="human",
+            approved_at=1_700_000_200,
+            evidence_digest=evidence_fingerprint("vendor.acme.retention_days", observations),
+            reason="Reviewed the source-linked readings.",
+        )
 
         result = self.tools.check_acceptance(
             "vendor.acme.retention_days",
             observations,
             manual_approval=True,
+            manual_approval_record=approval.as_dict(),
             policy=self.policy,
         )
         selected = self.tools.select_observer(["0x111", "0x222"], self.policy)

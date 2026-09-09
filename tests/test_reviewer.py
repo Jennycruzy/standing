@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from standing.approval import evidence_fingerprint, issue_manual_approval
 from standing.lifecycle import RemediationStatus
 from standing.memory import create_memory_store
 from standing.reviewer import ReviewerToolError, ReviewerTools
@@ -213,6 +214,28 @@ class ReviewerToolsTests(unittest.TestCase):
                 issued_at=100,
                 expires_at=200,
             )
+
+    def test_reviewer_persists_and_journals_evidence_bound_manual_approval(self) -> None:
+        observations = [{"observation_uid": "one", "value": 365}]
+        approval = issue_manual_approval(
+            "approval-1",
+            "vendor.acme.retention_days",
+            approved_by="alice",
+            approver_role="human",
+            approved_at=100,
+            evidence_digest=evidence_fingerprint("vendor.acme.retention_days", observations),
+            reason="Reviewed the source-linked evidence.",
+        )
+
+        recorded = self.tools.record_manual_approval(approval)
+
+        self.assertEqual(recorded.approval_id, "approval-1")
+        self.assertEqual(self.store.read_manual_approval("approval-1")["body"]["approved_by"], "alice")
+        self.assertEqual(self.store.list_manual_approvals("vendor.acme.retention_days")[0]["name"], "approval-1")
+        self.assertEqual(
+            self.store.read_standing_changes()[0]["extra"]["event_type"],
+            "manual_approval_recorded",
+        )
 
     def _save_decision_and_value(self, value: int) -> None:
         self.store.save_decision(

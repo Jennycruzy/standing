@@ -28,6 +28,7 @@ This file records the state at the 9 September 2026 continuation point.
 - The lifecycle records are now durable through dedicated Sibyl entities and the reviewer boundary. Revision promotion, remediation transitions, waiver issuance, and standing actions are journalled; an `allow` action for a non-standing result requires a stored, active human waiver.
 - The source-linked evaluation corpus contract and measurement script are implemented in [`standing/evaluation.py`](../standing/evaluation.py) and [`scripts/evaluate_dataset.py`](../scripts/evaluate_dataset.py). The checked-in manifest is intentionally empty; no real vendor expiry or evaluation case is being claimed yet.
 - The read-only console renderer is implemented in [`standing/console.py`](../standing/console.py) and [`scripts/render_console.py`](../scripts/render_console.py). It visibly labels controlled demo data, shows release blockers, and supports `--as-of` time travel over the persisted revision/journal view.
+- Manual approval is now an evidence-bound persisted record. [`scripts/approve_evidence.py`](../scripts/approve_evidence.py) records it only after the ledger is reviewed, and [`scripts/check_acceptance.py`](../scripts/check_acceptance.py) checks it without hiring or writing on-chain.
 
 ## What remains unfinished
 

@@ -2,6 +2,7 @@ import json
 import unittest
 from pathlib import Path
 
+from standing.approval import evidence_fingerprint, issue_manual_approval
 from standing.acceptance import (
     AcceptancePolicy,
     AcceptanceStatus,
@@ -29,11 +30,21 @@ class AcceptanceTests(unittest.TestCase):
 
     def test_two_clean_observers_and_vendor_source_are_accepted(self) -> None:
         observations = self._observations(365)
+        approval = issue_manual_approval(
+            "approval-1",
+            "vendor.acme.retention_days",
+            approved_by="alice",
+            approver_role="human",
+            approved_at=1_700_000_200,
+            evidence_digest=evidence_fingerprint("vendor.acme.retention_days", observations),
+            reason="Reviewed the three source-linked readings.",
+        )
         result = check_acceptance(
             "vendor.acme.retention_days",
             observations,
             self._records(),
             manual_approval=True,
+            manual_approval_record=approval.as_dict(),
             policy=self.policy,
         )
 
@@ -42,6 +53,46 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(result.accepted_value, 365)
         self.assertEqual(result.independent_observer_addresses, ("0x111", "0x222"))
         self.assertEqual(result.observation_uids, ("0xone", "0xprimary", "0xtwo"))
+        self.assertTrue(result.manual_approval_valid)
+        self.assertEqual(result.manual_approval_id, "approval-1")
+
+    def test_manual_approval_must_match_the_exact_evidence_set(self) -> None:
+        observations = self._observations(365)
+        approval = issue_manual_approval(
+            "approval-1",
+            "vendor.acme.retention_days",
+            approved_by="alice",
+            approver_role="human",
+            approved_at=1_700_000_200,
+            evidence_digest=evidence_fingerprint("vendor.acme.retention_days", observations),
+            reason="Reviewed the source-linked readings.",
+        )
+        changed = [*observations]
+        changed[-1] = {**changed[-1], "value": 90}
+
+        result = check_acceptance(
+            "vendor.acme.retention_days",
+            changed,
+            self._records(),
+            manual_approval=True,
+            manual_approval_record=approval.as_dict(),
+            policy=self.policy,
+        )
+
+        self.assertEqual(result.status, AcceptanceStatus.CONTESTED)
+        self.assertTrue(any("different evidence set" in reason for reason in result.reasons))
+
+    def test_manual_approval_record_is_required_when_flag_is_true(self) -> None:
+        result = check_acceptance(
+            "vendor.acme.retention_days",
+            self._observations(365),
+            self._records(),
+            manual_approval=True,
+            policy=self.policy,
+        )
+
+        self.assertEqual(result.status, AcceptanceStatus.CONTESTED)
+        self.assertTrue(any("persisted human approval" in reason for reason in result.reasons))
 
     def test_source_binding_requires_the_canonical_vendor_and_trusted_host(self) -> None:
         observations = self._observations(365)

@@ -15,6 +15,7 @@ from typing import Any, Mapping, Sequence, cast
 
 from sibyl_memory_client import MemoryClient  # type: ignore[import-untyped]
 
+from .approval import ManualApproval
 from .lifecycle import DecisionRevision, Remediation, Waiver
 from scripts.sibyl_archive import connect_database, restore_archived
 
@@ -167,6 +168,41 @@ class MemoryStore:
         return cast(
             dict[str, Any],
             self.client.set_entity("waiver", parsed.waiver_id, parsed.as_dict()),
+        )
+
+    def save_manual_approval(self, approval: ManualApproval | Mapping[str, Any]) -> dict[str, Any]:
+        """Persist one evidence-bound human approval by its stable ID."""
+
+        parsed = approval if isinstance(approval, ManualApproval) else ManualApproval.from_mapping(approval)
+        return cast(
+            dict[str, Any],
+            self.client.set_entity("manual_approval", parsed.approval_id, parsed.as_dict()),
+        )
+
+    def read_manual_approval(self, approval_id: str) -> dict[str, Any]:
+        """Read one evidence-bound human approval."""
+
+        key = _required_name(approval_id, "approval_id")
+        return cast(dict[str, Any], self.client.get_entity("manual_approval", key))
+
+    def list_manual_approvals(self, condition_key: str) -> list[dict[str, Any]]:
+        """Read approvals for one condition in approval-time order."""
+
+        key = _required_name(condition_key, "condition_key")
+        rows: list[dict[str, Any]] = []
+        for entity in self.client.list_entities(category="manual_approval", limit=10_000):
+            body = entity.get("body")
+            if not isinstance(body, Mapping):
+                raise TypeError("Sibyl returned a manual approval without a mapping body")
+            parsed = ManualApproval.from_mapping(body)
+            if parsed.condition_key == key:
+                rows.append(dict(entity))
+        return sorted(
+            rows,
+            key=lambda row: (
+                int(_entity_body(row).get("approved_at", 0)),
+                str(_entity_body(row).get("approval_id", row.get("name", ""))),
+            ),
         )
 
     def read_waiver(self, waiver_id: str) -> dict[str, Any]:

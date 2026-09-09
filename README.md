@@ -56,7 +56,7 @@ The read-only console renderer is [`standing/console.py`](standing/console.py), 
 
 ## Acceptance and observer history
 
-The pure acceptance policy is [`standing/acceptance.py`](standing/acceptance.py#L176). Its thresholds live in [`config/policy.json`](config/policy.json), not in source. The configured policy requires a vendor-published observation, two independent observers with at least three confirmed readings and no contradictions, and human approval; otherwise the result is `CONTESTED`.
+The pure acceptance policy is [`standing/acceptance.py`](standing/acceptance.py#L176). Its thresholds live in [`config/policy.json`](config/policy.json), not in source. The configured policy requires a vendor-published observation, two independent observers with at least three confirmed readings and no contradictions, and an evidence-bound human approval record; otherwise the result is `CONTESTED`.
 
 Observer independence is provenance-aware: strict mode requires distinct operator, source, and extractor identities for the observer addresses. Observation freshness is also policy-controlled; stale, missing, or future-dated evidence forces revalidation. Release gates in [`standing/release.py`](standing/release.py) keep real vendor cases and real evaluation ground truth separate from the controlled demo.
 
@@ -78,7 +78,7 @@ It reads the registry first and writes only missing schemas. With both schemas p
 
 The Base reader is [`standing/eas.py`](standing/eas.py#L177). It reads the direct EAS record, decodes the six-field observation payload, rejects revoked or mismatched records, and caches each chain response with its block number. The replay test uses a recorded Base mainnet response at [`tests/fixtures/eas_reference_read.json`](tests/fixtures/eas_reference_read.json).
 
-The ACP verifier client is [standing/acp.py](standing/acp.py#L105). It hires only when the acceptance result is not accepted, uses the configured job and spend caps in [config/acp.json](config/acp.json), and requires one typed verifier delivery signed by the selected observer address. Checked observations are persisted in the memory-backed evidence ledger so later runs evaluate accumulated evidence. Pass `--manual-approval` only after reviewing that evidence. ACP job mechanics remain in the official adapter under acp-adapter/.
+The ACP verifier client is [standing/acp.py](standing/acp.py#L105). It hires only when the acceptance result is not accepted, uses the configured job and spend caps in [config/acp.json](config/acp.json), and requires one typed verifier delivery signed by the selected observer address. Checked observations are persisted in the memory-backed evidence ledger so later runs evaluate accumulated evidence. The approval workflow is separate from hiring: review the ledger, record an approval with [`scripts/approve_evidence.py`](scripts/approve_evidence.py), then run [`scripts/check_acceptance.py`](scripts/check_acceptance.py). The verifier job cannot manufacture its own approval, and changing any observation invalidates the approval fingerprint. ACP job mechanics remain in the official adapter under acp-adapter/.
 
 ## ACP verifier loop
 

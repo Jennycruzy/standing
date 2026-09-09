@@ -7,6 +7,7 @@ from typing import Any, Mapping, Sequence
 
 from sibyl_memory_client.exceptions import NotFoundError  # type: ignore[import-untyped]
 
+from .approval import ManualApproval, ManualApprovalError
 from .acceptance import (
     AcceptancePolicy,
     AcceptanceResult,
@@ -305,6 +306,31 @@ class ReviewerTools:
         )
         return waiver
 
+    def record_manual_approval(
+        self,
+        approval: ManualApproval | Mapping[str, Any],
+    ) -> ManualApproval:
+        """Persist and journal an evidence-bound human approval."""
+
+        try:
+            parsed = approval if isinstance(approval, ManualApproval) else ManualApproval.from_mapping(approval)
+        except ManualApprovalError as error:
+            raise ReviewerToolError(str(error)) from error
+        self.memory.save_manual_approval(parsed)
+        self.memory.record_lifecycle_event(
+            event_type="manual_approval_recorded",
+            decision_id=f"condition:{parsed.condition_key}",
+            acted={
+                "action": "approve",
+                "actor_id": parsed.approved_by,
+                "explanation": parsed.reason,
+                "approval_id": parsed.approval_id,
+            },
+            forward=parsed.as_dict(),
+            extra={"condition_key": parsed.condition_key},
+        )
+        return parsed
+
     def read_observations(self, condition_key: str) -> tuple[dict[str, Any], ...]:
         """Read all checked observations for one condition."""
 
@@ -336,6 +362,7 @@ class ReviewerTools:
         observations: Sequence[Mapping[str, Any]],
         *,
         manual_approval: bool,
+        manual_approval_record: Mapping[str, Any] | None = None,
         policy: AcceptancePolicy,
         source_binding: Mapping[str, Any] | None = None,
         now_unix: int | None = None,
@@ -363,6 +390,7 @@ class ReviewerTools:
             observations,
             observer_records,
             manual_approval=manual_approval,
+            manual_approval_record=manual_approval_record,
             policy=policy,
             source_binding=source_binding,
             now_unix=now_unix,
