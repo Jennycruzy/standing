@@ -18,6 +18,21 @@ from .acceptance import (
 )
 from .acp import AcpVerifierClient, VerifierObservation
 from .evaluator import StandingEvaluation, StandingState, evaluate_standing
+from .lifecycle import (
+    DecisionRevision,
+    DecisionSnapshot,
+    LifecycleError,
+    Remediation,
+    RemediationStatus,
+    RemediationTransition,
+    Waiver,
+    WaiverCheck,
+    build_revision_timeline,
+    check_waiver,
+    decision_at,
+    issue_waiver as issue_lifecycle_waiver,
+    transition_remediation as transition_lifecycle_remediation,
+)
 from .memory import MemoryStore
 
 
@@ -97,6 +112,56 @@ class ReviewerTools:
         key = _required_string(decision_id, "decision_id")
         return DecisionRecord(key, _body(self.memory.read_decision(key), key))
 
+    def record_decision_revision(
+        self,
+        revision: DecisionRevision | Mapping[str, Any],
+        *,
+        actor_id: str,
+        reason: str,
+    ) -> DecisionRevision:
+        """Persist and promote a validated revision, preserving its predecessor."""
+
+        parsed = revision if isinstance(revision, DecisionRevision) else DecisionRevision.from_mapping(revision)
+        actor = _required_string(actor_id, "actor_id")
+        explanation = _required_string(reason, "reason")
+        existing_rows = self.memory.list_decision_revisions(parsed.decision_id)
+        existing = [_body(row, parsed.revision_id) for row in existing_rows]
+        try:
+            build_revision_timeline(
+                parsed.decision_id,
+                [*existing, parsed.as_dict()],
+            )
+        except LifecycleError as error:
+            raise ReviewerToolError(str(error)) from error
+        self.memory.save_decision_revision(parsed)
+        self.memory.save_decision(parsed.decision_id, parsed.materialized_body())
+        self.memory.record_lifecycle_event(
+            event_type="decision_revision_recorded",
+            decision_id=parsed.decision_id,
+            acted={
+                "action": "supersede" if parsed.supersedes_revision_id is not None else "record",
+                "actor_id": actor,
+                "explanation": explanation,
+            },
+            forward={
+                "revision_id": parsed.revision_id,
+                "supersedes_revision_id": parsed.supersedes_revision_id,
+            },
+            extra={"revision": parsed.as_dict()},
+        )
+        return parsed
+
+    def read_decision_at(self, decision_id: str, *, as_of: int | None = None) -> DecisionSnapshot:
+        """Read the governing revision and journal state at a historical instant."""
+
+        key = _required_string(decision_id, "decision_id")
+        rows = self.memory.list_decision_revisions(key)
+        revisions = [_body(row, key) for row in rows]
+        try:
+            return decision_at(key, revisions, self.memory.read_standing_changes(), as_of=as_of)
+        except LifecycleError as error:
+            raise ReviewerToolError(str(error)) from error
+
     def read_condition(self, condition_key: str) -> ConditionRecord:
         """Read the accepted current value for one condition."""
 
@@ -123,6 +188,122 @@ class ReviewerTools:
         body["condition_key"] = condition_key
         body["observation_uid"] = observation_uid
         return self.memory.save_observation(observation_uid, body)
+
+    def open_remediation(
+        self,
+        remediation_id: str,
+        decision_id: str,
+        revision_id: str,
+        *,
+        opened_at: int,
+        summary: str,
+        actor_id: str,
+    ) -> Remediation:
+        """Open and journal a remediation for one decision revision."""
+
+        try:
+            remediation = Remediation.create(
+                remediation_id,
+                decision_id,
+                revision_id,
+                opened_at=opened_at,
+                summary=summary,
+            )
+        except LifecycleError as error:
+            raise ReviewerToolError(str(error)) from error
+        actor = _required_string(actor_id, "actor_id")
+        self.memory.save_remediation(remediation)
+        self.memory.record_lifecycle_event(
+            event_type="remediation_opened",
+            decision_id=remediation.decision_id,
+            acted={"action": "open", "actor_id": actor, "explanation": remediation.summary},
+            forward=remediation.as_dict(),
+        )
+        return remediation
+
+    def transition_remediation(
+        self,
+        remediation_id: str,
+        target_status: RemediationStatus | str,
+        *,
+        occurred_at: int,
+        actor_id: str,
+        reason: str,
+        superseded_by_revision_id: str | None = None,
+    ) -> RemediationTransition:
+        """Apply, persist, and journal one valid remediation transition."""
+
+        key = _required_string(remediation_id, "remediation_id")
+        try:
+            current = Remediation.from_mapping(_body(self.memory.read_remediation(key), key))
+            transition = transition_lifecycle_remediation(
+                current,
+                target_status,
+                occurred_at=occurred_at,
+                actor_id=actor_id,
+                reason=reason,
+                superseded_by_revision_id=superseded_by_revision_id,
+            )
+        except LifecycleError as error:
+            raise ReviewerToolError(str(error)) from error
+        self.memory.save_remediation(transition.remediation)
+        self.memory.record_lifecycle_event(
+            event_type="remediation_transition",
+            decision_id=transition.remediation.decision_id,
+            acted={
+                "action": "transition",
+                "actor_id": transition.actor_id,
+                "explanation": transition.reason,
+            },
+            forward=transition.remediation.as_dict(),
+            extra={
+                "remediation_id": transition.remediation.remediation_id,
+                "from_status": transition.from_status.value,
+                "to_status": transition.to_status.value,
+            },
+        )
+        return transition
+
+    def issue_waiver(
+        self,
+        waiver_id: str,
+        decision_id: str,
+        *,
+        condition_key: str | None,
+        reason: str,
+        issued_by: str,
+        issuer_role: str,
+        issued_at: int,
+        expires_at: int,
+    ) -> Waiver:
+        """Persist and journal a human-only, expiring action waiver."""
+
+        try:
+            waiver = issue_lifecycle_waiver(
+                waiver_id,
+                decision_id,
+                condition_key=condition_key,
+                reason=reason,
+                issued_by=issued_by,
+                issuer_role=issuer_role,
+                issued_at=issued_at,
+                expires_at=expires_at,
+            )
+        except LifecycleError as error:
+            raise ReviewerToolError(str(error)) from error
+        self.memory.save_waiver(waiver)
+        self.memory.record_lifecycle_event(
+            event_type="waiver_issued",
+            decision_id=waiver.decision_id,
+            acted={
+                "action": "waive",
+                "actor_id": waiver.issued_by,
+                "explanation": waiver.reason,
+                "waiver_id": waiver.waiver_id,
+            },
+            forward=waiver.as_dict(),
+        )
+        return waiver
 
     def read_observations(self, condition_key: str) -> tuple[dict[str, Any], ...]:
         """Read all checked observations for one condition."""
@@ -269,6 +450,8 @@ class ReviewerTools:
         *,
         action: str,
         explanation: str,
+        waiver_id: str | None = None,
+        now_unix: int | None = None,
     ) -> str:
         """Write a checked result and reject actions that contradict it."""
 
@@ -281,22 +464,60 @@ class ReviewerTools:
             raise ReviewerToolError("action must be allow, block, or note")
         if evaluation.state == StandingState.STANDS and action == "block":
             raise ReviewerToolError("a standing decision cannot be blocked by the reviewer")
+        waiver_check: WaiverCheck | None = None
+        if waiver_id is not None:
+            waiver_key = _required_string(waiver_id, "waiver_id")
+            if action != "allow":
+                raise ReviewerToolError("a waiver can only accompany an allow action")
+            if now_unix is None:
+                raise ReviewerToolError("now_unix is required when checking a waiver")
+            try:
+                waiver = Waiver.from_mapping(_body(self.memory.read_waiver(waiver_key), waiver_key))
+                waiver_check = check_waiver(
+                    waiver,
+                    decision_id=key,
+                    blocking_condition_keys=tuple(
+                        condition.condition_key for condition in evaluation.conditions if condition.blocks
+                    ),
+                    now_unix=now_unix,
+                )
+            except LifecycleError as error:
+                raise ReviewerToolError(str(error)) from error
+            if not waiver_check.permits_action:
+                raise ReviewerToolError(waiver_check.reason)
         if evaluation.state != StandingState.STANDS and action != "block":
-            raise ReviewerToolError("a non-standing decision must be blocked")
+            if waiver_check is None or not waiver_check.permits_action:
+                raise ReviewerToolError("a non-standing decision must be blocked unless a human waiver is active")
 
         state_body = evaluation.as_dict()
         state_body["action"] = action
         state_body["explanation"] = explanation.strip()
+        if waiver_check is not None:
+            state_body["waiver"] = waiver_check.as_dict()
         self.memory.save_standing(key, state_body)
+        evaluated: dict[str, Any] = {
+            "decision_id": key,
+            "state": evaluation.state.value,
+            "fingerprint": evaluation.fingerprint,
+        }
+        forward: dict[str, Any] = {"state": evaluation.state.value}
+        decision_body = self.read_decision(key).body
+        revision_id = decision_body.get("revision_id")
+        if isinstance(revision_id, str) and revision_id.strip():
+            evaluated["revision_id"] = revision_id.strip()
+            forward["revision_id"] = revision_id.strip()
+        acted: dict[str, Any] = {"action": action, "explanation": explanation.strip()}
+        extra: dict[str, Any] = {
+            "condition_states": [condition.state.value for condition in evaluation.conditions]
+        }
+        if waiver_check is not None:
+            acted["waiver_id"] = waiver_check.waiver_id
+            extra["waiver"] = waiver_check.as_dict()
         return self.memory.record_standing_change(
-            evaluated={
-                "decision_id": key,
-                "state": evaluation.state.value,
-                "fingerprint": evaluation.fingerprint,
-            },
-            acted={"action": action, "explanation": explanation.strip()},
-            forward={"state": evaluation.state.value},
-            extra={"condition_states": [condition.state.value for condition in evaluation.conditions]},
+            evaluated=evaluated,
+            acted=acted,
+            forward=forward,
+            extra=extra,
         )
 
     def read_boot_state(self) -> BootState:

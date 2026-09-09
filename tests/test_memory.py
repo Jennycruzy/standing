@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from sibyl_memory_client.exceptions import NotFoundError
 
+from standing.lifecycle import DecisionRevision, Remediation, Waiver
 from standing.memory import create_memory_store
 
 
@@ -85,6 +86,52 @@ class MemoryLayerTests(unittest.TestCase):
         restored = self.store.restore_decision(archived["archived_id"])
         self.assertEqual(restored["name"], "old-decision")
         self.assertEqual(restored["body"]["governed_paths"], ["src/old.py"])
+
+    def test_lifecycle_records_round_trip_through_dedicated_categories_and_journal(self) -> None:
+        revision = DecisionRevision.from_mapping(
+            {
+                "decision_id": "lifecycle-decision",
+                "revision_id": "r1",
+                "effective_from": 100,
+                "body": {"title": "Keep the old path"},
+            }
+        )
+        remediation = Remediation.create(
+            "rem-1",
+            "lifecycle-decision",
+            "r1",
+            opened_at=100,
+            summary="Recheck the dependency.",
+        )
+        waiver = Waiver(
+            "waiver-1",
+            "lifecycle-decision",
+            None,
+            "Incident commander accepted the temporary exception.",
+            "alice",
+            "human",
+            100,
+            200,
+        )
+
+        self.store.save_decision_revision(revision)
+        self.store.save_remediation(remediation)
+        self.store.save_waiver(waiver)
+        self.store.record_lifecycle_event(
+            event_type="waiver_issued",
+            decision_id="lifecycle-decision",
+            acted={"action": "waive"},
+            forward={"waiver_id": "waiver-1"},
+            ts="2026-01-01T00:00:01Z",
+        )
+
+        self.assertEqual(self.store.read_decision_revision("r1")["body"]["revision_id"], "r1")
+        self.assertEqual(self.store.list_decision_revisions("lifecycle-decision")[0]["name"], "r1")
+        self.assertEqual(self.store.read_remediation("rem-1")["body"]["status"], "OPEN")
+        self.assertEqual(self.store.list_remediations("lifecycle-decision")[0]["name"], "rem-1")
+        self.assertEqual(self.store.read_waiver("waiver-1")["body"]["issued_by"], "alice")
+        self.assertEqual(self.store.list_waivers("lifecycle-decision")[0]["name"], "waiver-1")
+        self.assertEqual(self.store.read_standing_changes()[0]["extra"]["event_type"], "waiver_issued")
 
     def test_memory_off_uses_the_same_interface_but_starts_empty(self) -> None:
         with patch.dict(os.environ, {"MEMORY": "off"}):

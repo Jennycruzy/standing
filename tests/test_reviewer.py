@@ -2,6 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from standing.lifecycle import RemediationStatus
 from standing.memory import create_memory_store
 from standing.reviewer import ReviewerToolError, ReviewerTools
 
@@ -91,6 +92,127 @@ class ReviewerToolsTests(unittest.TestCase):
 
         self.assertEqual(review.evaluation.state.value, "UNKNOWN")
         self.assertTrue(review.blocks)
+
+    def test_revision_history_and_time_travel_are_persisted(self) -> None:
+        first = {
+            "decision_id": "versioned",
+            "revision_id": "r1",
+            "effective_from": 100,
+            "body": {
+                "title": "Use the first path",
+                "governed_paths": ["src/versioned.py"],
+                "conditions": [self._spec("vendor.retention")],
+            },
+        }
+        second = {
+            "decision_id": "versioned",
+            "revision_id": "r2",
+            "effective_from": 200,
+            "supersedes_revision_id": "r1",
+            "body": {
+                "title": "Use the replacement path",
+                "governed_paths": ["src/versioned.py"],
+                "conditions": [self._spec("vendor.retention")],
+            },
+        }
+
+        self.tools.record_decision_revision(first, actor_id="alice", reason="Initial decision.")
+        self.tools.record_decision_revision(second, actor_id="alice", reason="The decision was replaced.")
+        self.store.record_standing_change(
+            evaluated={"decision_id": "versioned", "revision_id": "r1", "state": "EXPIRED"},
+            acted={"action": "block", "explanation": "The first rule no longer holds."},
+            forward={"revision_id": "r1"},
+            extra={},
+            ts="1970-01-01T00:02:00Z",
+        )
+        self.store.record_standing_change(
+            evaluated={"decision_id": "versioned", "revision_id": "r2", "state": "STANDS"},
+            acted={"action": "allow", "explanation": "The replacement rule holds."},
+            forward={"revision_id": "r2"},
+            extra={},
+            ts="1970-01-01T00:03:20Z",
+        )
+
+        historic = self.tools.read_decision_at("versioned", as_of=199)
+        current = self.tools.read_decision_at("versioned", as_of=200)
+
+        self.assertEqual(historic.revision.revision_id if historic.revision else None, "r1")
+        self.assertEqual(historic.standing.state if historic.standing else None, "EXPIRED")
+        self.assertEqual(current.revision.revision_id if current.revision else None, "r2")
+        self.assertEqual(current.standing.action if current.standing else None, "allow")
+
+    def test_remediation_and_waiver_are_durable_and_waiver_does_not_change_state(self) -> None:
+        self.store.save_decision(
+            "waived-decision",
+            {
+                "title": "Use Acme for event persistence",
+                "governed_paths": ["src/events/archive.py"],
+                "conditions": [self._spec("vendor.acme.retention_days")],
+            },
+        )
+        evaluation = self.tools.evaluate_standing("waived-decision")
+        remediation = self.tools.open_remediation(
+            "rem-1",
+            "waived-decision",
+            "r1",
+            opened_at=100,
+            summary="Obtain a fresh retention confirmation.",
+            actor_id="alice",
+        )
+        transition = self.tools.transition_remediation(
+            remediation.remediation_id,
+            RemediationStatus.IN_PROGRESS,
+            occurred_at=110,
+            actor_id="reviewer",
+            reason="The verification request is running.",
+        )
+        self.tools.issue_waiver(
+            "waiver-1",
+            "waived-decision",
+            condition_key="vendor.acme.retention_days",
+            reason="The incident commander accepted a temporary exception.",
+            issued_by="alice",
+            issuer_role="human",
+            issued_at=100,
+            expires_at=200,
+        )
+
+        event_id = self.tools.write_standing_change(
+            "waived-decision",
+            evaluation,
+            action="allow",
+            explanation="Proceed temporarily under the recorded human waiver.",
+            waiver_id="waiver-1",
+            now_unix=150,
+        )
+
+        self.assertIsInstance(event_id, str)
+        self.assertEqual(transition.remediation.status, RemediationStatus.IN_PROGRESS)
+        self.assertEqual(self.store.read_standing("waived-decision")["state"], "UNKNOWN")
+        self.assertEqual(self.store.read_standing("waived-decision")["waiver"]["permits_action"], True)
+        self.assertEqual(self.store.read_remediation("rem-1")["body"]["status"], "IN_PROGRESS")
+        with self.assertRaises(ReviewerToolError):
+            self.tools.write_standing_change(
+                "waived-decision",
+                evaluation,
+                action="allow",
+                explanation="The expired waiver must not continue to allow.",
+                waiver_id="waiver-1",
+                now_unix=200,
+            )
+
+    def test_reviewer_rejects_model_waiver_issuance(self) -> None:
+        with self.assertRaises(ReviewerToolError):
+            self.tools.issue_waiver(
+                "waiver-model",
+                "missing-decision",
+                condition_key=None,
+                reason="The model requests an exception.",
+                issued_by="model",
+                issuer_role="model",
+                issued_at=100,
+                expires_at=200,
+            )
 
     def _save_decision_and_value(self, value: int) -> None:
         self.store.save_decision(
