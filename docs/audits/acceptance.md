@@ -12,7 +12,7 @@ Strict acceptance now requires each observer reading to carry operator, source, 
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 81 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 84 tests passed.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/policy.json` — valid JSON.
 - `git diff --check` — no whitespace errors.

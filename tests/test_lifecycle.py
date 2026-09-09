@@ -138,6 +138,24 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(current.standing.action if current.standing else None, "allow")
         self.assertEqual(len(current.standing_history), 2)
 
+    def test_lifecycle_events_do_not_hide_the_latest_standing_result(self) -> None:
+        events = [
+            self._event("e1", 100, "r1", "STANDS", "allow"),
+            {
+                "id": "waiver",
+                "ts": 150,
+                "evaluated": {"decision_id": "decision"},
+                "acted": {"action": "waive", "explanation": "Temporary human exception."},
+                "forward": {},
+                "extra": {"event_type": "waiver_issued"},
+            },
+        ]
+
+        timeline = project_standing_timeline(events, "decision")
+
+        self.assertEqual(timeline.current.event_id if timeline.current else None, "e1")
+        self.assertEqual(timeline.events[-1].event_type if timeline.events else None, "waiver_issued")
+
     def test_timeline_is_deterministic_and_filters_other_decisions(self) -> None:
         events = [
             self._event("e2", 200, "r1", "STANDS", "allow"),

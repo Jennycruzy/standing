@@ -46,11 +46,13 @@ The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/review
 
 The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
 
-The complete offline suite contains 81 Python tests and 4 TypeScript adapter tests. Both suites pass after the ACP resume-by-job-ID, evidence-ledger, provenance, freshness, lifecycle, evaluation-harness, and external-Provider changes.
+The complete offline suite contains 84 Python tests and 4 TypeScript adapter tests. Both suites pass after the ACP resume-by-job-ID, evidence-ledger, provenance, freshness, lifecycle, evaluation-harness, console, and external-Provider changes.
 
 Decision revisions, remediation, waivers, and time travel are pure lifecycle primitives in [`standing/lifecycle.py`](standing/lifecycle.py). A revision supersedes its predecessor at an explicit effective time; a remediation can end as `RESOLVED` or `SUPERSEDED` without erasing the prior decision; and an expiring waiver can permit a human-approved action without changing the evaluator's factual state. [`docs/audits/lifecycle.md`](docs/audits/lifecycle.md) records the boundary.
 
 The source-linked evaluation harness is [`standing/evaluation.py`](standing/evaluation.py), with measurement in [`scripts/evaluate_dataset.py`](scripts/evaluate_dataset.py). Each case must link the repository decision and published ground truth, pin a source snapshot, record effective/capture times, and explicitly identify synthetic data. The current manifest at [`docs/evaluation/cases.json`](docs/evaluation/cases.json) is intentionally empty until real cases are hand-verified.
+
+The read-only console renderer is [`standing/console.py`](standing/console.py), exposed by [`scripts/render_console.py`](scripts/render_console.py). It places the controlled-demo disclosure in the page itself, shows release blockers, and supports a historical `--as-of` view; lifecycle events cannot hide the latest standing result.
 
 ## Acceptance and observer history
 

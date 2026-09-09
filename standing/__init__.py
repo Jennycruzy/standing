@@ -82,6 +82,7 @@ from .evaluation import (
     measure_predictions,
     sha256_bytes,
 )
+from .console import render_console_html
 
 __all__ = [
     "AcceptancePolicy",
@@ -139,6 +140,7 @@ __all__ = [
     "EvaluationMismatch",
     "measure_predictions",
     "sha256_bytes",
+    "render_console_html",
     "create_memory_store",
     "evaluate_standing",
     "decode_string_payload",

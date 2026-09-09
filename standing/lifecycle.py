@@ -547,6 +547,7 @@ class StandingTimelineEvent:
     fingerprint: str | None
     explanation: str | None
     waiver_id: str | None
+    event_type: str | None
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> StandingTimelineEvent:
@@ -582,6 +583,12 @@ class StandingTimelineEvent:
             else (extra.get("waiver_id") if isinstance(extra, Mapping) else None),
             "waiver_id",
         )
+        event_type = _optional_string(
+            extra.get("event_type") if isinstance(extra, Mapping) else None,
+            "event_type",
+        )
+        if event_type is None and state is not None:
+            event_type = "standing_change"
         return cls(
             event_id,
             decision_id,
@@ -592,6 +599,7 @@ class StandingTimelineEvent:
             fingerprint,
             explanation,
             waiver_id,
+            event_type,
         )
 
     def as_dict(self) -> dict[str, Any]:
@@ -605,6 +613,7 @@ class StandingTimelineEvent:
             "fingerprint": self.fingerprint,
             "explanation": self.explanation,
             "waiver_id": self.waiver_id,
+            "event_type": self.event_type,
         }
 
 
@@ -642,7 +651,8 @@ def project_standing_timeline(
         if event.decision_id == key and (cutoff is None or event.occurred_at <= cutoff)
     )
     ordered = tuple(sorted(normalized, key=lambda event: (event.occurred_at, event.event_id)))
-    return StandingTimeline(key, cutoff, ordered, ordered[-1] if ordered else None)
+    standing_events = tuple(event for event in ordered if event.state is not None)
+    return StandingTimeline(key, cutoff, ordered, standing_events[-1] if standing_events else None)
 
 
 @dataclass(frozen=True)
