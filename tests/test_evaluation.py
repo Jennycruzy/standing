@@ -26,6 +26,21 @@ class EvaluationDatasetTests(unittest.TestCase):
         self.assertEqual(dataset.release_case_count(), 1)
         self.assertEqual([case.case_id for case in dataset.synthetic_cases], ["synthetic"])
 
+    def test_real_vendor_expiry_ignores_synthetic_and_non_vendor_cases(self) -> None:
+        real_expired = self._case("real-expired", expected="EXPIRED", synthetic=False)
+        synthetic_expired = self._case("synthetic-expired", expected="EXPIRED", synthetic=True)
+        repository_expired = self._case("repository-expired", expected="EXPIRED", synthetic=False)
+        repository_expired["ground_truth_source_type"] = "repository_history"
+        dataset = EvaluationDataset.from_mapping(
+            {
+                "dataset_id": "dataset-v1",
+                "cases": [real_expired, synthetic_expired, repository_expired],
+            }
+        )
+
+        self.assertTrue(dataset.has_real_vendor_expiry)
+        self.assertEqual([case.case_id for case in dataset.real_vendor_expiry_cases], ["real-expired"])
+
     def test_missing_or_unpinned_source_fields_are_rejected(self) -> None:
         raw = self._case("case", synthetic=False)
         raw.pop("source_sha256")

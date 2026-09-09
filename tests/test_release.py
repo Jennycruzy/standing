@@ -57,6 +57,37 @@ class ReleaseGateTests(unittest.TestCase):
 
         self.assertEqual(evidence.real_evaluation_case_count, 0)
 
+    def test_release_evidence_derives_vendor_expiry_from_dataset(self) -> None:
+        dataset = EvaluationDataset.from_mapping(
+            {
+                "dataset_id": "real-v1",
+                "cases": [
+                    {
+                        "case_id": "expired",
+                        "repository": "owner/repository",
+                        "decision_url": "https://github.com/owner/repository/blob/main/decision.md",
+                        "decision_ref": "main:decision.md",
+                        "ground_truth_url": "https://vendor.example.com/history",
+                        "ground_truth_source_type": "vendor_history",
+                        "ground_truth_effective_at": 1_700_000_000,
+                        "captured_at": 1_700_000_100,
+                        "source_sha256": "a" * 64,
+                        "expected_state": "EXPIRED",
+                        "synthetic": False,
+                    }
+                ],
+            }
+        )
+
+        evidence = ReleaseEvidence.from_dataset(
+            dataset,
+            controlled_demo_disclosed=True,
+            independent_operator_ids=("operator:one",),
+        )
+
+        self.assertTrue(evidence.real_vendor_expiry_present)
+        self.assertEqual(evidence.real_evaluation_case_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()

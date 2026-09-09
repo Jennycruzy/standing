@@ -23,17 +23,33 @@ class ReleaseEvidence:
         dataset: EvaluationDataset,
         *,
         controlled_demo_disclosed: bool,
-        real_vendor_expiry_present: bool,
+        real_vendor_expiry_present: bool | None = None,
         independent_operator_ids: tuple[str, ...],
     ) -> ReleaseEvidence:
-        """Build release evidence from the dataset's validated real-case count."""
+        """Build release evidence from the dataset's validated real-case count.
+
+        When the vendor-expiry claim is omitted, derive it from the validated
+        corpus instead of accepting a separate operator assertion.
+        """
 
         return cls(
             controlled_demo_disclosed=controlled_demo_disclosed,
-            real_vendor_expiry_present=real_vendor_expiry_present,
+            real_vendor_expiry_present=(
+                dataset.has_real_vendor_expiry
+                if real_vendor_expiry_present is None
+                else real_vendor_expiry_present
+            ),
             real_evaluation_case_count=dataset.release_case_count(),
             independent_operator_ids=independent_operator_ids,
         )
+
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "controlled_demo_disclosed": self.controlled_demo_disclosed,
+            "real_vendor_expiry_present": self.real_vendor_expiry_present,
+            "real_evaluation_case_count": self.real_evaluation_case_count,
+            "independent_operator_ids": list(self.independent_operator_ids),
+        }
 
 
 @dataclass(frozen=True)

@@ -170,6 +170,23 @@ class EvaluationDataset:
     def synthetic_cases(self) -> tuple[EvaluationCase, ...]:
         return tuple(case for case in self.cases if case.synthetic)
 
+    @property
+    def real_vendor_expiry_cases(self) -> tuple[EvaluationCase, ...]:
+        """Return hand-verified vendor-history cases whose ground truth expired."""
+
+        return tuple(
+            case
+            for case in self.real_cases
+            if case.ground_truth_source_type == "vendor_history"
+            and case.expected_state == StandingState.EXPIRED
+        )
+
+    @property
+    def has_real_vendor_expiry(self) -> bool:
+        """Whether the corpus contains a non-synthetic vendor-expiry case."""
+
+        return bool(self.real_vendor_expiry_cases)
+
     def as_dict(self) -> dict[str, Any]:
         return {
             "dataset_id": self.dataset_id,
