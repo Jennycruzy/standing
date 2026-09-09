@@ -33,6 +33,7 @@ class AcpVerifierTests(unittest.TestCase):
         self.assertEqual(self.config.offering_name, "published_condition_check")
         self.assertEqual(self.config.budget_usdc, 0.01)
         self.assertEqual(self.config.max_job_usdc, 0.01)
+        self.assertTrue(self.config.start_verifier)
 
     def test_parser_requires_one_typed_verifier_delivery(self) -> None:
         result = {

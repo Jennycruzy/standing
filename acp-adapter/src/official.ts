@@ -14,14 +14,20 @@ export type OfficialAcpConfig = {
   builderCode?: string;
 };
 
-export async function createOfficialRuntime(config: OfficialAcpConfig): Promise<AcpRuntime> {
-  const provider = await PrivyAlchemyEvmProviderAdapter.create({
+export async function createOfficialProvider(
+  config: OfficialAcpConfig,
+): Promise<PrivyAlchemyEvmProviderAdapter> {
+  return PrivyAlchemyEvmProviderAdapter.create({
     walletAddress: config.walletAddress,
     walletId: config.walletId,
     signerPrivateKey: config.signerPrivateKey,
     chains: [base],
     ...(config.builderCode === undefined ? {} : { builderCode: config.builderCode }),
   });
+}
+
+export async function createOfficialRuntime(config: OfficialAcpConfig): Promise<AcpRuntime> {
+  const provider = await createOfficialProvider(config);
 
   return {
     createAgent: () => AcpAgent.create({ evmProvider: provider }),
@@ -29,17 +35,20 @@ export async function createOfficialRuntime(config: OfficialAcpConfig): Promise<
   };
 }
 
-export function officialConfigFromEnv(env: NodeJS.ProcessEnv = process.env): OfficialAcpConfig {
-  const walletAddress = requiredEnv(env, "STANDING_ACP_WALLET_ADDRESS");
+export function officialConfigFromEnv(
+  env: NodeJS.ProcessEnv = process.env,
+  prefix = "STANDING_ACP_",
+): OfficialAcpConfig {
+  const walletAddress = requiredEnv(env, `${prefix}WALLET_ADDRESS`);
   if (!/^0x[a-fA-F0-9]{40}$/.test(walletAddress)) {
-    throw new TypeError("STANDING_ACP_WALLET_ADDRESS must be a 20-byte EVM address");
+    throw new TypeError(`${prefix}WALLET_ADDRESS must be a 20-byte EVM address`);
   }
 
   return {
     walletAddress: walletAddress as `0x${string}`,
-    walletId: requiredEnv(env, "STANDING_ACP_WALLET_ID"),
-    signerPrivateKey: requiredEnv(env, "STANDING_ACP_SIGNER_PRIVATE_KEY"),
-    builderCode: optionalEnv(env, "STANDING_ACP_BUILDER_CODE"),
+    walletId: requiredEnv(env, `${prefix}WALLET_ID`),
+    signerPrivateKey: requiredEnv(env, `${prefix}SIGNER_PRIVATE_KEY`),
+    builderCode: optionalEnv(env, `${prefix}BUILDER_CODE`),
   };
 }
 

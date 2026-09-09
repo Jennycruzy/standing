@@ -1,6 +1,6 @@
 # Acceptance and observer history audit
 
-Date: 2026-09-08
+Date: 2026-09-09
 
 ## Result
 
@@ -10,7 +10,7 @@ The policy values are loaded at runtime from [`config/policy.json`](../../config
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 32 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 47 tests passed in the last recorded run.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/policy.json` — valid JSON.
 - `git diff --check` — no whitespace errors.
@@ -19,8 +19,8 @@ The policy values are loaded at runtime from [`config/policy.json`](../../config
 
 ## Gaps recorded
 
-- Observer outcomes currently update the local reliability record only; the matching ERC-8004 reputation signal is not written yet.
-- The policy receives observations directly; the EAS observation reader and ACP verifier still need to feed it.
+- Observer outcomes update the local reliability record through the reviewer. The matching ERC-8004 verifier-outcome writer is implemented in [scripts/run_verifier_loop.py](../../scripts/run_verifier_loop.py), but a successful live signal is not yet recorded.
+- The policy receives typed observations from the EAS/ACP loop in code; the live end-to-end delivery still needs to be captured.
 - The current configured rule intentionally requires two independent observer addresses in addition to the vendor-published observation. That is a configuration choice and can be changed only in `config/policy.json`.
 
 ## Exit statement

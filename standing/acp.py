@@ -28,6 +28,8 @@ class AcpVerifierConfig:
     daily_spend_usdc: float
     completion_reason: str
     timeout_seconds: float
+    start_verifier: bool
+    verifier_startup_timeout_seconds: float
 
 
 def load_acp_config(path: str | Path) -> AcpVerifierConfig:
@@ -47,6 +49,9 @@ def load_acp_config(path: str | Path) -> AcpVerifierConfig:
         raise AcpVerifierError("budget_usdc exceeds max_job_usdc")
     if max_job > daily:
         raise AcpVerifierError("max_job_usdc exceeds daily_spend_usdc")
+    start_verifier = section.get("start_verifier")
+    if not isinstance(start_verifier, bool):
+        raise AcpVerifierError("start_verifier must be true or false")
     return AcpVerifierConfig(
         chain_id=chain_id,
         offering_name=_required_string(section.get("offering_name"), "offering_name"),
@@ -56,6 +61,11 @@ def load_acp_config(path: str | Path) -> AcpVerifierConfig:
         daily_spend_usdc=daily,
         completion_reason=_required_string(section.get("completion_reason"), "completion_reason"),
         timeout_seconds=_positive_number(section.get("timeout_seconds"), "timeout_seconds"),
+        start_verifier=start_verifier,
+        verifier_startup_timeout_seconds=_positive_number(
+            section.get("verifier_startup_timeout_seconds"),
+            "verifier_startup_timeout_seconds",
+        ),
     )
 
 
@@ -72,6 +82,7 @@ class VerifierObservation:
     effective_from: int
     note: str
     job_id: str
+    observation_transaction: str | None
 
     def as_acceptance_record(self) -> dict[str, Any]:
         return {
@@ -84,6 +95,7 @@ class VerifierObservation:
             "effective_from": self.effective_from,
             "note": self.note,
             "acp_job_id": self.job_id,
+            "observation_transaction": self.observation_transaction,
         }
 
 
@@ -127,6 +139,8 @@ class AcpVerifierClient:
         *,
         acceptance: AcceptanceResult,
         spent_today_usdc: float,
+        source_url: str | None = None,
+        value_type: str | None = None,
     ) -> VerifierObservation:
         """Post one fixed-shape ACP job and require a typed delivery."""
 
@@ -141,14 +155,25 @@ class AcpVerifierClient:
             raise AcpVerifierError("configured job budget exceeds the per-job cap")
         if spent + self.config.budget_usdc > self.config.daily_spend_usdc:
             raise AcpVerifierError("daily ACP spend cap would be exceeded")
+        requirement: dict[str, Any] = {"conditionKey": key}
+        if source_url is not None or value_type is not None:
+            if source_url is None or value_type is None:
+                raise AcpVerifierError("source_url and value_type must be supplied together")
+            if not source_url.startswith(("https://", "http://")):
+                raise AcpVerifierError("source_url must be HTTP or HTTPS")
+            if value_type not in {"number", "boolean", "date", "set"}:
+                raise AcpVerifierError("value_type is not supported")
+            requirement.update({"sourceUrl": source_url, "valueType": value_type})
         request = {
             "chainId": self.config.chain_id,
             "offeringName": self.config.offering_name,
             "providerAddress": observer,
-            "requirement": {"conditionKey": key},
+            "requirement": requirement,
             "budgetUsdc": self.config.budget_usdc,
             "completionReason": self.config.completion_reason,
             "timeoutMs": int(self.config.timeout_seconds * 1000),
+            "startVerifier": self.config.start_verifier,
+            "verifierStartupTimeoutMs": int(self.config.verifier_startup_timeout_seconds * 1000),
         }
         result = self.runner(
             request,
@@ -219,6 +244,7 @@ def parse_verifier_delivery(
         effective_from=_nonnegative_int(delivery.get("effective_from"), "verifier effective_from"),
         note=_required_string(delivery.get("note"), "verifier note"),
         job_id=job_id,
+        observation_transaction=_optional_uid(delivery.get("observation_transaction")),
     )
 
 
@@ -270,3 +296,9 @@ def _uid(value: Any, label: str) -> str:
     except ValueError as error:
         raise AcpVerifierError(f"{label} must be a 32-byte hex value") from error
     return value
+
+
+def _optional_uid(value: Any) -> str | None:
+    if value is None:
+        return None
+    return _uid(value, "verifier observation_transaction")

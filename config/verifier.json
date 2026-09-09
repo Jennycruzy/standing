@@ -1,0 +1,11 @@
+{
+  "conditions": {
+    "sandbox.demo.retention_days": {
+      "mode": "sandbox_fixed",
+      "value": "90",
+      "source_url": "https://github.com/Jennycruzy/standing",
+      "note": "Sandbox payload is fictional and does not describe a vendor.",
+      "value_type": "number"
+    }
+  }
+}

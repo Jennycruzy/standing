@@ -173,6 +173,8 @@ class ReviewerTools:
         *,
         acceptance: AcceptanceResult,
         spent_today_usdc: float,
+        source_url: str | None = None,
+        value_type: str | None = None,
     ) -> VerifierObservation:
         """Hire the selected observer through ACP after policy failure."""
 
@@ -181,6 +183,8 @@ class ReviewerTools:
             observer_address,
             acceptance=acceptance,
             spent_today_usdc=spent_today_usdc,
+            source_url=source_url,
+            value_type=value_type,
         )
 
     def record_observer_outcome(self, address: str, *, confirmed: bool) -> ObserverHistory:

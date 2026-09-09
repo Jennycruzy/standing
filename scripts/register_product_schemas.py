@@ -122,9 +122,10 @@ def send_registration(
     base: Mapping[str, Any],
     private_key: str,
     data: bytes,
+    destination: str | None = None,
 ) -> tuple[str, dict[str, Any]]:
     sender = Account.from_key(private_key).address
-    registry = _required_string(base.get("schemaRegistry"), "base.schemaRegistry")
+    registry = destination or _required_string(base.get("schemaRegistry"), "base.schemaRegistry")
     chain_id = _positive_int(base.get("chainId"), "base.chainId")
     multiplier, gas_buffer, poll_seconds, poll_attempts = transaction_settings(base)
     nonce = _quantity(transport.request("eth_getTransactionCount", [sender, "pending"]), "pending nonce")

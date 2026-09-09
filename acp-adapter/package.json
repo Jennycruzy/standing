@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "start": "node --import tsx src/cli.ts",
+    "verifier": "node --import tsx src/verifier.ts",
     "test": "node --import tsx --test test/*.test.ts",
     "typecheck": "tsc --noEmit"
   },

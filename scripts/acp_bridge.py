@@ -5,7 +5,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import selectors
 import subprocess
+import time
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -42,21 +44,26 @@ def run_acp_job(
     else:
         base_environment = dict(environment)
     child_environment = adapter_environment(base_environment)
+    verifier_process: subprocess.Popen[str] | None = None
     try:
-        completed = subprocess.run(
-            ["npm", "start"],
-            cwd=adapter_path,
-            input=json.dumps(dict(request), separators=(",", ":")),
-            text=True,
-            capture_output=True,
-            env=child_environment,
-            timeout=timeout_seconds,
-            check=False,
+        if request.get("startVerifier") is True:
+            verifier_process = start_verifier_worker(
+                adapter_path,
+                child_environment,
+                _timeout_seconds(request.get("verifierStartupTimeoutMs"), 30.0),
+            )
+        completed = _run_adapter(
+            adapter_path,
+            child_environment,
+            request,
+            verifier_process,
+            timeout_seconds,
         )
-    except subprocess.TimeoutExpired as process_error:
-        raise AcpBridgeError("ACP adapter timed out") from process_error
     except OSError as process_error:
         raise AcpBridgeError("ACP adapter process could not be started") from process_error
+    finally:
+        if verifier_process is not None:
+            stop_verifier_worker(verifier_process)
     response = _parse_response(completed.stdout)
     if completed.returncode != 0 or response.get("ok") is not True:
         response_error = response.get("error") if isinstance(response, dict) else None
@@ -68,6 +75,143 @@ def run_acp_job(
             )
         raise AcpBridgeError("ACP adapter exited without a successful response")
     return _validate_result(response.get("result"))
+
+
+def _run_adapter(
+    adapter_path: Path,
+    environment: Mapping[str, str],
+    request: Mapping[str, Any],
+    verifier_process: subprocess.Popen[str] | None,
+    timeout_seconds: float | None,
+) -> subprocess.CompletedProcess[str]:
+    """Run the buyer and fail promptly if the seller exits unsuccessfully."""
+
+    process = subprocess.Popen(
+        ["npm", "start"],
+        cwd=adapter_path,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        env=dict(environment),
+    )
+    if process.stdin is None:
+        _terminate_process(process)
+        raise AcpBridgeError("ACP adapter has no request stream")
+    process.stdin.write(json.dumps(dict(request), separators=(",", ":")))
+    process.stdin.close()
+    process.stdin = None
+    deadline = None if timeout_seconds is None else time.monotonic() + timeout_seconds
+    try:
+        while process.poll() is None:
+            if verifier_process is not None:
+                verifier_code = verifier_process.poll()
+                if verifier_code not in {None, 0, -15, -9}:
+                    _terminate_process(process)
+                    detail = _stream_text(verifier_process.stderr)
+                    suffix = f": {detail}" if detail else ""
+                    raise AcpBridgeError(
+                        f"ACP verifier worker exited unsuccessfully{suffix}"
+                    )
+            if deadline is not None and time.monotonic() >= deadline:
+                _terminate_process(process)
+                raise AcpBridgeError("ACP adapter timed out")
+            time.sleep(0.1)
+    finally:
+        if process.poll() is None:
+            _terminate_process(process)
+    stdout, stderr = process.communicate()
+    if process.returncode is None:
+        raise AcpBridgeError("ACP adapter did not report an exit status")
+    return subprocess.CompletedProcess(
+        process.args,
+        process.returncode,
+        stdout,
+        stderr,
+    )
+
+
+def start_verifier_worker(
+    adapter_path: Path,
+    environment: Mapping[str, str],
+    startup_timeout_seconds: float,
+) -> subprocess.Popen[str]:
+    """Start the separate seller agent and wait for its ready line."""
+
+    try:
+        process = subprocess.Popen(
+            ["node", "--import", "tsx", "src/verifier.ts"],
+            cwd=adapter_path,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            env=dict(environment),
+            bufsize=1,
+        )
+    except OSError as process_error:
+        raise AcpBridgeError("ACP verifier worker could not be started") from process_error
+    if process.stdout is None:
+        process.kill()
+        raise AcpBridgeError("ACP verifier worker has no readiness stream")
+
+    selector = selectors.DefaultSelector()
+    selector.register(process.stdout, selectors.EVENT_READ)
+    deadline = time.monotonic() + startup_timeout_seconds
+    try:
+        while time.monotonic() < deadline:
+            remaining = max(0.0, deadline - time.monotonic())
+            events = selector.select(remaining)
+            if not events:
+                break
+            line = process.stdout.readline().strip()
+            if not line:
+                if process.poll() is not None:
+                    detail = _stream_text(process.stderr)
+                    suffix = f": {detail}" if detail else ""
+                    raise AcpBridgeError(
+                        f"ACP verifier worker exited before readiness{suffix}"
+                    )
+                continue
+            try:
+                message = json.loads(line)
+            except json.JSONDecodeError as error:
+                raise AcpBridgeError("ACP verifier worker produced invalid readiness JSON") from error
+            if isinstance(message, dict) and message.get("ready") is True:
+                return process
+            raise AcpBridgeError("ACP verifier worker did not announce readiness")
+    finally:
+        selector.close()
+
+    _terminate_process(process)
+    raise AcpBridgeError("ACP verifier worker startup timed out")
+
+
+def stop_verifier_worker(process: subprocess.Popen[str]) -> None:
+    """Stop the seller process without copying its stderr into the result."""
+
+    if process.poll() is None:
+        _terminate_process(process)
+    if process.returncode not in {0, -15, -9}:
+        raise AcpBridgeError("ACP verifier worker exited unsuccessfully")
+
+
+def _terminate_process(process: subprocess.Popen[str]) -> None:
+    if process.poll() is None:
+        process.terminate()
+        try:
+            process.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait(timeout=5)
+
+
+def _stream_text(stream: Any) -> str:
+    if stream is None:
+        return ""
+    try:
+        return str(stream.read()).strip()
+    except OSError:
+        return ""
 
 
 def load_environment_file(path: str | Path) -> dict[str, str]:
@@ -97,15 +241,32 @@ def adapter_environment(environment: Mapping[str, str]) -> dict[str, str]:
     """Copy the environment and map legacy buyer names into adapter names."""
 
     child = dict(environment)
+    for secret_name in (
+        "OPENAI_API_KEY",
+        "BASE_SIGNER_PRIVATE_KEY",
+        "WHITELISTED_WALLET_PRIVATE_KEY",
+    ):
+        child.pop(secret_name, None)
     aliases = {
         "STANDING_ACP_WALLET_ADDRESS": "BUYER_AGENT_WALLET_ADDRESS",
         "STANDING_ACP_WALLET_ID": "BUYER_WALLET_ID",
         "STANDING_ACP_SIGNER_PRIVATE_KEY": "BUYER_SIGNER_PRIVATE_KEY",
+        "STANDING_ACP_SELLER_WALLET_ADDRESS": "SELLER_AGENT_WALLET_ADDRESS",
+        "STANDING_ACP_SELLER_WALLET_ID": "SELLER_WALLET_ID",
+        "STANDING_ACP_SELLER_SIGNER_PRIVATE_KEY": "SELLER_SIGNER_PRIVATE_KEY",
     }
     for target, source in aliases.items():
         if not child.get(target, "").strip() and child.get(source, "").strip():
             child[target] = child[source]
     return child
+
+
+def _timeout_seconds(value: Any, default: float) -> float:
+    if value is None:
+        return default
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or value <= 0:
+        raise AcpBridgeError("verifierStartupTimeoutMs must be positive")
+    return float(value) / 1000.0
 
 
 def _parse_response(stdout: str) -> dict[str, Any]:

@@ -1,5 +1,5 @@
 export { AcpJobError, StandingAcpAdapter } from "./adapter.js";
-export { createOfficialRuntime, officialConfigFromEnv } from "./official.js";
+export { createOfficialProvider, createOfficialRuntime, officialConfigFromEnv } from "./official.js";
 export type {
   AcpAgent,
   AcpEntry,

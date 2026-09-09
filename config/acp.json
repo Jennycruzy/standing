@@ -7,6 +7,8 @@
     "max_job_usdc": 0.01,
     "daily_spend_usdc": 0.1,
     "completion_reason": "condition verification delivered",
-    "timeout_seconds": 900
+    "timeout_seconds": 900,
+    "start_verifier": true,
+    "verifier_startup_timeout_seconds": 180
   }
 }

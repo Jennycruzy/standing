@@ -26,6 +26,17 @@ from .eas_registry import (
     schema_matches,
     schema_uid,
 )
+from .reputation import (
+    ReputationConfig,
+    ReputationError,
+    decode_feedback,
+    decode_last_index,
+    evidence_hash,
+    feedback_calldata,
+    last_index_calldata,
+    load_reputation_config,
+    read_feedback_calldata,
+)
 from .acp import (
     AcpVerifierClient,
     AcpVerifierConfig,
@@ -67,6 +78,8 @@ __all__ = [
     "ObserverHistory",
     "ObserverSelectionError",
     "ReviewItem",
+    "ReputationConfig",
+    "ReputationError",
     "RegisteredSchema",
     "SchemaDefinition",
     "StandingEvaluation",
@@ -89,4 +102,11 @@ __all__ = [
     "schema_matches",
     "schema_uid",
     "select_observer",
+    "decode_feedback",
+    "decode_last_index",
+    "evidence_hash",
+    "feedback_calldata",
+    "last_index_calldata",
+    "load_reputation_config",
+    "read_feedback_calldata",
 ]
