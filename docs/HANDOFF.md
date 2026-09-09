@@ -13,7 +13,7 @@ This file records the state at the 9 September 2026 continuation point.
 - The ERC-8004 Base Identity and Reputation registries now have live proof: Standing identity `84973` was registered, the separate client wrote feedback index `1`, and owner, wallet, token URI, feedback, and summary read back exactly. The idempotent verifier is [`scripts/erc8004_preflight.py`](../scripts/erc8004_preflight.py).
 - The real Sibyl `preflight/standing` archive row was restored in `.preflight-memory.db` with its original entity ID and body `{"status":"verified"}`. `MemoryClient.get_entity`, search, and FTS were checked afterward; the archive row is gone from the archive table.
 - The isolated ACP adapter boundary is in [`acp-adapter/`](../acp-adapter/). Its official-client wiring typechecks, four offline tests pass, and it now supports resume-by-job-ID so a retry cannot create a duplicate job.
-- The Python-side ACP bridge is in [scripts/acp_bridge.py](../scripts/acp_bridge.py). It maps buyer and seller credentials into the isolated adapter, loads the local ignored .env, validates only completed typed results, and fails closed on adapter errors/timeouts. The current offline suites pass 64 Python tests and 4 TypeScript adapter tests.
+- The Python-side ACP bridge is in [scripts/acp_bridge.py](../scripts/acp_bridge.py). It maps buyer and seller credentials into the isolated adapter, loads the local ignored .env, validates only completed typed results, and fails closed on adapter errors/timeouts. The current offline suites pass 70 Python tests and 4 TypeScript adapter tests.
 - Checked ACP/EAS observations are now persisted in the memory-backed evidence ledger, and the live-loop command exposes `--manual-approval` for an explicit operator gate after evidence review.
 - The memory store, pure evaluator, reviewer tools, acceptance policy, observer selection, EAS reader, ACP verifier boundary, and ERC-8004 feedback helpers are implemented under [standing/](../standing/). The bridge watchdog and resume-by-job-ID changes are covered by the current test suites.
 - The EAS reader replays a recorded Base mainnet `getAttestation` response, caches reads with their block number, and rejects the earlier preflight schema as a product observation. The ACP verifier client requires an unsatisfied acceptance result, enforces the configured spend caps, and requires one typed delivery from the selected observer address.
@@ -24,6 +24,7 @@ This file records the state at the 9 September 2026 continuation point.
 - Fresh live verifier deliveries are now recorded: capped ACP jobs `77736`, `77742`, `77743`, and `77748` completed; the seller published Base EAS observations, the evidence ledger accumulated the later readings, Sibyl now records 4 confirmed and 0 contradicted readings for observer `0x344903e1dbf8ed072edb3797e832ad74c07cb735`, and ERC-8004 feedback was written/read for each checked outcome. Full transaction links and UIDs are in [the verifier-loop audit](audits/verifier-loop.md).
 - Strict observer provenance, source binding, freshness checks, controlled-demo disclosure, and non-demo release gates are now implemented in `standing/`. The current live records remain historical same-owner demo evidence and are not silently upgraded by the new checks.
 - The live-loop CLI now accepts `--provider-address` and `--offering-name` for an external marketplace Provider. External mode does not start the local seller worker, so a remote Provider can supply the second observer without exposing or copying its credentials.
+- Decision revision chains, time-travel snapshots, constrained remediation transitions, and human-only expiring waivers are implemented as pure lifecycle primitives in [`standing/lifecycle.py`](../standing/lifecycle.py). They preserve the factual evaluator result while making supersession, remediation, and temporary action authorization explicit.
 
 ## What remains unfinished
 
@@ -32,8 +33,8 @@ This file records the state at the 9 September 2026 continuation point.
 
 ## Commits already present
 
-The repository has real commits and origin/main is configured. The latest pushed commit is db6d72c feat: register product EAS schemas. The current continuation also contains the tested ACP resume-by-job-ID changes and the live verifier evidence updates; those changes remain in the working tree.
+The repository has real commits and origin/main is configured. The latest pushed commit is d6354bb (`feat: add evidence provenance and freshness gates`). The lifecycle slice is the current continuation and is ready for its own incremental commit after validation.
 
 ## Safe next session order
 
-Read this file, inspect git status, run the two offline suites, and keep .env out of git. The next product step is to decide whether the acceptance policy should remain contested for bootstrap evidence or receive the second observer/vendor inputs needed for `ACCEPTED`. Do not treat the Virtuals virtualAgentId values as ACP Entity IDs. Do not publish a vendor.* observation until its source and effective date have been hand-verified.
+Read this file, inspect git status, run the two offline suites, and keep .env out of git. The next product step is to connect the lifecycle primitives to memory-backed reviewer writes and the public time-travel view. Acceptance should remain contested until the second observer/vendor inputs and human approval exist. Do not treat the Virtuals virtualAgentId values as ACP Entity IDs. Do not publish a vendor.* observation until its source and effective date have been hand-verified.

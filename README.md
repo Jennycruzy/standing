@@ -46,7 +46,9 @@ The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/review
 
 The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
 
-The complete offline suite contains 64 Python tests and 4 TypeScript adapter tests. Both suites pass after the ACP resume-by-job-ID, evidence-ledger, provenance, freshness, and external-Provider changes.
+The complete offline suite contains 70 Python tests and 4 TypeScript adapter tests. Both suites pass after the ACP resume-by-job-ID, evidence-ledger, provenance, freshness, lifecycle, and external-Provider changes.
+
+Decision revisions, remediation, waivers, and time travel are pure lifecycle primitives in [`standing/lifecycle.py`](standing/lifecycle.py). A revision supersedes its predecessor at an explicit effective time; a remediation can end as `RESOLVED` or `SUPERSEDED` without erasing the prior decision; and an expiring waiver can permit a human-approved action without changing the evaluator's factual state. [`docs/audits/lifecycle.md`](docs/audits/lifecycle.md) records the boundary.
 
 ## Acceptance and observer history
 
