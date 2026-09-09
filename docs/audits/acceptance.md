@@ -10,7 +10,7 @@ The policy values are loaded at runtime from [`config/policy.json`](../../config
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 47 tests passed in the last recorded run.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 50 tests passed.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/policy.json` — valid JSON.
 - `git diff --check` — no whitespace errors.
@@ -19,10 +19,10 @@ The policy values are loaded at runtime from [`config/policy.json`](../../config
 
 ## Gaps recorded
 
-- Observer outcomes update the local reliability record through the reviewer. The matching ERC-8004 verifier-outcome writer is implemented in [scripts/run_verifier_loop.py](../../scripts/run_verifier_loop.py), but a successful live signal is not yet recorded.
-- The policy receives typed observations from the EAS/ACP loop in code; the live end-to-end delivery still needs to be captured.
+- Observer outcomes update the local reliability record through the reviewer. The matching ERC-8004 verifier-outcome writer is implemented in [scripts/run_verifier_loop.py](../../scripts/run_verifier_loop.py), and its successful live signal is recorded in [the verifier-loop audit](verifier-loop.md).
+- Checked typed observations from the EAS/ACP loop are persisted in the evidence ledger and are available to later acceptance evaluations. The live bootstrap result remains `CONTESTED` until the configured independent evidence and approval requirements are met.
 - The current configured rule intentionally requires two independent observer addresses in addition to the vendor-published observation. That is a configuration choice and can be changed only in `config/policy.json`.
 
 ## Exit statement
 
-The acceptance decision and memory-driven observer choice are ready to receive real EAS and ACP observations.
+The acceptance decision, memory-backed evidence ledger, and observer choice are ready for the second independent observer and the hand-verified vendor evidence required by the configured policy.

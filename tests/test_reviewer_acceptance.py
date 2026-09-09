@@ -78,6 +78,20 @@ class ReviewerAcceptanceTests(unittest.TestCase):
         stored = self.store.read_observer("0x111")
         self.assertEqual(stored["body"]["readings_contradicted"], 1)
 
+    def test_reviewer_persists_and_reads_checked_observations(self) -> None:
+        observation = {
+            "condition_key": "vendor.acme.retention_days",
+            "value": 365,
+            "source_type": "verifier",
+            "observer_address": "0x111",
+            "observation_uid": "0xone",
+        }
+
+        stored = self.tools.record_observation(observation)
+
+        self.assertEqual(stored["body"], observation)
+        self.assertEqual(self.tools.read_observations("vendor.acme.retention_days"), (observation,))
+
 
 if __name__ == "__main__":
     unittest.main()

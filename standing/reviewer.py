@@ -112,6 +112,24 @@ class ReviewerTools:
         key = _required_string(address, "observer address")
         return self.memory.read_observer(key)
 
+    def record_observation(self, observation: Mapping[str, Any]) -> dict[str, Any]:
+        """Persist one checked observation for later acceptance evaluations."""
+
+        if not isinstance(observation, Mapping):
+            raise ReviewerToolError("observation must be a mapping")
+        condition_key = _required_string(observation.get("condition_key"), "condition_key")
+        observation_uid = _required_string(observation.get("observation_uid"), "observation_uid")
+        body = dict(observation)
+        body["condition_key"] = condition_key
+        body["observation_uid"] = observation_uid
+        return self.memory.save_observation(observation_uid, body)
+
+    def read_observations(self, condition_key: str) -> tuple[dict[str, Any], ...]:
+        """Read all checked observations for one condition."""
+
+        key = _required_string(condition_key, "condition_key")
+        return tuple(self.memory.list_observations(key))
+
     def select_observer(
         self,
         addresses: Sequence[str],
@@ -175,6 +193,7 @@ class ReviewerTools:
         spent_today_usdc: float,
         source_url: str | None = None,
         value_type: str | None = None,
+        job_id: str | None = None,
     ) -> VerifierObservation:
         """Hire the selected observer through ACP after policy failure."""
 
@@ -185,6 +204,7 @@ class ReviewerTools:
             spent_today_usdc=spent_today_usdc,
             source_url=source_url,
             value_type=value_type,
+            job_id=job_id,
         )
 
     def record_observer_outcome(self, address: str, *, confirmed: bool) -> ObserverHistory:

@@ -46,6 +46,12 @@ def main() -> None:
     parser.add_argument("--condition", default="sandbox.demo.retention_days")
     parser.add_argument("--spent-today-usdc", type=float, default=0.0)
     parser.add_argument("--bootstrap", action="store_true", help="use the configured seller before it has three readings")
+    parser.add_argument("--job-id", help="resume an existing active ACP job instead of creating a new one")
+    parser.add_argument(
+        "--manual-approval",
+        action="store_true",
+        help="assert explicit human approval after reviewing the accumulated evidence",
+    )
     args = parser.parse_args()
 
     env = load_environment_file(ENV_PATH)
@@ -57,10 +63,11 @@ def main() -> None:
     try:
         tools = ReviewerTools(store)
         _ensure_observer_entity(store, seller_address)
+        prior_observations = tools.read_observations(args.condition)
         initial_acceptance = tools.check_acceptance(
             args.condition,
-            [],
-            manual_approval=False,
+            prior_observations,
+            manual_approval=args.manual_approval,
             policy=policy,
         )
         selected_address = _select_or_bootstrap(tools, seller_address, policy, args.bootstrap)
@@ -77,12 +84,15 @@ def main() -> None:
             spent_today_usdc=args.spent_today_usdc,
             source_url=_required_string(verifier_condition.get("source_url"), "verifier source_url"),
             value_type=_required_string(verifier_condition.get("value_type"), "verifier value_type"),
+            job_id=args.job_id,
         )
         chain_observation = _verify_eas_observation(observation, args.condition)
+        tools.record_observation(observation.as_acceptance_record())
+        accumulated_observations = tools.read_observations(args.condition)
         final_acceptance = tools.check_acceptance(
             args.condition,
-            [observation.as_acceptance_record()],
-            manual_approval=False,
+            accumulated_observations,
+            manual_approval=args.manual_approval,
             policy=policy,
         )
         reputation = _write_reputation_signal(

@@ -44,13 +44,13 @@ The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/review
 
 The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
 
-The complete offline suite contains 47 Python tests and 4 TypeScript adapter tests. The last recorded passing run predates the paused ACP bridge-watchdog edit; rerun both suites before claiming this increment is verified.
+The complete offline suite contains 50 Python tests and 4 TypeScript adapter tests. Both suites pass after the ACP resume-by-job-ID and evidence-ledger changes.
 
 ## Acceptance and observer history
 
 The pure acceptance policy is [`standing/acceptance.py`](standing/acceptance.py#L176). Its thresholds live in [`config/policy.json`](config/policy.json), not in source. The configured policy requires a vendor-published observation, two independent observers with at least three confirmed readings and no contradictions, and human approval; otherwise the result is `CONTESTED`.
 
-Observer selection reads the reliability records from memory and favors fewer contradictions, then more confirmed readings. A checked outcome updates the local record through [standing/reviewer.py](standing/reviewer.py#L137). The ERC-8004 feedback writer is implemented in [standing/reputation.py](standing/reputation.py) and is called by the live-loop command below; its verifier-outcome transaction still needs to be captured.
+Observer selection reads the reliability records from memory and favors fewer contradictions, then more confirmed readings. A checked outcome updates the local record through [standing/reviewer.py](standing/reviewer.py#L137). The ERC-8004 feedback writer is implemented in [standing/reputation.py](standing/reputation.py) and is called by the live-loop command below; its live transaction and readback are recorded in [the verifier-loop audit](docs/audits/verifier-loop.md).
 
 ## Base product schemas
 
@@ -68,13 +68,13 @@ It reads the registry first and writes only missing schemas. With both schemas p
 
 The Base reader is [`standing/eas.py`](standing/eas.py#L177). It reads the direct EAS record, decodes the six-field observation payload, rejects revoked or mismatched records, and caches each chain response with its block number. The replay test uses a recorded Base mainnet response at [`tests/fixtures/eas_reference_read.json`](tests/fixtures/eas_reference_read.json).
 
-The ACP verifier client is [standing/acp.py](standing/acp.py#L105). It hires only when the acceptance result is not accepted, uses the configured job and spend caps in [config/acp.json](config/acp.json), and requires one typed verifier delivery signed by the selected observer address. ACP job mechanics remain in the official adapter under acp-adapter/.
+The ACP verifier client is [standing/acp.py](standing/acp.py#L105). It hires only when the acceptance result is not accepted, uses the configured job and spend caps in [config/acp.json](config/acp.json), and requires one typed verifier delivery signed by the selected observer address. Checked observations are persisted in the memory-backed evidence ledger so later runs evaluate accumulated evidence. Pass `--manual-approval` only after reviewing that evidence. ACP job mechanics remain in the official adapter under acp-adapter/.
 
 ## ACP verifier loop
 
 The buyer is Standing and the seller is a separately keyed ACP agent using the existing published_condition_check offering. The seller reads the configured sandbox page, publishes its own EAS observation on Base, and returns that observation through ACP. The end-to-end command is [scripts/run_verifier_loop.py](scripts/run_verifier_loop.py); the seller worker is [acp-adapter/src/verifier.ts](acp-adapter/src/verifier.ts).
 
-The paused live attempt created ACP job 77515, reached FUNDED, and expired before delivery. It is recorded as an unsuccessful diagnostic, not as product evidence. Resume by running the command once, then add the resulting ACP, EAS, memory, and ERC-8004 links to the audit and this README. No vendor.* observation has been published.
+The paused live attempt created ACP job 77515, reached FUNDED, and expired before delivery; it remains an unsuccessful diagnostic, not product evidence. Fresh capped jobs 77736, 77742, 77743, and 77748 completed through the live Python↔TypeScript bridge. The seller published and returned its own Base EAS observations, the Python loop read them back, accumulated the evidence, updated the Sibyl observer record to 4 confirmed readings with no contradictions, and wrote/read ERC-8004 feedback. The full evidence is in [the verifier-loop audit](docs/audits/verifier-loop.md). Acceptance remains intentionally `CONTESTED` because the configured policy still requires vendor evidence, two independent observers, and human approval. No vendor.* observation has been published.
 
 ## Prior Work
 

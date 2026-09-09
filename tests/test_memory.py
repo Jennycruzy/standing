@@ -39,6 +39,16 @@ class MemoryLayerTests(unittest.TestCase):
             "0x1111111111111111111111111111111111111111",
             {"readings_confirmed": 3, "readings_contradicted": 0},
         )
+        self.store.save_observation(
+            "0xobservation",
+            {
+                "condition_key": "vendor.acme.retention_days",
+                "value": 365,
+                "source_type": "verifier",
+                "observer_address": "0x1111111111111111111111111111111111111111",
+                "observation_uid": "0xobservation",
+            },
+        )
         self.store.save_standing("acme-events", {"state": "STANDS"})
         self.store.save_condition_reference(
             "vendor.acme.retention_days",
@@ -54,6 +64,10 @@ class MemoryLayerTests(unittest.TestCase):
 
         self.assertEqual(self.store.read_condition("vendor.acme.retention_days")["body"]["accepted_value"], 365)
         self.assertEqual(self.store.read_observer("0x1111111111111111111111111111111111111111")["body"]["readings_confirmed"], 3)
+        self.assertEqual(
+            self.store.list_observations("vendor.acme.retention_days")[0]["value"],
+            365,
+        )
         self.assertEqual(self.store.read_standing("acme-events")["state"], "STANDS")
         reference = self.store.read_condition_reference("vendor.acme.retention_days")
         self.assertIsNotNone(reference)

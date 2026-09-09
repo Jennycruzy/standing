@@ -141,12 +141,14 @@ class AcpVerifierClient:
         spent_today_usdc: float,
         source_url: str | None = None,
         value_type: str | None = None,
+        job_id: str | None = None,
     ) -> VerifierObservation:
         """Post one fixed-shape ACP job and require a typed delivery."""
 
         key = _required_string(condition_key, "condition_key")
         observer = _address(observer_address, "observer_address")
         spent = _nonnegative_number(spent_today_usdc, "spent_today_usdc")
+        resume_job_id = _optional_job_id(job_id)
         if acceptance.condition_key != key:
             raise AcpVerifierError("acceptance result does not match the requested condition")
         if acceptance.accepted:
@@ -175,6 +177,8 @@ class AcpVerifierClient:
             "startVerifier": self.config.start_verifier,
             "verifierStartupTimeoutMs": int(self.config.verifier_startup_timeout_seconds * 1000),
         }
+        if resume_job_id is not None:
+            request["jobId"] = resume_job_id
         result = self.runner(
             request,
             adapter_dir=self.adapter_dir,
@@ -276,6 +280,16 @@ def _nonnegative_number(value: Any, label: str) -> float:
     if not isinstance(value, (int, float)) or isinstance(value, bool) or value < 0:
         raise AcpVerifierError(f"{label} must be a non-negative number")
     return float(value)
+
+
+def _optional_job_id(value: Any) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str) or not value.strip() or not value.strip().isdigit():
+        raise AcpVerifierError("job_id must be a positive decimal string")
+    if int(value.strip()) <= 0:
+        raise AcpVerifierError("job_id must be a positive decimal string")
+    return value.strip()
 
 
 def _address(value: Any, label: str) -> str:

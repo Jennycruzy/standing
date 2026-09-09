@@ -125,6 +125,46 @@ class AcpVerifierTests(unittest.TestCase):
             )
         self.assertFalse(called)
 
+    def test_client_can_resume_an_existing_job_without_creating_another(self) -> None:
+        calls: list[dict[str, Any]] = []
+
+        def runner(request: dict[str, Any], **_: Any) -> dict[str, Any]:
+            calls.append(request)
+            return self._completed_result()
+
+        client = AcpVerifierClient(
+            adapter_dir=Path(__file__).parents[1] / "acp-adapter",
+            config=self.config,
+            environment={},
+            runner=runner,
+        )
+        client.hire_verifier(
+            self.condition_key,
+            self.observer,
+            acceptance=self.acceptance,
+            spent_today_usdc=0.0,
+            job_id="77716",
+        )
+
+        self.assertEqual(calls[0]["jobId"], "77716")
+
+    def test_client_rejects_an_invalid_resume_job_id(self) -> None:
+        client = AcpVerifierClient(
+            adapter_dir=Path(__file__).parents[1] / "acp-adapter",
+            config=self.config,
+            environment={},
+            runner=lambda *_args, **_kwargs: self._completed_result(),
+        )
+
+        with self.assertRaises(AcpVerifierError):
+            client.hire_verifier(
+                self.condition_key,
+                self.observer,
+                acceptance=self.acceptance,
+                spent_today_usdc=0.0,
+                job_id="not-a-job",
+            )
+
     def _completed_result(self) -> dict[str, Any]:
         delivery = {
             "condition_key": self.condition_key,

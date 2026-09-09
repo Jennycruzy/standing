@@ -77,6 +77,31 @@ class MemoryStore:
         observer_address = _required_name(address, "observer address")
         return cast(dict[str, Any], self.client.get_entity("observer", observer_address))
 
+    def save_observation(self, observation_uid: str, body: Mapping[str, Any]) -> dict[str, Any]:
+        """Persist one checked observation keyed by its immutable EAS UID."""
+
+        uid = _required_name(observation_uid, "observation UID")
+        return cast(
+            dict[str, Any],
+            self.client.set_entity("observation", uid, dict(body)),
+        )
+
+    def list_observations(self, condition_key: str) -> list[dict[str, Any]]:
+        """Read all persisted observations for one condition deterministically."""
+
+        key = _required_name(condition_key, "condition key")
+        observations: list[dict[str, Any]] = []
+        for entity in self.client.list_entities(category="observation", limit=10_000):
+            body = entity.get("body")
+            if not isinstance(body, dict):
+                raise TypeError("Sibyl returned an observation without a mapping body")
+            if body.get("condition_key") == key:
+                observations.append(dict(body))
+        return sorted(
+            observations,
+            key=lambda observation: str(observation.get("observation_uid", "")),
+        )
+
     def save_standing(self, decision_id: str, body: Mapping[str, Any]) -> None:
         """Store the hot current-standing state for boot-time reads."""
 
