@@ -73,6 +73,15 @@ from .lifecycle import (
     project_standing_timeline,
     transition_remediation,
 )
+from .evaluation import (
+    EvaluationCase,
+    EvaluationDataset,
+    EvaluationDatasetError,
+    EvaluationMetrics,
+    EvaluationMismatch,
+    measure_predictions,
+    sha256_bytes,
+)
 
 __all__ = [
     "AcceptancePolicy",
@@ -123,6 +132,13 @@ __all__ = [
     "issue_waiver",
     "project_standing_timeline",
     "transition_remediation",
+    "EvaluationCase",
+    "EvaluationDataset",
+    "EvaluationDatasetError",
+    "EvaluationMetrics",
+    "EvaluationMismatch",
+    "measure_predictions",
+    "sha256_bytes",
     "create_memory_store",
     "evaluate_standing",
     "decode_string_payload",

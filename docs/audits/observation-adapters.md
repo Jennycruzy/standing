@@ -14,7 +14,7 @@ Verifier deliveries now also carry a controlled-demo disclosure and structured o
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 64 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 81 tests passed.
 - `npm test` in `acp-adapter/` — 4 tests passed in the last recorded run.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/chain.json`, `config/acp.json`, `config/reputation.json`, and `config/verifier.json` — valid JSON.

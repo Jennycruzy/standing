@@ -5,6 +5,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from .evaluation import EvaluationDataset
+
 
 @dataclass(frozen=True)
 class ReleaseEvidence:
@@ -14,6 +16,24 @@ class ReleaseEvidence:
     real_vendor_expiry_present: bool
     real_evaluation_case_count: int
     independent_operator_ids: tuple[str, ...]
+
+    @classmethod
+    def from_dataset(
+        cls,
+        dataset: EvaluationDataset,
+        *,
+        controlled_demo_disclosed: bool,
+        real_vendor_expiry_present: bool,
+        independent_operator_ids: tuple[str, ...],
+    ) -> ReleaseEvidence:
+        """Build release evidence from the dataset's validated real-case count."""
+
+        return cls(
+            controlled_demo_disclosed=controlled_demo_disclosed,
+            real_vendor_expiry_present=real_vendor_expiry_present,
+            real_evaluation_case_count=dataset.release_case_count(),
+            independent_operator_ids=independent_operator_ids,
+        )
 
 
 @dataclass(frozen=True)

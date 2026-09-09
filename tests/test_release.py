@@ -1,5 +1,6 @@
 import unittest
 
+from standing.evaluation import EvaluationDataset
 from standing.release import ReleaseEvidence, check_release_gates
 
 
@@ -43,6 +44,18 @@ class ReleaseGateTests(unittest.TestCase):
 
         self.assertFalse(result.ready)
         self.assertTrue(any("independent operator" in reason for reason in result.reasons))
+
+    def test_release_evidence_can_take_its_case_count_from_validated_dataset(self) -> None:
+        dataset = EvaluationDataset.from_mapping({"dataset_id": "empty-v1", "cases": []})
+
+        evidence = ReleaseEvidence.from_dataset(
+            dataset,
+            controlled_demo_disclosed=True,
+            real_vendor_expiry_present=False,
+            independent_operator_ids=("operator:standing",),
+        )
+
+        self.assertEqual(evidence.real_evaluation_case_count, 0)
 
 
 if __name__ == "__main__":

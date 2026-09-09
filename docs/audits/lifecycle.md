@@ -21,14 +21,14 @@ four-state evaluator cannot express by itself:
 
 ## Boundary
 
-The module is pure. It does not write a revision, remediation, or waiver to
-memory yet; the next integration slice will add those writes alongside the
-existing standing journal. A waiver's `permits_action` result is an action-gate
-signal, not an `ACCEPTED` standing result.
+The domain functions remain pure. `MemoryStore` persists revisions,
+remediations, and waivers in dedicated categories, while `ReviewerTools`
+validates and journals every mutation. A waiver's `permits_action` result is an
+action-gate signal, not an `ACCEPTED` standing result.
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 70 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 81 tests passed.
 - `.preflight-venv/bin/python -m mypy --strict standing` — no issues found.
 - [`tests/test_lifecycle.py`](../../tests/test_lifecycle.py) covers revision
   time travel, invalid chains, remediation transitions, human-only waivers,
