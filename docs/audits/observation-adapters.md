@@ -10,9 +10,11 @@ The Base reader loads its endpoint and EAS address from [`config/chain.json`](..
 
 The ACP client builds the fixed verifier request, checks the configured per-job and daily spend limits before starting the bridge, and refuses to hire when acceptance already succeeded. A completed job is not enough: the result must contain exactly one JSON verifier delivery with the condition key, value, source URL, observation UID, effective date, note, and the selected observer address.
 
+Verifier deliveries now also carry a controlled-demo disclosure and structured operator/source/extractor provenance. The Python acceptance boundary binds observation URLs to the condition's trusted source policy and forces revalidation when the configured freshness window expires.
+
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 50 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 64 tests passed.
 - `npm test` in `acp-adapter/` — 4 tests passed in the last recorded run.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/chain.json`, `config/acp.json`, `config/reputation.json`, and `config/verifier.json` — valid JSON.

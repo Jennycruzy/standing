@@ -4,7 +4,7 @@ Date: 2026-09-09
 
 ## Result
 
-The live delivery path passed on 2026-09-09. Standing started the seller worker with a separate ACP wallet, sent the condition key together with the configured publisher URL and value type, and required an unsatisfied acceptance result before hiring. The seller published its own EAS observation and returned the UID through ACP. The Python command read the chain record, evaluated acceptance, wrote the observer outcome to Sibyl, and wrote and read an ERC-8004 feedback record.
+The live delivery path passed on 2026-09-09. Standing started the seller worker with a separate ACP wallet, sent the condition key together with the configured publisher URL and value type, and required an unsatisfied acceptance result before hiring. The seller published its own EAS observation and returned the UID through ACP. The Python command read the chain record, evaluated acceptance, wrote the observer outcome to Sibyl, and wrote and read an ERC-8004 feedback record. The subsequent implementation now carries explicit provenance and freshness checks and supports a remote Provider mode for future independent observations.
 
 The final acceptance result was `CONTESTED`, as required by the current policy: the live loop still has no vendor-published observation, only one observer, and no human acceptance flag. The observer now has the required three-reading history. That is a policy outcome, not a delivery or chain-integrity failure.
 

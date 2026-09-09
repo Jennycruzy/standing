@@ -4,6 +4,8 @@
     "independent_observers": 2,
     "min_observer_history": 3,
     "max_observer_contradictions": 0,
-    "manual_approval_required": true
+    "manual_approval_required": true,
+    "require_independence_provenance": true,
+    "max_observation_age_seconds": 86400
   }
 }

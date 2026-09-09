@@ -10,6 +10,7 @@ from typing import Any, Mapping, Protocol
 from scripts.acp_bridge import run_acp_job
 
 from .acceptance import AcceptanceResult
+from .provenance import ObservationProvenance, ProvenanceError
 
 
 class AcpVerifierError(RuntimeError):
@@ -81,8 +82,10 @@ class VerifierObservation:
     observer_address: str
     effective_from: int
     note: str
+    disclosure: str
     job_id: str
     observation_transaction: str | None
+    provenance: ObservationProvenance
 
     def as_acceptance_record(self) -> dict[str, Any]:
         return {
@@ -94,8 +97,10 @@ class VerifierObservation:
             "observer_address": self.observer_address,
             "effective_from": self.effective_from,
             "note": self.note,
+            "disclosure": self.disclosure,
             "acp_job_id": self.job_id,
             "observation_transaction": self.observation_transaction,
+            "provenance": self.provenance.as_dict(),
         }
 
 
@@ -142,6 +147,8 @@ class AcpVerifierClient:
         source_url: str | None = None,
         value_type: str | None = None,
         job_id: str | None = None,
+        start_verifier: bool | None = None,
+        offering_name: str | None = None,
     ) -> VerifierObservation:
         """Post one fixed-shape ACP job and require a typed delivery."""
 
@@ -157,6 +164,13 @@ class AcpVerifierClient:
             raise AcpVerifierError("configured job budget exceeds the per-job cap")
         if spent + self.config.budget_usdc > self.config.daily_spend_usdc:
             raise AcpVerifierError("daily ACP spend cap would be exceeded")
+        if start_verifier is not None and not isinstance(start_verifier, bool):
+            raise AcpVerifierError("start_verifier must be true or false when supplied")
+        selected_offering = (
+            self.config.offering_name
+            if offering_name is None
+            else _required_string(offering_name, "offering_name")
+        )
         requirement: dict[str, Any] = {"conditionKey": key}
         if source_url is not None or value_type is not None:
             if source_url is None or value_type is None:
@@ -168,13 +182,13 @@ class AcpVerifierClient:
             requirement.update({"sourceUrl": source_url, "valueType": value_type})
         request = {
             "chainId": self.config.chain_id,
-            "offeringName": self.config.offering_name,
+            "offeringName": selected_offering,
             "providerAddress": observer,
             "requirement": requirement,
             "budgetUsdc": self.config.budget_usdc,
             "completionReason": self.config.completion_reason,
             "timeoutMs": int(self.config.timeout_seconds * 1000),
-            "startVerifier": self.config.start_verifier,
+            "startVerifier": self.config.start_verifier if start_verifier is None else start_verifier,
             "verifierStartupTimeoutMs": int(self.config.verifier_startup_timeout_seconds * 1000),
         }
         if resume_job_id is not None:
@@ -238,6 +252,10 @@ def parse_verifier_delivery(
     url = _required_string(delivery.get("source_url"), "verifier source_url")
     if not url.startswith(("https://", "http://")):
         raise AcpVerifierError("verifier source_url must be HTTP or HTTPS")
+    note = _required_string(delivery.get("note"), "verifier note")
+    disclosure = _required_string(delivery.get("disclosure"), "verifier disclosure")
+    if disclosure not in note:
+        raise AcpVerifierError("verifier disclosure is not present in the signed EAS note")
     return VerifierObservation(
         condition_key=key,
         value=value,
@@ -246,10 +264,19 @@ def parse_verifier_delivery(
         observation_uid=_uid(delivery.get("observation_uid"), "verifier observation_uid"),
         observer_address=address,
         effective_from=_nonnegative_int(delivery.get("effective_from"), "verifier effective_from"),
-        note=_required_string(delivery.get("note"), "verifier note"),
+        note=note,
+        disclosure=disclosure,
         job_id=job_id,
         observation_transaction=_optional_uid(delivery.get("observation_transaction")),
+        provenance=_parse_provenance(delivery.get("provenance")),
     )
+
+
+def _parse_provenance(value: Any) -> ObservationProvenance:
+    try:
+        return ObservationProvenance.from_mapping(value, label="verifier provenance")
+    except ProvenanceError as error:
+        raise AcpVerifierError(str(error)) from error
 
 
 def _required_string(value: Any, label: str) -> str:

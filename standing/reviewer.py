@@ -156,6 +156,8 @@ class ReviewerTools:
         *,
         manual_approval: bool,
         policy: AcceptancePolicy,
+        source_binding: Mapping[str, Any] | None = None,
+        now_unix: int | None = None,
     ) -> AcceptanceResult:
         """Apply the policy using observer records read from memory."""
 
@@ -181,6 +183,8 @@ class ReviewerTools:
             observer_records,
             manual_approval=manual_approval,
             policy=policy,
+            source_binding=source_binding,
+            now_unix=now_unix,
         )
 
     def hire_verifier(
@@ -194,6 +198,8 @@ class ReviewerTools:
         source_url: str | None = None,
         value_type: str | None = None,
         job_id: str | None = None,
+        start_verifier: bool | None = None,
+        offering_name: str | None = None,
     ) -> VerifierObservation:
         """Hire the selected observer through ACP after policy failure."""
 
@@ -205,6 +211,8 @@ class ReviewerTools:
             source_url=source_url,
             value_type=value_type,
             job_id=job_id,
+            start_verifier=start_verifier,
+            offering_name=offering_name,
         )
 
     def record_observer_outcome(self, address: str, *, confirmed: bool) -> ObserverHistory:

@@ -9,6 +9,11 @@
     "completion_reason": "condition verification delivered",
     "timeout_seconds": 900,
     "start_verifier": true,
-    "verifier_startup_timeout_seconds": 180
+    "verifier_startup_timeout_seconds": 180,
+    "observer_provenance": {
+      "operator_id": "standing-owner",
+      "source_id": "github.com/Jennycruzy/standing",
+      "extractor_id": "standing.verifier.sandbox_fixed.v1"
+    }
   }
 }

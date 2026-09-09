@@ -4,8 +4,14 @@
       "mode": "sandbox_fixed",
       "value": "90",
       "source_url": "https://github.com/Jennycruzy/standing",
-      "note": "Sandbox payload is fictional and does not describe a vendor.",
-      "value_type": "number"
+      "note": "CONTROLLED DEMO DATA — owner-controlled GitHub source; fictional value; not vendor evidence.",
+      "value_type": "number",
+      "disclosure": "CONTROLLED DEMO DATA",
+      "source_binding": {
+        "allowed_hosts": ["github.com"],
+        "canonical_url": "https://github.com/Jennycruzy/standing",
+        "publisher_id": "standing-owner"
+      }
     }
   }
 }

@@ -43,6 +43,11 @@ class ReviewerAcceptanceTests(unittest.TestCase):
                 "source_type": "verifier",
                 "observer_address": "0x111",
                 "observation_uid": "0xone",
+                "provenance": {
+                    "operator_id": "operator:one",
+                    "source_id": "source:one",
+                    "extractor_id": "extractor:one",
+                },
             },
             {
                 "condition_key": "vendor.acme.retention_days",
@@ -50,6 +55,11 @@ class ReviewerAcceptanceTests(unittest.TestCase):
                 "source_type": "verifier",
                 "observer_address": "0x222",
                 "observation_uid": "0xtwo",
+                "provenance": {
+                    "operator_id": "operator:two",
+                    "source_id": "source:two",
+                    "extractor_id": "extractor:two",
+                },
             },
         ]
 

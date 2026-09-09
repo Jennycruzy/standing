@@ -24,6 +24,8 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(self.policy.min_observer_history, 3)
         self.assertEqual(self.policy.max_observer_contradictions, 0)
         self.assertTrue(self.policy.manual_approval_required)
+        self.assertTrue(self.policy.require_independence_provenance)
+        self.assertEqual(self.policy.max_observation_age_seconds, 86400)
 
     def test_two_clean_observers_and_vendor_source_are_accepted(self) -> None:
         observations = self._observations(365)
@@ -40,6 +42,88 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(result.accepted_value, 365)
         self.assertEqual(result.independent_observer_addresses, ("0x111", "0x222"))
         self.assertEqual(result.observation_uids, ("0xone", "0xprimary", "0xtwo"))
+
+    def test_source_binding_requires_the_canonical_vendor_and_trusted_host(self) -> None:
+        observations = self._observations(365)
+        observations[0] = {
+            **observations[0],
+            "source_url": "https://vendor.example.evil/retention",
+        }
+
+        result = check_acceptance(
+            "vendor.acme.retention_days",
+            observations,
+            self._records(),
+            manual_approval=True,
+            policy=self.policy,
+            source_binding={
+                "allowed_hosts": ["vendor.example"],
+                "canonical_url": "https://vendor.example/retention",
+                "publisher_id": "publisher:acme",
+            },
+        )
+
+        self.assertEqual(result.status, AcceptanceStatus.CONTESTED)
+        self.assertFalse(result.vendor_primary_present)
+        self.assertTrue(any("canonical trusted source" in reason for reason in result.reasons))
+
+    def test_shared_operator_source_or_extractor_is_not_independent(self) -> None:
+        observations = self._observations(365)
+        observations[-1] = {
+            **observations[-1],
+            "provenance": {
+                "operator_id": "operator:one",
+                "source_id": "source:one",
+                "extractor_id": "extractor:one",
+            },
+        }
+
+        result = check_acceptance(
+            "vendor.acme.retention_days",
+            observations,
+            self._records(),
+            manual_approval=True,
+            policy=self.policy,
+        )
+
+        self.assertEqual(result.status, AcceptanceStatus.CONTESTED)
+        self.assertTrue(any("share an operator identity" in reason for reason in result.reasons))
+        self.assertTrue(any("share a source identity" in reason for reason in result.reasons))
+        self.assertTrue(any("share an extractor identity" in reason for reason in result.reasons))
+
+    def test_missing_independence_provenance_is_explicitly_contested(self) -> None:
+        observations = self._observations(365)
+        observations[1] = {key: value for key, value in observations[1].items() if key != "provenance"}
+
+        result = check_acceptance(
+            "vendor.acme.retention_days",
+            observations,
+            self._records(),
+            manual_approval=True,
+            policy=self.policy,
+        )
+
+        self.assertEqual(result.status, AcceptanceStatus.CONTESTED)
+        self.assertTrue(any("missing operator" in reason for reason in result.reasons))
+
+    def test_stale_evidence_requires_revalidation(self) -> None:
+        observations = self._observations(365)
+        for observation in observations:
+            observation["effective_from"] = 100
+
+        result = check_acceptance(
+            "vendor.acme.retention_days",
+            observations,
+            self._records(),
+            manual_approval=True,
+            policy=self.policy,
+            now_unix=100 + self.policy.max_observation_age_seconds + 1,
+        )
+
+        self.assertEqual(result.status, AcceptanceStatus.CONTESTED)
+        self.assertTrue(result.freshness_checked)
+        self.assertEqual(len(result.stale_observation_uids), 3)
+        self.assertTrue(any("stale" in reason for reason in result.reasons))
 
     def test_disagreement_is_contested_even_with_clean_histories(self) -> None:
         observations = self._observations(365)
@@ -135,6 +219,8 @@ class AcceptanceTests(unittest.TestCase):
                 "value": value,
                 "source_type": "vendor_primary",
                 "observation_uid": "0xprimary",
+                "source_url": "https://vendor.example/retention",
+                "publisher_id": "publisher:acme",
             },
             {
                 "condition_key": "vendor.acme.retention_days",
@@ -142,6 +228,12 @@ class AcceptanceTests(unittest.TestCase):
                 "source_type": "verifier",
                 "observer_address": "0x111",
                 "observation_uid": "0xone",
+                "source_url": "https://vendor.example/retention",
+                "provenance": {
+                    "operator_id": "operator:one",
+                    "source_id": "source:one",
+                    "extractor_id": "extractor:one",
+                },
             },
             {
                 "condition_key": "vendor.acme.retention_days",
@@ -149,6 +241,12 @@ class AcceptanceTests(unittest.TestCase):
                 "source_type": "verifier",
                 "observer_address": "0x222",
                 "observation_uid": "0xtwo",
+                "source_url": "https://vendor.example/retention",
+                "provenance": {
+                    "operator_id": "operator:two",
+                    "source_id": "source:two",
+                    "extractor_id": "extractor:two",
+                },
             },
         ]
 

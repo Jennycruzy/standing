@@ -2,6 +2,8 @@
 
 Standing remembers why a code decision was made and checks whether the facts it depended on still hold.
 
+> **CONTROLLED DEMO DATA:** the current live verifier condition is an owner-controlled GitHub sandbox with a fictional value. It demonstrates the evidence path, but it is not vendor evidence and is not presented as an independent source.
+
 ## Memory
 
 Sibyl Memory is the local store behind Standing. It is a database file on the machine, not a separate service.
@@ -44,11 +46,13 @@ The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/review
 
 The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
 
-The complete offline suite contains 50 Python tests and 4 TypeScript adapter tests. Both suites pass after the ACP resume-by-job-ID and evidence-ledger changes.
+The complete offline suite contains 64 Python tests and 4 TypeScript adapter tests. Both suites pass after the ACP resume-by-job-ID, evidence-ledger, provenance, freshness, and external-Provider changes.
 
 ## Acceptance and observer history
 
 The pure acceptance policy is [`standing/acceptance.py`](standing/acceptance.py#L176). Its thresholds live in [`config/policy.json`](config/policy.json), not in source. The configured policy requires a vendor-published observation, two independent observers with at least three confirmed readings and no contradictions, and human approval; otherwise the result is `CONTESTED`.
+
+Observer independence is provenance-aware: strict mode requires distinct operator, source, and extractor identities for the observer addresses. Observation freshness is also policy-controlled; stale, missing, or future-dated evidence forces revalidation. Release gates in [`standing/release.py`](standing/release.py) keep real vendor cases and real evaluation ground truth separate from the controlled demo.
 
 Observer selection reads the reliability records from memory and favors fewer contradictions, then more confirmed readings. A checked outcome updates the local record through [standing/reviewer.py](standing/reviewer.py#L137). The ERC-8004 feedback writer is implemented in [standing/reputation.py](standing/reputation.py) and is called by the live-loop command below; its live transaction and readback are recorded in [the verifier-loop audit](docs/audits/verifier-loop.md).
 
@@ -73,6 +77,19 @@ The ACP verifier client is [standing/acp.py](standing/acp.py#L105). It hires onl
 ## ACP verifier loop
 
 The buyer is Standing and the seller is a separately keyed ACP agent using the existing published_condition_check offering. The seller reads the configured sandbox page, publishes its own EAS observation on Base, and returns that observation through ACP. The end-to-end command is [scripts/run_verifier_loop.py](scripts/run_verifier_loop.py); the seller worker is [acp-adapter/src/verifier.ts](acp-adapter/src/verifier.ts).
+
+Each verifier delivery includes a visible disclosure plus operator, source, and extractor provenance. The source binding for the controlled demo is configured beside the condition in [config/verifier.json](config/verifier.json); a real release must replace it with a hand-verified vendor source.
+
+An external marketplace Provider can be targeted without local seller credentials by supplying its public address and offering name. The adapter then sends the same structured requirement and waits for the remote Provider's typed EAS delivery:
+
+```sh
+.preflight-venv/bin/python scripts/run_verifier_loop.py \\
+  --provider-address 0xProviderAddress \\
+  --offering-name published_condition_check \\
+  --spent-today-usdc 0.03
+```
+
+The remote Provider must already support the required condition, Base EAS schema, disclosure, and provenance fields; hiring cannot add those capabilities after the fact.
 
 The paused live attempt created ACP job 77515, reached FUNDED, and expired before delivery; it remains an unsuccessful diagnostic, not product evidence. Fresh capped jobs 77736, 77742, 77743, and 77748 completed through the live Python↔TypeScript bridge. The seller published and returned its own Base EAS observations, the Python loop read them back, accumulated the evidence, updated the Sibyl observer record to 4 confirmed readings with no contradictions, and wrote/read ERC-8004 feedback. The full evidence is in [the verifier-loop audit](docs/audits/verifier-loop.md). Acceptance remains intentionally `CONTESTED` because the configured policy still requires vendor evidence, two independent observers, and human approval. No vendor.* observation has been published.
 

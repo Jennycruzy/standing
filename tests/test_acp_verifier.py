@@ -71,6 +71,8 @@ class AcpVerifierTests(unittest.TestCase):
 
         self.assertEqual(observation.job_id, "76973")
         self.assertEqual(observation.value, 90)
+        self.assertEqual(observation.disclosure, "CONTROLLED DEMO DATA")
+        self.assertEqual(observation.provenance.operator_id, "operator:standing")
         self.assertEqual(calls[0]["providerAddress"], self.observer)
         self.assertEqual(calls[0]["requirement"], {"conditionKey": self.condition_key})
         self.assertNotIn("privateKey", json.dumps(calls[0]))
@@ -148,6 +150,31 @@ class AcpVerifierTests(unittest.TestCase):
 
         self.assertEqual(calls[0]["jobId"], "77716")
 
+    def test_client_can_target_an_external_provider_without_starting_local_seller(self) -> None:
+        calls: list[dict[str, Any]] = []
+
+        def runner(request: dict[str, Any], **_: Any) -> dict[str, Any]:
+            calls.append(request)
+            return self._completed_result()
+
+        client = AcpVerifierClient(
+            adapter_dir=Path(__file__).parents[1] / "acp-adapter",
+            config=self.config,
+            environment={},
+            runner=runner,
+        )
+        client.hire_verifier(
+            self.condition_key,
+            self.observer,
+            acceptance=self.acceptance,
+            spent_today_usdc=0.0,
+            start_verifier=False,
+            offering_name="external_condition_check",
+        )
+
+        self.assertEqual(calls[0]["offeringName"], "external_condition_check")
+        self.assertFalse(calls[0]["startVerifier"])
+
     def test_client_rejects_an_invalid_resume_job_id(self) -> None:
         client = AcpVerifierClient(
             adapter_dir=Path(__file__).parents[1] / "acp-adapter",
@@ -174,7 +201,13 @@ class AcpVerifierTests(unittest.TestCase):
             "observation_uid": "0x" + "ab" * 32,
             "observer_address": self.observer,
             "effective_from": 1_000,
-            "note": "The published page reports 90 days.",
+            "note": "CONTROLLED DEMO DATA — The published page reports 90 days.",
+            "disclosure": "CONTROLLED DEMO DATA",
+            "provenance": {
+                "operator_id": "operator:standing",
+                "source_id": "source:vendor.example",
+                "extractor_id": "extractor:standing.v1",
+            },
         }
         return {
             "jobId": "76973",

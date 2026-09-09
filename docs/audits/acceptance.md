@@ -8,20 +8,26 @@ The acceptance policy is a pure function. It reads observation records and obser
 
 The policy values are loaded at runtime from [`config/policy.json`](../../config/policy.json). Observer selection is deterministic: fewer contradictions first, then more confirmed readings, then more total readings, then address order. The reviewer reads and updates those records through the real Sibyl client.
 
+Strict acceptance now requires each observer reading to carry operator, source, and extractor provenance. The condition source binding also constrains observation URLs and, for vendor-primary evidence, the canonical URL and publisher identity. Evidence older than the configured freshness window cannot be reused.
+
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 50 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 64 tests passed.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/policy.json` — valid JSON.
 - `git diff --check` — no whitespace errors.
 - [`tests/test_acceptance.py`](../../tests/test_acceptance.py) covers policy loading, acceptance, disagreement, missing history, selection, and outcome counting.
 - [`tests/test_reviewer_acceptance.py`](../../tests/test_reviewer_acceptance.py) proves that observer records are read and updated through real local Sibyl storage.
+- [`tests/test_provenance.py`](../../tests/test_provenance.py) covers structured provenance and lookalike-domain rejection.
+- [`tests/test_freshness.py`](../../tests/test_freshness.py) covers stale, missing, and future-dated evidence.
 
 ## Gaps recorded
 
 - Observer outcomes update the local reliability record through the reviewer. The matching ERC-8004 verifier-outcome writer is implemented in [scripts/run_verifier_loop.py](../../scripts/run_verifier_loop.py), and its successful live signal is recorded in [the verifier-loop audit](verifier-loop.md).
 - Checked typed observations from the EAS/ACP loop are persisted in the evidence ledger and are available to later acceptance evaluations. The live bootstrap result remains `CONTESTED` until the configured independent evidence and approval requirements are met.
 - The current configured rule intentionally requires two independent observer addresses in addition to the vendor-published observation. That is a configuration choice and can be changed only in `config/policy.json`.
+- The current live records predate strict provenance fields and remain same-owner controlled-demo evidence; they are intentionally not upgraded into independent or vendor-primary evidence.
+- A second observer is only independent when its operator, source, and extractor identities are distinct. The live loop now supports a remote Provider address; a second wallet or parser under the same operator remains contested.
 
 ## Exit statement
 

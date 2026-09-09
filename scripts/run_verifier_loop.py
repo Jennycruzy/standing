@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -45,6 +46,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--condition", default="sandbox.demo.retention_days")
     parser.add_argument("--spent-today-usdc", type=float, default=0.0)
+    parser.add_argument(
+        "--provider-address",
+        help="hire this external Provider address instead of the configured local seller",
+    )
+    parser.add_argument(
+        "--offering-name",
+        help="use this Provider offering instead of the configured offering",
+    )
     parser.add_argument("--bootstrap", action="store_true", help="use the configured seller before it has three readings")
     parser.add_argument("--job-id", help="resume an existing active ACP job instead of creating a new one")
     parser.add_argument(
@@ -55,8 +64,15 @@ def main() -> None:
     args = parser.parse_args()
 
     env = load_environment_file(ENV_PATH)
-    seller_address = _required_env(env, "SELLER_AGENT_WALLET_ADDRESS")
+    external_provider = args.provider_address is not None
+    seller_address = (
+        _required_address(args.provider_address, "provider_address")
+        if external_provider
+        else _required_env(env, "SELLER_AGENT_WALLET_ADDRESS")
+    )
     verifier_condition = _verifier_condition(args.condition)
+    source_binding = _object(verifier_condition.get("source_binding"), "verifier source_binding")
+    now_unix = int(time.time())
     acp_config = load_acp_config(ACP_CONFIG_PATH)
     policy = load_acceptance_policy(POLICY_CONFIG_PATH)
     store = create_memory_store(path=ROOT / ".standing-memory.db", tenant_id="standing-demo")
@@ -69,8 +85,14 @@ def main() -> None:
             prior_observations,
             manual_approval=args.manual_approval,
             policy=policy,
+            source_binding=source_binding,
+            now_unix=now_unix,
         )
-        selected_address = _select_or_bootstrap(tools, seller_address, policy, args.bootstrap)
+        selected_address = (
+            seller_address
+            if external_provider
+            else _select_or_bootstrap(tools, seller_address, policy, args.bootstrap)
+        )
         client = AcpVerifierClient(
             adapter_dir=ROOT / "acp-adapter",
             config=acp_config,
@@ -85,6 +107,8 @@ def main() -> None:
             source_url=_required_string(verifier_condition.get("source_url"), "verifier source_url"),
             value_type=_required_string(verifier_condition.get("value_type"), "verifier value_type"),
             job_id=args.job_id,
+            start_verifier=not external_provider,
+            offering_name=args.offering_name,
         )
         chain_observation = _verify_eas_observation(observation, args.condition)
         tools.record_observation(observation.as_acceptance_record())
@@ -94,6 +118,8 @@ def main() -> None:
             accumulated_observations,
             manual_approval=args.manual_approval,
             policy=policy,
+            source_binding=source_binding,
+            now_unix=now_unix,
         )
         reputation = _write_reputation_signal(
             observation=observation.as_acceptance_record(),
@@ -172,6 +198,8 @@ def _verify_eas_observation(observation: Any, condition_key: str) -> dict[str, A
         "transactionHash": observation.observation_transaction,
         "transactionUrl": _transaction_url(observation.observation_transaction),
         "sourceUrl": decoded["source_url"],
+        "disclosure": expected["disclosure"],
+        "provenance": expected["provenance"],
         "blockNumber": record.block_number,
         "refUID": decoded["ref_uid"],
     }
@@ -296,6 +324,17 @@ def _required_env(env: Mapping[str, str], key: str) -> str:
     if not value:
         raise RuntimeError(f"{key} is missing")
     return value
+
+
+def _required_address(value: Any, label: str) -> str:
+    address = _required_string(value, label)
+    if len(address) != 42 or not address.startswith("0x"):
+        raise RuntimeError(f"{label} must be a 20-byte EVM address")
+    try:
+        bytes.fromhex(address[2:])
+    except ValueError as error:
+        raise RuntimeError(f"{label} must be a 20-byte EVM address") from error
+    return address
 
 
 def _required_string(value: Any, label: str) -> str:

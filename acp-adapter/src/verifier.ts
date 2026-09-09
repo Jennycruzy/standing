@@ -28,7 +28,14 @@ type ConditionSpec = {
   value: string | number | boolean;
   source_url: string;
   note: string;
+  disclosure: string;
   value_type: "number" | "boolean" | "date" | "set";
+};
+
+type ObserverProvenance = {
+  operator_id: string;
+  source_id: string;
+  extractor_id: string;
 };
 
 type Delivery = {
@@ -41,6 +48,8 @@ type Delivery = {
   observer_address: Address;
   effective_from: number;
   note: string;
+  disclosure: string;
+  provenance: ObserverProvenance;
 };
 
 type RuntimeConfig = {
@@ -50,6 +59,7 @@ type RuntimeConfig = {
   sourceType: string;
   sourceTypeCode: number;
   budgetUsdc: number;
+  observerProvenance: ObserverProvenance;
   conditions: Record<string, ConditionSpec>;
 };
 
@@ -107,6 +117,9 @@ async function handleEntry(
       const requirement = parseRequirement(entry.content);
       const spec = config.conditions[requirement.conditionKey];
       if (spec === undefined) return;
+      if (!spec.note.includes(spec.disclosure)) {
+        throw new Error("verifier disclosure is not present in the configured EAS note");
+      }
       if (requirement.sourceUrl !== spec.source_url || requirement.valueType !== spec.value_type) {
         throw new Error("ACP requirement does not match the configured verifier source");
       }
@@ -156,6 +169,9 @@ function recoverActiveJob(
     const requirement = parseRequirement(entry.content);
     const spec = config.conditions[requirement.conditionKey];
     if (spec === undefined) continue;
+    if (!spec.note.includes(spec.disclosure)) {
+      throw new Error("verifier disclosure is not present in the configured EAS note");
+    }
     if (requirement.sourceUrl !== spec.source_url || requirement.valueType !== spec.value_type) {
       throw new Error("ACP requirement does not match the configured verifier source");
     }
@@ -241,6 +257,8 @@ async function publishObservation(
     observer_address: observerAddress,
     effective_from: effectiveFrom,
     note: job.spec.note,
+    disclosure: job.spec.disclosure,
+    provenance: config.observerProvenance,
   };
 }
 
@@ -259,6 +277,12 @@ function loadRuntimeConfig(): RuntimeConfig {
   const sourceTypes = objectValue(eas.source_types, "eas.source_types");
   const conditions = objectValue(verifier.conditions, "verifier.conditions") as Record<string, ConditionSpec>;
   const sourceType = requiredString(acpSection.source_type, "acp.source_type");
+  const provenanceRaw = objectValue(acpSection.observer_provenance, "acp.observer_provenance");
+  const observerProvenance: ObserverProvenance = {
+    operator_id: requiredString(provenanceRaw.operator_id, "acp.observer_provenance.operator_id"),
+    source_id: requiredString(provenanceRaw.source_id, "acp.observer_provenance.source_id"),
+    extractor_id: requiredString(provenanceRaw.extractor_id, "acp.observer_provenance.extractor_id"),
+  };
   const sourceTypeCode = Object.entries(sourceTypes).find(([, value]) => value === sourceType)?.[0];
   if (sourceTypeCode === undefined || !/^\d+$/.test(sourceTypeCode)) {
     throw new Error(`source type ${sourceType} is not configured`);
@@ -274,6 +298,7 @@ function loadRuntimeConfig(): RuntimeConfig {
     sourceType,
     sourceTypeCode: Number(sourceTypeCode),
     budgetUsdc: positiveNumber(acpSection.budget_usdc, "acp.budget_usdc"),
+    observerProvenance,
     conditions,
   };
 }

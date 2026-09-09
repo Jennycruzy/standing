@@ -8,6 +8,9 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
+from .provenance import ObservationProvenance, ProvenanceError, SourceBinding
+from .freshness import check_freshness
+
 
 class AcceptanceStatus(StrEnum):
     """The two outcomes of the observation acceptance policy."""
@@ -29,6 +32,8 @@ class AcceptancePolicy:
     min_observer_history: int
     max_observer_contradictions: int
     manual_approval_required: bool
+    require_independence_provenance: bool = False
+    max_observation_age_seconds: int | None = None
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> AcceptancePolicy:
@@ -41,6 +46,14 @@ class AcceptancePolicy:
             ),
             manual_approval_required=_required_bool(
                 raw.get("manual_approval_required"), "manual_approval_required"
+            ),
+            require_independence_provenance=_optional_bool(
+                raw.get("require_independence_provenance", False),
+                "require_independence_provenance",
+            ),
+            max_observation_age_seconds=_optional_positive_int(
+                raw.get("max_observation_age_seconds"),
+                "max_observation_age_seconds",
             ),
         )
 
@@ -146,6 +159,11 @@ class AcceptanceResult:
     manual_approval: bool
     observation_uids: tuple[str, ...]
     reasons: tuple[str, ...]
+    independent_operator_ids: tuple[str, ...] = ()
+    independent_source_ids: tuple[str, ...] = ()
+    independent_extractor_ids: tuple[str, ...] = ()
+    freshness_checked: bool = False
+    stale_observation_uids: tuple[str, ...] = ()
 
     @property
     def accepted(self) -> bool:
@@ -162,6 +180,11 @@ class AcceptanceResult:
             "manual_approval": self.manual_approval,
             "observation_uids": list(self.observation_uids),
             "reasons": list(self.reasons),
+            "independent_operator_ids": list(self.independent_operator_ids),
+            "independent_source_ids": list(self.independent_source_ids),
+            "independent_extractor_ids": list(self.independent_extractor_ids),
+            "freshness_checked": self.freshness_checked,
+            "stale_observation_uids": list(self.stale_observation_uids),
         }
 
 
@@ -171,6 +194,10 @@ class _Observation:
     source_type: str
     observer_address: str | None
     observation_uid: str
+    source_url: str | None
+    publisher_id: str | None
+    provenance: ObservationProvenance | None
+    effective_from: int | None
 
 
 def check_acceptance(
@@ -180,6 +207,8 @@ def check_acceptance(
     *,
     manual_approval: bool,
     policy: AcceptancePolicy,
+    source_binding: Mapping[str, Any] | None = None,
+    now_unix: int | None = None,
 ) -> AcceptanceResult:
     """Apply the configured policy without I/O or a model call."""
 
@@ -187,10 +216,46 @@ def check_acceptance(
     if not isinstance(manual_approval, bool):
         raise ValueError("manual_approval must be true or false")
     normalized = tuple(_observation(key, raw) for raw in observations)
+    binding = SourceBinding.from_mapping(source_binding) if source_binding is not None else None
     reasons: list[str] = []
+    freshness_checked = policy.max_observation_age_seconds is not None and now_unix is not None
+    stale_observation_uids: tuple[str, ...] = ()
+    if freshness_checked:
+        freshness = check_freshness(
+            [
+                {
+                    "observation_uid": item.observation_uid,
+                    "effective_from": item.effective_from,
+                }
+                for item in normalized
+            ],
+            now_unix=now_unix if now_unix is not None else 0,
+            max_age_seconds=policy.max_observation_age_seconds
+            if policy.max_observation_age_seconds is not None
+            else 1,
+        )
+        reasons.extend(freshness.reasons)
+        stale_observation_uids = tuple(
+            sorted(
+                set(freshness.stale_observation_uids)
+                | set(freshness.missing_timestamp_uids)
+                | set(freshness.future_timestamp_uids)
+            )
+        )
     vendor_primary = tuple(
         item for item in normalized if item.source_type == policy.vendor_primary_source_type
     )
+    trusted_vendor_primary = tuple(
+        item
+        for item in vendor_primary
+        if _trusted_vendor_observation(item, binding, reasons)
+    )
+    if binding is not None:
+        for item in normalized:
+            if item.source_url is None or not binding.allows(item.source_url):
+                reasons.append(
+                    f"Observation {item.observation_uid} is outside the trusted source boundary."
+                )
     independent_addresses = tuple(
         sorted(
             {
@@ -202,13 +267,67 @@ def check_acceptance(
         )
     )
 
-    if not vendor_primary:
+    provenance_by_address: dict[str, set[ObservationProvenance]] = {}
+    for item in normalized:
+        if item.source_type == policy.vendor_primary_source_type:
+            continue
+        address = item.observer_address
+        if address is None or item.provenance is None:
+            continue
+        provenance_by_address.setdefault(address, set()).add(item.provenance)
+
+    complete_provenance = [
+        address
+        for address in independent_addresses
+        if len(provenance_by_address.get(address, set())) == 1
+    ]
+    independent_provenance = tuple(
+        sorted(
+            provenance_by_address[address],
+            key=lambda item: (item.operator_id, item.source_id, item.extractor_id),
+        )[0]
+        for address in complete_provenance
+    )
+    operator_ids = tuple(sorted({item.operator_id for item in independent_provenance}))
+    source_ids = tuple(sorted({item.source_id for item in independent_provenance}))
+    extractor_ids = tuple(sorted({item.extractor_id for item in independent_provenance}))
+
+    if not trusted_vendor_primary:
         reasons.append("No vendor-published observation is present.")
     if len(independent_addresses) < policy.independent_observers:
         reasons.append(
             f"Only {len(independent_addresses)} independent observer(s) are present; "
             f"the policy requires {policy.independent_observers}."
         )
+    if policy.require_independence_provenance:
+        missing = [
+            address
+            for address in independent_addresses
+            if len(provenance_by_address.get(address, set())) == 0
+        ]
+        if missing:
+            reasons.append(
+                "Independent observers are missing operator, source, or extractor provenance: "
+                + ", ".join(missing)
+                + "."
+            )
+        inconsistent = [
+            address
+            for address in independent_addresses
+            if len(provenance_by_address.get(address, set())) > 1
+        ]
+        if inconsistent:
+            reasons.append(
+                "An observer changed provenance across readings: "
+                + ", ".join(inconsistent)
+                + "."
+            )
+        if len(operator_ids) != len(complete_provenance):
+            reasons.append("Independent observers share an operator identity.")
+        if len(source_ids) != len(complete_provenance):
+            reasons.append("Independent observers share a source identity.")
+        if len(extractor_ids) != len(complete_provenance):
+            reasons.append("Independent observers share an extractor identity.")
     if policy.manual_approval_required and not manual_approval:
         reasons.append("A human approval is required before this value can be accepted.")
 
@@ -236,11 +355,16 @@ def check_acceptance(
         condition_key=key,
         status=AcceptanceStatus.ACCEPTED if accepted else AcceptanceStatus.CONTESTED,
         accepted_value=normalized[0].value if accepted else None,
-        vendor_primary_present=bool(vendor_primary),
+        vendor_primary_present=bool(trusted_vendor_primary),
         independent_observer_addresses=independent_addresses,
         manual_approval=manual_approval,
         observation_uids=tuple(sorted(item.observation_uid for item in normalized)),
         reasons=tuple(reasons),
+        independent_operator_ids=operator_ids,
+        independent_source_ids=source_ids,
+        independent_extractor_ids=extractor_ids,
+        freshness_checked=freshness_checked,
+        stale_observation_uids=stale_observation_uids,
     )
 
 
@@ -257,7 +381,65 @@ def _observation(condition_key: str, raw: Mapping[str, Any]) -> _Observation:
     if raw_address is not None and (not isinstance(raw_address, str) or not raw_address.strip()):
         raise ValueError("observer_address must be a non-empty string when supplied")
     observer_address = raw_address.strip() if isinstance(raw_address, str) else None
-    return _Observation(value, source_type, observer_address, uid)
+    raw_source_url = raw.get("source_url")
+    source_url = None
+    if raw_source_url is not None:
+        if not isinstance(raw_source_url, str) or not raw_source_url.strip():
+            raise ValueError("source_url must be a non-empty string when supplied")
+        source_url = raw_source_url.strip()
+    raw_publisher = raw.get("publisher_id")
+    publisher_id = None
+    if raw_publisher is not None:
+        if not isinstance(raw_publisher, str) or not raw_publisher.strip():
+            raise ValueError("publisher_id must be a non-empty string when supplied")
+        publisher_id = raw_publisher.strip()
+    raw_provenance = raw.get("provenance")
+    provenance = None
+    if raw_provenance is not None:
+        try:
+            provenance = ObservationProvenance.from_mapping(raw_provenance)
+        except ProvenanceError as error:
+            raise ValueError(str(error)) from error
+    raw_effective_from = raw.get("effective_from")
+    effective_from = None
+    if raw_effective_from is not None:
+        if (
+            not isinstance(raw_effective_from, int)
+            or isinstance(raw_effective_from, bool)
+            or raw_effective_from < 0
+        ):
+            raise ValueError("effective_from must be a non-negative integer when supplied")
+        effective_from = raw_effective_from
+    return _Observation(
+        value,
+        source_type,
+        observer_address,
+        uid,
+        source_url,
+        publisher_id,
+        provenance,
+        effective_from,
+    )
+
+
+def _trusted_vendor_observation(
+    observation: _Observation,
+    binding: SourceBinding | None,
+    reasons: list[str],
+) -> bool:
+    if binding is None:
+        return True
+    if observation.source_url is None or not binding.allows(observation.source_url, require_canonical=True):
+        reasons.append(
+            f"Vendor observation {observation.observation_uid} is not from the canonical trusted source."
+        )
+        return False
+    if binding.publisher_id is not None and observation.publisher_id != binding.publisher_id:
+        reasons.append(
+            f"Vendor observation {observation.observation_uid} is not attributed to the trusted publisher."
+        )
+        return False
+    return True
 
 
 def _required_string(value: Any, label: str) -> str:
@@ -269,6 +451,20 @@ def _required_string(value: Any, label: str) -> str:
 def _required_bool(value: Any, label: str) -> bool:
     if not isinstance(value, bool):
         raise ValueError(f"{label} must be true or false")
+    return value
+
+
+def _optional_bool(value: Any, label: str) -> bool:
+    if not isinstance(value, bool):
+        raise ValueError(f"{label} must be true or false")
+    return value
+
+
+def _optional_positive_int(value: Any, label: str) -> int | None:
+    if value is None:
+        return None
+    if not isinstance(value, int) or isinstance(value, bool) or value <= 0:
+        raise ValueError(f"{label} must be a positive integer when supplied")
     return value
 
 
