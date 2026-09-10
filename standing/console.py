@@ -27,10 +27,10 @@ def render_console_html(
     revision_text = "No revision is active at this time." if revision is None else _revision_text(revision)
     standing = snapshot.standing
     state = "NO STANDING RESULT" if standing is None or standing.state is None else standing.state
-    action = "—" if standing is None or standing.action is None else standing.action
+    action = "Not recorded" if standing is None or standing.action is None else standing.action
     as_of = "current" if snapshot.as_of is None else str(snapshot.as_of)
     disclosure = (
-        "CONTROLLED SCENARIO — FICTIONAL ACME. Owner-controlled sandbox; fictional value; not vendor evidence."
+        "CONTROLLED SCENARIO: FICTIONAL ACME. Owner-controlled sandbox; fictional value; not vendor evidence."
         if controlled_scenario_disclosed
         else ""
     )
@@ -105,11 +105,11 @@ def _revision_text(revision: Any) -> str:
 
 
 def _event_row(event: StandingTimelineEvent) -> str:
-    state = "—" if event.state is None else event.state
-    action = "—" if event.action is None else event.action
-    explanation = "—" if event.explanation is None else event.explanation
-    revision = "—" if event.revision_id is None else event.revision_id
-    event_type = "—" if event.event_type is None else event.event_type
+    state = "Not recorded" if event.state is None else event.state
+    action = "Not recorded" if event.action is None else event.action
+    explanation = "Not recorded" if event.explanation is None else event.explanation
+    revision = "Not recorded" if event.revision_id is None else event.revision_id
+    event_type = "Not recorded" if event.event_type is None else event.event_type
     return (
         "<tr>"
         f"<td>{escape(str(event.occurred_at))}<br><code>{escape(event.event_id)}</code></td>"

@@ -34,7 +34,7 @@ class ConsoleRenderingTests(unittest.TestCase):
             release_gate=release,
         )
 
-        self.assertIn("CONTROLLED SCENARIO — FICTIONAL ACME", html)
+        self.assertIn("CONTROLLED SCENARIO: FICTIONAL ACME", html)
         self.assertIn('data-as-of="150"', html)
         self.assertIn("EXPIRED", html)
         self.assertIn("vendor-expiry", html)
@@ -49,7 +49,7 @@ class ConsoleRenderingTests(unittest.TestCase):
             release_gate=ReleaseGateResult(True, ()),
         )
 
-        self.assertNotIn("CONTROLLED SCENARIO — FICTIONAL ACME", html)
+        self.assertNotIn("CONTROLLED SCENARIO: FICTIONAL ACME", html)
         self.assertIn("NO ACTIVE REVISION", html)
         self.assertIn("READY", html)
 
