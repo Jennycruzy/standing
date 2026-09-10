@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from standing.dashboard import CONTROLLED_DISCLOSURE, DashboardApp, render_dashboard_html, render_landing_html
+from standing.dashboard import CONTROLLED_DISCLOSURE, DashboardApp, FAVICON_SVG, render_dashboard_html, render_landing_html
 from standing.memory import create_memory_store
 
 
@@ -145,6 +145,11 @@ class DashboardTests(unittest.TestCase):
         for label in ("Code remembers", "Reasoning should too", "Open console", "bitemporal", "Evidence chain"):
             self.assertIn(label, html)
         self.assertIn('href="/console"', html)
+        self.assertIn('href="/favicon.svg"', html)
+
+    def test_frontend_uses_standing_favicon(self) -> None:
+        self.assertIn('<link rel="icon" href="/favicon.svg"', render_dashboard_html(self.app.state()))
+        self.assertIn("#8fbe9a", FAVICON_SVG)
 
     def test_waiver_control_is_preview_only(self) -> None:
         result = self.app.action("waiver")

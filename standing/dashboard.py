@@ -28,6 +28,11 @@ CONTROLLED_DISCLOSURE = (
     "Completed Virtuals ACP → source extraction → Base EAS records are shown separately "
     "as live historical proof."
 )
+FAVICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<rect width="64" height="64" rx="14" fill="#242a26"/>
+<circle cx="32" cy="32" r="20" fill="none" stroke="#8fbe9a" stroke-width="3"/>
+<circle cx="32" cy="32" r="7" fill="#d39a6e"/>
+</svg>"""
 SANDBOX_CONDITION = "sandbox.acme.retention_days"
 SANDBOX_PATH = "src/archive.py"
 SANDBOX_SOURCE_URL = "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/sandbox/acme-retention.json"
@@ -794,6 +799,7 @@ def render_landing_html(payload: Mapping[str, Any], *, page_title: str = "Standi
 <html lang="en">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>{title}</title>
   <style>
     :root {{ color-scheme:light; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#f3f0e8; color:#202521; --bg:#f3f0e8; --paper:#202521; --muted:#656b65; --faint:#8a9089; --line:#d7d3c9; --line-strong:#aaa99f; --sage:#315f43; --sage-strong:#47795a; --copper:#9b5d32; --red:#a7443d; }}
@@ -844,6 +850,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <title>{title}</title>
   <style>
     :root {{
@@ -1130,7 +1137,9 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
         def do_GET(self) -> None:  # noqa: N802
             try:
                 parsed = urlparse(self.path)
-                if parsed.path == "/":
+                if parsed.path == "/favicon.svg":
+                    _respond_svg(self, FAVICON_SVG)
+                elif parsed.path == "/":
                     _respond_html(self, render_landing_html(app.state()))
                 elif parsed.path == "/console":
                     _respond_html(self, render_dashboard_html(app.state()))
@@ -1293,6 +1302,17 @@ def _respond_html(handler: BaseHTTPRequestHandler, html: str) -> None:
     handler.send_header("content-type", "text/html; charset=utf-8")
     handler.send_header("content-length", str(len(encoded)))
     handler.send_header("cache-control", "no-store")
+    _send_security_headers(handler)
+    handler.end_headers()
+    handler.wfile.write(encoded)
+
+
+def _respond_svg(handler: BaseHTTPRequestHandler, svg: str) -> None:
+    encoded = svg.encode("utf-8")
+    handler.send_response(HTTPStatus.OK)
+    handler.send_header("content-type", "image/svg+xml")
+    handler.send_header("content-length", str(len(encoded)))
+    handler.send_header("cache-control", "public, max-age=86400")
     _send_security_headers(handler)
     handler.end_headers()
     handler.wfile.write(encoded)
