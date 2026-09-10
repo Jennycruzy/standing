@@ -1,0 +1,27 @@
+# Standing verification run
+
+- UTC: `2026-09-10T13:45:33Z`
+- Commit: `2681652`
+- Python: `3.12.13`
+- Node: `v20.20.2`
+
+## Checks
+
+| Check | Result |
+| --- | --- |
+| python_tests | `155` |
+| mypy_strict | `PASS` |
+| typescript_tests | `9` |
+| typescript_typecheck | `PASS` |
+| fresh_process_memory | `PASS` |
+| memory_removal | `PASS` |
+| corpus_validation | `PASS` |
+
+## Corpus
+
+- Public repository cases: `3`
+- Human-reviewed public cases: `3`
+- Reviewed vendor-expiry cases: `3`
+- Controlled scenarios: `17`
+
+This artifact records verification output; it does not claim an unrun benchmark score.

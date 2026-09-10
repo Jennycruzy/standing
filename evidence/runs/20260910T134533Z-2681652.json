@@ -1,0 +1,41 @@
+{
+  "checks": {
+    "corpus_validation": "PASS",
+    "fresh_process_memory": "PASS",
+    "memory_removal": "PASS",
+    "mypy_strict": "PASS",
+    "python_tests": 155,
+    "typescript_tests": 9,
+    "typescript_typecheck": "PASS"
+  },
+  "commit": "2681652",
+  "corpus": {
+    "controlled_scenarios": 17,
+    "public_cases": 3,
+    "reviewed_public_cases": 3,
+    "vendor_expiry_cases": 3
+  },
+  "memory_proof": {
+    "command": "memory-proof",
+    "external_fact": {
+      "retention_days": 90,
+      "source_value_before_fixed_change": 365
+    },
+    "memory_off": {
+      "assumption_recovered": null,
+      "decision_found": null,
+      "expiry_detected": false,
+      "protection": "HISTORICAL PROTECTION UNAVAILABLE"
+    },
+    "memory_on": {
+      "assumption_recovered": "retention_days >= 365",
+      "decision_found": "ACME-001",
+      "expiry_detected": true,
+      "protection": "BLOCK"
+    }
+  },
+  "node": "v20.20.2",
+  "python": "3.12.13",
+  "status": "PASSED",
+  "utc_timestamp": "2026-09-10T13:45:33Z"
+}
