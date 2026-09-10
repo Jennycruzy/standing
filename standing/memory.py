@@ -19,7 +19,6 @@ from sibyl_memory_client.exceptions import NotFoundError  # type: ignore[import-
 
 from .approval import ManualApproval
 from .lifecycle import DecisionRevision, Remediation, Waiver
-from scripts.sibyl_archive import connect_database, restore_archived
 from .temporal import TemporalEvidence, TemporalObservation, TemporalObservationError
 
 
@@ -564,6 +563,14 @@ class MemoryStore:
     def restore_decision(self, archive_id: str) -> dict[str, Any]:
         """Restore one archived decision using the documented SDK fallback."""
 
+        try:
+            from scripts.sibyl_archive import connect_database, restore_archived
+        except ModuleNotFoundError as error:
+            if error.name != "scripts":
+                raise
+            raise RuntimeError(
+                "archive restore helpers are not installed; reinstall Standing with its scripts package"
+            ) from error
         archive_key = _required_name(archive_id, "archive_id")
         connection = connect_database(self.path)
         try:
