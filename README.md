@@ -39,6 +39,8 @@ Standing     EXPIRED — BLOCK
 [Open Standing](https://standing-o1sj.onrender.com/) ·
 [Open Console](https://standing-o1sj.onrender.com/console) ·
 [Product walkthrough](docs/WALKTHROUGH.md) ·
+[Product announcement](https://x.com/jennyoliver57/status/2097685282598346909) ·
+[Technical proof](https://x.com/jennyoliver57/status/2098056302916190634) ·
 [Public evaluation](docs/EVALUATION.md) ·
 [Source](https://github.com/Jennycruzy/standing) ·
 [Run locally](#run-standing) ·
@@ -290,6 +292,11 @@ the TypeScript adapter passes `tsc --noEmit`.
 - [Product walkthrough](docs/WALKTHROUGH.md)
 - [Trust model](docs/TRUST-MODEL.md)
 - [Evaluation methodology](docs/EVALUATION.md)
+
+## Public posts
+
+- [Standing product announcement](https://x.com/jennyoliver57/status/2097685282598346909)
+- [Standing technical proof](https://x.com/jennyoliver57/status/2098056302916190634)
 
 ## Team
 

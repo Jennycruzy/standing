@@ -1,13 +1,13 @@
 # Standing submission kit
 
-This file is the final-day control sheet. Replace the three remaining placeholders before
-submitting:
+This file is the final-day control sheet. Publish and add the remaining product
+walkthrough before submitting:
 
 ```text
 LIVE_URL=https://standing-o1sj.onrender.com
 WALKTHROUGH_URL=<2–5 minute public product walkthrough URL>
-POST_1_URL=<public launch post URL>
-POST_2_URL=<second public post URL>
+POST_1_URL=https://x.com/jennyoliver57/status/2097685282598346909
+POST_2_URL=https://x.com/jennyoliver57/status/2098056302916190634
 ```
 
 ## Submission description
@@ -143,7 +143,7 @@ Code: https://github.com/Jennycruzy/standing
 ## Final checklist
 
 - [ ] Deploy `render.yaml` and verify `/api/state` returns HTTP 200.
-- [ ] Replace `WALKTHROUGH_URL`, `POST_1_URL`, and `POST_2_URL` at the top of this file.
+- [ ] Replace `WALKTHROUGH_URL` at the top of this file.
 - [ ] Record the product walkthrough in one continuous 2–5 minute take.
 - [ ] Run `proof-seed`, `boot`, and `review` as separate CLI processes against
       the same proof database.
@@ -152,7 +152,7 @@ Code: https://github.com/Jennycruzy/standing
 - [ ] Show Memory Proof and replacement/allow; do not stop at BLOCKED.
 - [ ] Open at least one genuine public vendor source.
 - [ ] Open the completed ACP job and Base EAS transaction from the dashboard.
-- [ ] Publish two public posts and save their URLs.
+- [x] Publish two public posts and save their URLs.
 - [ ] Confirm the GitHub repository is public and the MIT license is visible.
 - [ ] Run the validation commands immediately before submission.
 - [ ] Submit before the deadline in `docs/preflight.json`.
