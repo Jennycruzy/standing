@@ -16,5 +16,5 @@ The operator workflow is deliberately separate from ACP hiring:
 4. run [`scripts/check_acceptance.py`](../../scripts/check_acceptance.py).
 
 The approval record is persisted in Sibyl and its issuance is journalled. The
-current controlled-demo evidence still cannot pass because it lacks vendor
+current controlled-scenario evidence still cannot pass because it lacks vendor
 primary evidence and a genuinely independent second operator.

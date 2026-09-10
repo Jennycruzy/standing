@@ -8,7 +8,7 @@
     "submissionDeadlineUtc": "2026-09-10T23:59:00Z",
     "buildWindow": "2026-09-01 through 2026-09-10 UTC",
     "daysRemainingAtCapture": 6,
-    "memoryDeletionGate": "Deleting Sibyl Memory must cause the claimed core function to fail or materially degrade. The video must show fresh-session recall, the README must point to critical reads and writes, and a deletion test must demonstrate the break.",
+    "memoryDeletionGate": "Deleting Sibyl Memory must cause the claimed core function to fail or materially degrade. The video must show fresh-session recall, the README must point to critical reads and writes, and a deletion test must shows the break.",
     "rubric": {
       "memoryLoadBearing": 40,
       "innovationAndOriginality": 25,
@@ -16,9 +16,9 @@
       "pitchAndPresentation": 15
     },
     "pmfBonus": "Up to 10 points; nonzero requires a publicly verifiable artifact showing a named audience and validated pain point, usage, pilot, waitlist, or design partner.",
-    "partnerMultiplier": "Base or Virtuals count only when doing real product work in the demo. Base deployment is the eligibility floor; an executed on-chain action earns its bonus. First partner +15%, second +10%, capped at 1.25x.",
+    "partnerMultiplier": "Base or Virtuals count only when doing real product work in the sandbox. Base deployment is the eligibility floor; an executed on-chain action earns its bonus. First partner +15%, second +10%, capped at 1.25x.",
     "mainnetRequirement": "The rules require an executed on-chain action for the Base bonus; they do not expressly say that it must be on mainnet. This project specification independently requires Base mainnet attestations.",
-    "submissionRequirements": "Public OSI-licensed GitHub repository with real commit history; 2–5 minute demo including fresh-session recall; README; two public posts."
+    "submissionRequirements": "Public OSI-licensed GitHub repository with real commit history; 2–5 minute sandbox including fresh-session recall; README; two public posts."
   },
   "teamRegistration": {
     "status": "PASS",
@@ -309,7 +309,7 @@
       "nativeReferenceAttestationWeiIncludingL1": "1545853129055",
       "nativeReferenceAttestationUid": "0x04802d72a1eb01ed02ed60ede8628bffbb93087fb6b8a458c8dc060849b2ca66",
       "phase0EasWriteTotalWeiIncludingL1": "2958712948867",
-      "maximumDemoSpend": "Not set; no public signing button is implemented."
+      "maximumScenarioSpend": "Not set; no public signing button is implemented."
     },
     "status": "PASS_WITH_HISTORICAL_DEVIATION",
     "blocker": null

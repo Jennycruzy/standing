@@ -91,9 +91,9 @@ accept a separately configured observation value. The Python bridge validates
 the typed delivery, reads the Base EAS record, persists the complete temporal
 observation, and invokes acceptance promotion.
 
-The current live demo source is intentionally controlled fictional data. It is
+The current live sandbox source is intentionally controlled fictional data. It is
 labelled in the source, verifier configuration, observation notes, dashboard,
-README, and demo documentation.
+README, and sandbox documentation.
 
 ### Advisory model boundary
 
@@ -107,13 +107,13 @@ it becomes eligible for persistence.
 
 The product-centered local dashboard is served by
 [`standing/dashboard.py`](../standing/dashboard.py). `standing dashboard
---demo` uses an isolated temporary Sibyl database and exposes only fixed
-actions: break/restore the controlled source, inspect a waiver preview, and
+--sandbox` uses an isolated temporary Sibyl database and exposes only fixed
+actions: break/reset the controlled source, inspect a waiver preview, and
 record the pre-authored replacement decision. It has no user-controlled
 destination, calldata, value, source URL, schema, or signer input.
 
 The CLI is registered in `pyproject.toml` and provides boot, review, condition,
-history, decision, waiver, dashboard, and deletion-test commands.
+history, decision, waiver, dashboard, proof-seed, and memory-proof commands.
 
 ## State and history rules
 
@@ -130,5 +130,5 @@ Sibyl preserves engineering intent and its journal. Virtuals ACP acquires
 fresh verification when evidence is stale or insufficient. Base EAS gives
 observations a public chain record. ERC-8004 records observer outcomes and
 reputation signals. The repository includes three human-reviewed public cases,
-including vendor expiries. Deployment, a public demo video, and third-party PMF
+including vendor expiries. Deployment, a public sandbox video, and third-party PMF
 confirmation remain external publication tasks.

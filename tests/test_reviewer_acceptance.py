@@ -125,8 +125,8 @@ class ReviewerAcceptanceTests(unittest.TestCase):
             observation_uid="0xverifier",
             observer_address="0x111",
             effective_from=1_000,
-            note="CONTROLLED DEMO DATA — extracted from source",
-            disclosure="CONTROLLED DEMO DATA",
+            note="CONTROLLED SCENARIO — FICTIONAL ACME. Extracted from source.",
+            disclosure="CONTROLLED SCENARIO — FICTIONAL ACME",
             job_id="job-1",
             observation_transaction=None,
             provenance=ObservationProvenance(
@@ -169,8 +169,8 @@ class ReviewerAcceptanceTests(unittest.TestCase):
             observation_uid="0x" + "ab" * 32,
             observer_address="0x111",
             effective_from=2_000,
-            note="CONTROLLED DEMO DATA — extracted from source",
-            disclosure="CONTROLLED DEMO DATA",
+            note="CONTROLLED SCENARIO — FICTIONAL ACME. Extracted from source.",
+            disclosure="CONTROLLED SCENARIO — FICTIONAL ACME",
             job_id="job-2",
             observation_transaction=None,
             provenance=ObservationProvenance(

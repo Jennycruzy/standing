@@ -71,17 +71,16 @@ promoting it automatically.
 
 The `standing` console entry point is declared in
 [`pyproject.toml`](../../pyproject.toml) and provides `boot`, `review`,
-`condition`, `history`, `decision`, `waiver`, `demo-seed`, `dashboard`, and
-`deletion-test`. `demo-seed`, `boot`, and `review` can run as separate OS
+`condition`, `history`, `decision`, `waiver`, `proof-seed`, `dashboard`, and
+`memory-proof`. `proof-seed`, `boot`, and `review` can run as separate OS
 processes against one persistent proof store. The dashboard is an isolated
-controlled demo with a
+controlled sandbox with a
 landing finding, clickable decision graph, bitemporal time travel, provenance,
-fixed PR review, memory on/off comparison, source break/restore, replacement
-decision, human-confirmation controls, waiver inspection, and a visible
-real-world candidate panel. It contains no arbitrary transaction-signing
-surface.
+fixed sample review, backend memory proof, source break/reset, replacement
+decision, human-confirmation controls, waiver policy inspection, and a visible
+real-world case panel. It contains no arbitrary transaction-signing surface.
 
-The demo source is explicitly Fictional Acme Corporation data operated by
+The sandbox source is explicitly Fictional Acme Corporation data operated by
 Standing. The dashboard mutation is a deterministic local replay and is
 labelled as such. Genuine verifier extraction and the live ACP → Base EAS path
 are proven separately by the linked completed records.
@@ -101,9 +100,9 @@ accuracy is published from only three cases.
 The current release check reports:
 
 ```text
-0 pending real candidates
-3 reviewed real cases
-3 source-linked expiry cases
+0 pending public cases
+3 reviewed public cases
+3 source-linked expiry findings
 0 independent operator identities supplied to the strict release check
 release ready: false
 ```
@@ -123,7 +122,7 @@ The following checks pass in the current workspace:
 - `.preflight-venv/bin/python -m mypy --strict standing` — no issues;
 - `npm test` in `acp-adapter/` — 9 tests passed;
 - `npm run typecheck -- --pretty false` in `acp-adapter/` — passed;
-- `standing deletion-test` — memory-on detects the expired dependency and
+- `standing memory-proof` — memory-present detects the expired dependency and
   memory-off reports historical protection unavailable; and
 - `git diff --check` — no whitespace errors.
 

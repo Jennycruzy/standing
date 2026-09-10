@@ -96,7 +96,7 @@ class VerifierObservation:
     evidence_hash: str | None = None
     source_snapshot_hash: str | None = None
     source_publication_date: int | None = None
-    demo_controlled: bool = False
+    controlled_scenario: bool = False
     ref_uid: str | None = None
     source_domain: str | None = None
 
@@ -127,7 +127,7 @@ class VerifierObservation:
             "evidence_hash": self.evidence_hash,
             "source_snapshot_hash": self.source_snapshot_hash,
             "source_publication_date": self.source_publication_date,
-            "demo_controlled": self.demo_controlled,
+            "controlled_scenario": self.controlled_scenario,
             "ref_uid": self.ref_uid,
         }
         return record
@@ -329,9 +329,9 @@ def parse_verifier_delivery(
         "verifier source_publication_date",
     )
     ref_uid = _optional_uid(delivery.get("ref_uid"))
-    demo_controlled = delivery.get("demo_controlled", False)
-    if not isinstance(demo_controlled, bool):
-        raise AcpVerifierError("verifier demo_controlled must be true or false")
+    controlled_scenario = delivery.get("controlled_scenario", False)
+    if not isinstance(controlled_scenario, bool):
+        raise AcpVerifierError("verifier controlled_scenario must be true or false")
     return VerifierObservation(
         condition_key=key,
         value=value,
@@ -354,7 +354,7 @@ def parse_verifier_delivery(
         evidence_hash=evidence_hash_value,
         source_snapshot_hash=source_snapshot_hash,
         source_publication_date=source_publication_date,
-        demo_controlled=demo_controlled,
+        controlled_scenario=controlled_scenario,
         ref_uid=ref_uid,
         source_domain=source_domain,
     )

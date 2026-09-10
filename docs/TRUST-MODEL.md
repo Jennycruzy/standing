@@ -51,7 +51,7 @@ Standing records three dimensions separately:
   methods and versions.
 
 Multiple wallet addresses under one operator do not prove operator
-independence. The current controlled demo has one owner/operator and therefore
+independence. The current controlled sandbox has one owner/operator and therefore
 does not qualify as independent factual evidence.
 
 Freshness has both a maximum age and an optional scheduled recheck interval.
@@ -92,10 +92,10 @@ wrong-unit, unsupported-required, or unverifiable evidence does not become
 Failed ACP jobs are retained as diagnostic history and are not presented as
 successful product evidence.
 
-## Controlled demo disclosure
+## Controlled sandbox disclosure
 
-The interactive demo uses Fictional Acme Corporation data from a source
-operated by Standing for deterministic demonstration. The verifier genuinely
+The interactive sandbox uses Fictional Acme Corporation data from a source
+operated by Standing for deterministic product walkthrough. The verifier genuinely
 fetches and extracts the published JSON, but the source is not a vendor and
 does not establish independent factual reliability. The dashboard and
-observation metadata mark this as `demo_controlled: true`.
+observation metadata mark this as `controlled_scenario: true`.

@@ -30,7 +30,7 @@ The reviewer performs the memory read → evidence accumulation → acceptance e
 
 The changed-path and acceptance integrations described as remaining above are
 implemented now. `standing review` accepts working-tree, base, commit, and
-fixed demo PR inputs; exact governed-path validation happens before a block;
+fixed sandbox PR inputs; exact governed-path validation happens before a block;
 stale dependencies can explicitly trigger ACP revalidation; and the model
 boundary persists advisory artifact proposals until a human confirms or
 rejects them. The dashboard exposes the same confirmation and remediation

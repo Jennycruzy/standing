@@ -38,7 +38,7 @@ type ConditionSpec = {
   disclosure: string;
   value_type: ExtractedValueType;
   extraction: ExtractionPolicy;
-  demo_controlled: boolean;
+  controlled_scenario: boolean;
 };
 
 type Requirement = {
@@ -75,7 +75,7 @@ type Delivery = {
   evidence_hash: string;
   source_snapshot_hash: string;
   source_publication_date?: number;
-  demo_controlled: boolean;
+  controlled_scenario: boolean;
   note: string;
   disclosure: string;
   provenance: ObserverProvenance;
@@ -320,7 +320,7 @@ async function publishObservation(
     evidence_hash: extracted.sourceSnapshotHash,
     source_snapshot_hash: extracted.sourceSnapshotHash,
     source_publication_date: extracted.sourcePublicationDate,
-    demo_controlled: job.spec.demo_controlled,
+    controlled_scenario: job.spec.controlled_scenario,
     ref_uid: job.refUid ?? ZERO_UID,
     note,
     disclosure: job.spec.disclosure,
@@ -351,9 +351,9 @@ function loadRuntimeConfig(): RuntimeConfig {
     if (!["number", "boolean", "date", "set"].includes(valueType)) {
       throw new Error(`verifier condition ${conditionKey}.value_type is not supported`);
     }
-    const demoControlled = spec.demo_controlled;
-    if (typeof demoControlled !== "boolean") {
-      throw new Error(`verifier condition ${conditionKey}.demo_controlled must be true or false`);
+    const controlledScenario = spec.controlled_scenario;
+    if (typeof controlledScenario !== "boolean") {
+      throw new Error(`verifier condition ${conditionKey}.controlled_scenario must be true or false`);
     }
     conditions[conditionKey] = {
       mode: "source_extract",
@@ -362,7 +362,7 @@ function loadRuntimeConfig(): RuntimeConfig {
       disclosure: requiredString(spec.disclosure, `verifier condition ${conditionKey}.disclosure`),
       value_type: valueType as ExtractedValueType,
       extraction: parseExtractionPolicy(spec.extraction),
-      demo_controlled: demoControlled,
+      controlled_scenario: controlledScenario,
     };
   }
   const sourceType = requiredString(acpSection.source_type, "acp.source_type");

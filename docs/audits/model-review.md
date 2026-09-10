@@ -31,7 +31,7 @@ and observation payloads for a separate caller-controlled write.
 
 The live model call is intentionally not claimed by this audit. It requires a
 working `OPENAI_API_KEY`; the checked-in configuration is not a credential.
-The current controlled-demo evidence and release gates remain unchanged.
+The current controlled-scenario evidence and release gates remain unchanged.
 
 ## Current validation addendum (10 September 2026)
 

@@ -12,7 +12,7 @@ from standing.memory import create_memory_store
 
 
 class CliTests(unittest.TestCase):
-    def test_demo_seed_is_recalled_and_blocks_from_new_cli_invocations(self) -> None:
+    def test_sandbox_seed_is_recalled_and_blocks_from_new_cli_invocations(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             memory_path = Path(directory) / "fresh-process-proof.db"
             common = [
@@ -32,7 +32,7 @@ class CliTests(unittest.TestCase):
                 )
                 return json.loads(completed.stdout)
 
-            self.assertEqual(invoke("demo-seed")["action"], "BLOCK")
+            self.assertEqual(invoke("proof-seed")["action"], "BLOCK")
             self.assertGreater(invoke("boot")["journal_entries"], 0)
 
             recalled = invoke("review", "src/archive.py")
@@ -100,7 +100,7 @@ class CliTests(unittest.TestCase):
                         "cli-tests",
                         "decision",
                         "ingest",
-                        "docs/DEMO.md",
+                        "docs/WALKTHROUGH.md",
                     ]
                 )
             self.assertEqual(result, 0)
@@ -115,13 +115,14 @@ class CliTests(unittest.TestCase):
             finally:
                 store.close()
 
-    def test_deletion_test_runs_the_post_change_controlled_scenario(self) -> None:
+    def test_memory_proof_runs_the_post_change_controlled_scenario(self) -> None:
         output = io.StringIO()
         with redirect_stdout(output):
-            result = main(["deletion-test"])
+            result = main(["memory-proof"])
 
         self.assertEqual(result, 0)
         payload = json.loads(output.getvalue())
+        self.assertEqual(payload["command"], "memory-proof")
         self.assertEqual(payload["external_fact"]["retention_days"], 90)
         self.assertTrue(payload["memory_on"]["expiry_detected"])
         self.assertEqual(payload["memory_on"]["protection"], "BLOCK")

@@ -44,7 +44,7 @@ VERIFIER_CONFIG_PATH = ROOT / "config" / "verifier.json"
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--condition", default="sandbox.demo.retention_days")
+    parser.add_argument("--condition", default="sandbox.acme.retention_days")
     parser.add_argument("--spent-today-usdc", type=float, default=0.0)
     parser.add_argument(
         "--provider-address",
@@ -79,7 +79,7 @@ def main() -> None:
     now_unix = int(time.time())
     acp_config = load_acp_config(ACP_CONFIG_PATH)
     policy = load_acceptance_policy(POLICY_CONFIG_PATH)
-    store = create_memory_store(path=ROOT / ".standing-memory.db", tenant_id="standing-demo")
+    store = create_memory_store(path=ROOT / ".standing-memory.db", tenant_id="standing")
     try:
         tools = ReviewerTools(store)
         _ensure_observer_entity(store, seller_address)

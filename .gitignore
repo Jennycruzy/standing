@@ -4,6 +4,7 @@
 .standing-memory.db
 .standing-memory.db-*
 .standing-eas-cache.json
+standing-proof.db*
 acp-adapter/node_modules/
 acp-adapter/dist/
 __pycache__/

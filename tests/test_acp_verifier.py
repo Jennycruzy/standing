@@ -71,7 +71,7 @@ class AcpVerifierTests(unittest.TestCase):
 
         self.assertEqual(observation.job_id, "76973")
         self.assertEqual(observation.value, 90)
-        self.assertEqual(observation.disclosure, "CONTROLLED DEMO DATA")
+        self.assertEqual(observation.disclosure, "CONTROLLED SCENARIO — FICTIONAL ACME")
         self.assertEqual(observation.provenance.operator_id, "operator:standing")
         self.assertEqual(observation.unit, "days")
         self.assertEqual(observation.extraction_method, "JSON_PATH")
@@ -212,9 +212,9 @@ class AcpVerifierTests(unittest.TestCase):
             "extraction_version": "retention-json-v1",
             "evidence_hash": "a" * 64,
             "source_snapshot_hash": "a" * 64,
-            "demo_controlled": True,
-            "note": "CONTROLLED DEMO DATA — The published page reports 90 days.",
-            "disclosure": "CONTROLLED DEMO DATA",
+            "controlled_scenario": True,
+            "note": "CONTROLLED SCENARIO — FICTIONAL ACME. The published page reports 90 days.",
+            "disclosure": "CONTROLLED SCENARIO — FICTIONAL ACME",
             "provenance": {
                 "operator_id": "operator:standing",
                 "source_id": "source:vendor.example",

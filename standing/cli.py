@@ -20,7 +20,7 @@ from .temporal import TemporalObservationError
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEMO_SOURCE_PATH = ROOT / "docs" / "demo" / "acme-retention.json"
+SANDBOX_SOURCE_PATH = ROOT / "docs" / "sandbox" / "acme-retention.json"
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -29,8 +29,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser = _build_parser()
     args = parser.parse_args(argv)
     try:
-        if args.command == "deletion-test":
-            return _deletion_test()
+        if args.command == "memory-proof":
+            return _memory_proof()
         if args.command == "dashboard":
             return _dashboard(args)
         store = create_memory_store(
@@ -41,8 +41,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             tools = ReviewerTools(store)
             if args.command == "boot":
                 payload = _boot(tools)
-            elif args.command == "demo-seed":
-                payload = _demo_seed(store)
+            elif args.command == "proof-seed":
+                payload = _sandbox_seed(store)
             elif args.command == "review":
                 payload = _review(tools, args)
             elif args.command == "condition":
@@ -65,25 +65,25 @@ def main(argv: Sequence[str] | None = None) -> int:
 
 
 def _dashboard(args: argparse.Namespace) -> int:
-    """Serve the dashboard, isolating the fixed demo from project memory."""
+    """Serve the dashboard, isolating the fixed sandbox from project memory."""
 
     from .dashboard import DashboardApp, serve_dashboard
 
-    if args.demo:
-        with TemporaryDirectory(prefix="standing-dashboard-demo-") as directory:
+    if args.sandbox:
+        with TemporaryDirectory(prefix="standing-dashboard-sandbox-") as directory:
             store = create_memory_store(
                 path=Path(directory) / "memory.db",
                 tenant_id=args.tenant_id,
             )
             try:
-                serve_dashboard(DashboardApp(store, demo=True), host=args.host, port=args.port)
+                serve_dashboard(DashboardApp(store, sandbox=True), host=args.host, port=args.port)
             finally:
                 store.close()
         return 0
 
     store = create_memory_store(path=args.memory_path, tenant_id=args.tenant_id)
     try:
-        serve_dashboard(DashboardApp(store, demo=False), host=args.host, port=args.port)
+        serve_dashboard(DashboardApp(store, sandbox=False), host=args.host, port=args.port)
     finally:
         store.close()
     return 0
@@ -97,7 +97,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     commands.add_parser("boot", help="load the remembered standing journal")
     commands.add_parser(
-        "demo-seed",
+        "proof-seed",
         help="write the controlled post-change proof to configured Sibyl memory and exit",
     )
 
@@ -107,9 +107,9 @@ def _build_parser() -> argparse.ArgumentParser:
     review_sources.add_argument("--base", help="review paths changed from a git base")
     review_sources.add_argument("--commit", help="review paths changed in one commit")
     review_sources.add_argument(
-        "--demo-pr",
+        "--sample-pr",
         type=int,
-        help="read a preloaded config/demo/pr-N.json change set (not a live GitHub PR)",
+        help="read a preloaded config/sandbox/pr-N.json change set (not a live GitHub PR)",
     )
     review.add_argument(
         "--revalidate",
@@ -191,12 +191,12 @@ def _build_parser() -> argparse.ArgumentParser:
     dashboard.add_argument("--host", default="127.0.0.1")
     dashboard.add_argument("--port", type=int, default=8787)
     dashboard.add_argument(
-        "--demo",
+        "--sandbox",
         action="store_true",
-        help="serve an isolated fixed controlled demo without mutating configured memory",
+        help="serve an isolated fixed controlled sandbox without mutating configured memory",
     )
 
-    commands.add_parser("deletion-test", help="run the memory-on/off comparison")
+    commands.add_parser("memory-proof", help="run the fresh-process memory comparison")
     return parser
 
 
@@ -210,19 +210,19 @@ def _boot(tools: ReviewerTools) -> dict[str, Any]:
     }
 
 
-def _demo_seed(store: Any) -> dict[str, Any]:
+def _sandbox_seed(store: Any) -> dict[str, Any]:
     """Persist the controlled scenario so a later OS process must recall it."""
 
-    from .dashboard import DemoController
+    from .dashboard import SandboxController
 
-    controller = DemoController.create(store)
+    controller = SandboxController.create(store)
     controller.break_assumption()
     reviews = controller.tools.review_paths(["src/archive.py"])
     if len(reviews) != 1:
         raise ReviewerToolError("controlled proof did not create exactly one governed review")
     review = reviews[0]
     return {
-        "command": "demo-seed",
+        "command": "proof-seed",
         "process_boundary": "seed complete; this process can now exit",
         "decision_id": review.decision_id,
         "changed_path": "src/archive.py",
@@ -292,8 +292,8 @@ def _review(tools: ReviewerTools, args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _changed_paths(args: argparse.Namespace) -> tuple[str, ...]:
-    if args.demo_pr is not None:
-        fixture = ROOT / "config" / "demo" / f"pr-{args.demo_pr}.json"
+    if args.sample_pr is not None:
+        fixture = ROOT / "config" / "sandbox" / f"pr-{args.sample_pr}.json"
         with fixture.open("r", encoding="utf-8") as handle:
             raw = json.load(handle)
         if not isinstance(raw, Mapping) or not isinstance(raw.get("changed_paths"), list):
@@ -484,25 +484,28 @@ def _waiver(store: Any, args: argparse.Namespace) -> dict[str, Any]:
     raise ValueError(f"unsupported waiver command: {command}")
 
 
-def _deletion_test() -> int:
-    source_fact = _read_demo_fact()
-    # The deletion test runs the fixed post-change scenario without mutating
-    # the checked-in controlled source.  This mirrors the dashboard's
-    # BREAK DEMO ASSUMPTION action and keeps the comparison deterministic.
+def _memory_proof() -> int:
+    source_fact = _read_sandbox_fact()
+    # The memory proof runs the same fixed post-change scenario as the
+    # dashboard without mutating the checked-in controlled source.
     fact = 90 if source_fact == 365 else source_fact
-    with TemporaryDirectory(prefix="standing-deletion-test-") as directory:
+    from .dashboard import SANDBOX_PATH, SandboxController
+
+    with TemporaryDirectory(prefix="standing-memory-proof-") as directory:
         root = Path(directory)
-        on_store = create_memory_store(path=root / "memory-on.db", tenant_id="deletion-test-on")
-        off_store = create_memory_store(path=root / "memory-off.db", tenant_id="deletion-test-off")
+        on_store = create_memory_store(path=root / "memory-on.db", tenant_id="memory-proof-present")
+        off_store = create_memory_store(path=root / "memory-off.db", tenant_id="memory-proof-removed")
         try:
             on_tools = ReviewerTools(on_store)
             off_tools = ReviewerTools(off_store)
-            _seed_deletion_scenario(on_store, fact)
-            on_review = on_tools.review_paths(["src/archive.py"])
-            off_review = off_tools.review_paths(["src/archive.py"])
+            controller = SandboxController.create(on_store)
+            controller.break_assumption()
+            on_review = on_tools.review_paths([SANDBOX_PATH])
+            off_review = off_tools.review_paths([SANDBOX_PATH])
             on_decision = on_review[0] if on_review else None
+            off_decision = off_review[0] if off_review else None
             payload = {
-                "command": "deletion-test",
+                "command": "memory-proof",
                 "external_fact": {
                     "retention_days": fact,
                     "source_value_before_fixed_change": source_fact,
@@ -514,10 +517,16 @@ def _deletion_test() -> int:
                     "protection": "BLOCK" if on_decision and on_decision.blocks else "ALLOW",
                 },
                 "memory_off": {
-                    "decision_found": None,
-                    "assumption_recovered": None,
-                    "expiry_detected": False,
-                    "protection": "HISTORICAL PROTECTION UNAVAILABLE",
+                    "decision_found": None if off_decision is None else off_decision.decision_id,
+                    "assumption_recovered": (
+                        "retention_days >= 365" if off_decision is not None else None
+                    ),
+                    "expiry_detected": bool(off_decision and off_decision.blocks),
+                    "protection": (
+                        "BLOCK"
+                        if off_decision and off_decision.blocks
+                        else "HISTORICAL PROTECTION UNAVAILABLE"
+                    ),
                 },
             }
             _print_json(payload)
@@ -527,43 +536,14 @@ def _deletion_test() -> int:
             off_store.close()
 
 
-def _seed_deletion_scenario(store: Any, fact: int) -> None:
-    store.save_decision(
-        "ACME-001",
-        {
-            "title": "Use Acme for event archives",
-            "governed_paths": ["src/archive.py"],
-            "conditions": [
-                {
-                    "condition_key": "sandbox.demo.retention_days",
-                    "predicate": "retention_days >= 365",
-                    "provenance": "CONFIRMED",
-                    "required": True,
-                }
-            ],
-        },
-    )
-    store.save_condition_reference(
-        "sandbox.demo.retention_days",
-        {
-            "condition_key": "sandbox.demo.retention_days",
-            "accepted_value": fact,
-            "unit": "days",
-            "accepted_source_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/demo/acme-retention.json",
-            "observation_uids": ["controlled-demo-current"],
-            "basis": "controlled demo source",
-        },
-    )
-
-
-def _read_demo_fact() -> int:
-    with DEMO_SOURCE_PATH.open("r", encoding="utf-8") as handle:
+def _read_sandbox_fact() -> int:
+    with SANDBOX_SOURCE_PATH.open("r", encoding="utf-8") as handle:
         raw = json.load(handle)
     if not isinstance(raw, Mapping):
-        raise ValueError("controlled demo source must contain an object")
+        raise ValueError("controlled sandbox source must contain an object")
     value = raw.get("retention_days")
     if isinstance(value, bool) or not isinstance(value, int) or value < 0:
-        raise ValueError("controlled demo retention_days must be a non-negative integer")
+        raise ValueError("controlled sandbox retention_days must be a non-negative integer")
     return value
 
 

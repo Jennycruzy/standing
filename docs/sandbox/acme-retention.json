@@ -1,0 +1,9 @@
+{
+  "vendor": "Fictional Acme Corporation",
+  "condition_key": "sandbox.acme.retention_days",
+  "retention_days": 365,
+  "unit": "days",
+  "effective_from": "2026-01-01",
+  "published_at": "2026-01-01",
+  "disclosure": "CONTROLLED SCENARIO — FICTIONAL ACME. Source operated by Standing for deterministic exploration; not vendor evidence."
+}

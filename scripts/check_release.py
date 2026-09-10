@@ -1,4 +1,4 @@
-"""Check whether the source-linked evidence is ready for a non-demo release."""
+"""Check whether the source-linked evidence is ready for a non-sandbox release."""
 
 from __future__ import annotations
 
@@ -18,9 +18,9 @@ def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dataset", type=Path, default=Path("docs/evaluation/cases.json"))
     parser.add_argument(
-        "--controlled-demo-disclosed",
+        "--controlled-scenario-disclosed",
         action="store_true",
-        help="confirm that the controlled-demo disclosure is visible in release materials",
+        help="confirm that the controlled-scenario disclosure is visible in release materials",
     )
     parser.add_argument(
         "--operator-id",
@@ -43,7 +43,7 @@ def main() -> int:
         dataset = EvaluationDataset.load(args.dataset)
         evidence = ReleaseEvidence.from_dataset(
             dataset,
-            controlled_demo_disclosed=args.controlled_demo_disclosed,
+            controlled_scenario_disclosed=args.controlled_scenario_disclosed,
             independent_operator_ids=operator_ids,
         )
         gate = check_release_gates(

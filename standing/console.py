@@ -12,14 +12,14 @@ from .release import ReleaseGateResult
 def render_console_html(
     snapshot: DecisionSnapshot,
     *,
-    controlled_demo_disclosed: bool,
+    controlled_scenario_disclosed: bool,
     release_gate: ReleaseGateResult,
     page_title: str = "Standing console",
 ) -> str:
     """Render a self-contained read-only view of one decision snapshot."""
 
-    if not isinstance(controlled_demo_disclosed, bool):
-        raise ValueError("controlled_demo_disclosed must be true or false")
+    if not isinstance(controlled_scenario_disclosed, bool):
+        raise ValueError("controlled_scenario_disclosed must be true or false")
     title = escape(page_title, quote=True)
     decision_id = escape(snapshot.decision_id, quote=True)
     revision = snapshot.revision
@@ -30,8 +30,8 @@ def render_console_html(
     action = "—" if standing is None or standing.action is None else standing.action
     as_of = "current" if snapshot.as_of is None else str(snapshot.as_of)
     disclosure = (
-        "CONTROLLED DEMO DATA — owner-controlled sandbox; fictional value; not vendor evidence."
-        if controlled_demo_disclosed
+        "CONTROLLED SCENARIO — FICTIONAL ACME. Owner-controlled sandbox; fictional value; not vendor evidence."
+        if controlled_scenario_disclosed
         else ""
     )
     release_class = "ready" if release_gate.ready else "blocked"

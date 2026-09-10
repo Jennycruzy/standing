@@ -26,7 +26,7 @@ VERIFIER_PATH = ROOT / "config" / "verifier.json"
 
 def _arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--condition", default="sandbox.demo.retention_days")
+    parser.add_argument("--condition", default="sandbox.acme.retention_days")
     parser.add_argument("--approval-id")
     parser.add_argument("--memory-path", type=Path)
     return parser.parse_args()
@@ -60,7 +60,7 @@ def main() -> int:
     args = _arguments()
     store = create_memory_store(
         path=args.memory_path or ROOT / ".standing-memory.db",
-        tenant_id="standing-demo",
+        tenant_id="standing",
     )
     try:
         tools = ReviewerTools(store)

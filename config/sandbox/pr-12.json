@@ -1,8 +1,8 @@
 {
   "pr": 12,
   "title": "Archive implementation change",
-  "controlled_demo": true,
-  "disclosure": "CONTROLLED DEMO — fixed preloaded change set; no arbitrary repository or signing input.",
+  "controlled_scenario": true,
+  "disclosure": "CONTROLLED SCENARIO — fixed preloaded change set; no arbitrary repository or signing input.",
   "changed_paths": [
     "src/archive.py",
     "tests/test_archive.py",

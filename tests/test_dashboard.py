@@ -13,7 +13,7 @@ class DashboardTests(unittest.TestCase):
             path=Path(self.directory.name) / "dashboard.db",
             tenant_id="dashboard-tests",
         )
-        self.app = DashboardApp(self.store, demo=True)
+        self.app = DashboardApp(self.store, sandbox=True)
 
     def tearDown(self) -> None:
         self.store.close()
@@ -25,10 +25,10 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(state["summary"], "All remembered engineering decisions currently have standing.")
         self.assertEqual(state["primary_finding"]["decision_id"], "ACME-001")
         self.assertEqual(state["primary_finding"]["evaluation"]["state"], "STANDS")
-        self.assertIn("CONTROLLED DEMO", state["disclosure"])
-        self.assertEqual(state["demo"]["current_value"], 365)
+        self.assertIn("CONTROLLED SCENARIO", state["disclosure"])
+        self.assertEqual(state["sandbox"]["current_value"], 365)
 
-    def test_fixed_demo_change_updates_temporal_evidence_and_expiry(self) -> None:
+    def test_fixed_sandbox_change_updates_temporal_evidence_and_expiry(self) -> None:
         state = self.app.action("break")
 
         self.assertEqual(state["primary_finding"]["evaluation"]["state"], "EXPIRED")
@@ -36,9 +36,43 @@ class DashboardTests(unittest.TestCase):
         self.assertEqual(condition["reference"]["accepted_value"], 90)
         self.assertEqual(
             [row["observation_uid"] for row in condition["observations"]],
-            ["demo-initial", "demo-changed"],
+            ["sandbox-initial", "sandbox-changed"],
         )
-        self.assertEqual(state["demo"]["current_value"], 90)
+        self.assertEqual(state["sandbox"]["current_value"], 90)
+        self.assertEqual(state["review_result"]["action"], "BLOCK")
+        self.assertEqual(state["review_result"]["decision_id"], "ACME-001")
+
+        time_travel = state["sandbox"]["time_travel"]
+        decision_point = next(row for row in time_travel if row["point"] == 1770768000)
+        self.assertEqual(decision_point["valid"]["value"], 365)
+        self.assertEqual(decision_point["known"]["value"], 365)
+        changed_point = next(row for row in time_travel if row["point"] == 1788739200)
+        self.assertEqual(changed_point["valid"]["value"], 90)
+        self.assertEqual(changed_point["known"]["value"], 365)
+
+    def test_review_and_memory_proof_are_backend_results(self) -> None:
+        self.app.action("break")
+        state = self.app.action("memory-comparison")
+
+        comparison = state["memory_comparison"]
+        self.assertEqual(comparison["memory_on"]["decision_found"], "ACME-001")
+        self.assertEqual(comparison["memory_on"]["current_fact"], 90)
+        self.assertEqual(comparison["memory_on"]["protection"], "BLOCK")
+        self.assertIsNone(comparison["memory_removed"]["decision_found"])
+        self.assertEqual(
+            comparison["memory_removed"]["protection"],
+            "HISTORICAL PROTECTION UNAVAILABLE",
+        )
+
+    def test_reset_restores_current_decision_without_erasing_history(self) -> None:
+        self.app.action("break")
+        self.app.action("resolve")
+        state = self.app.action("reset")
+
+        decisions = {item["decision_id"]: item for item in state["decisions"]}
+        self.assertEqual(decisions["ACME-001"]["body"]["status"], "CURRENT")
+        self.assertNotIn("STORAGE-002", decisions)
+        self.assertEqual(state["sandbox"]["current_value"], 365)
 
     def test_resolve_supersedes_old_decision_and_leaves_replacement_active(self) -> None:
         self.app.action("break")
@@ -60,36 +94,36 @@ class DashboardTests(unittest.TestCase):
 
         confirmed = [proposal for proposal in state["proposals"] if proposal["proposal_id"] == proposal_id][0]
         self.assertEqual(confirmed["status"], "CONFIRMED")
-        self.assertEqual(confirmed["confirmed_by"], "demo-human")
+        self.assertEqual(confirmed["confirmed_by"], "sandbox-human")
         self.assertEqual(
             [item["decision_id"] for item in state["decisions"] if item["decision_id"] == "AUDIT-003"],
             ["AUDIT-003"],
         )
 
-    def test_html_contains_temporal_and_fixed_demo_surfaces(self) -> None:
+    def test_html_contains_temporal_and_fixed_sandbox_surfaces(self) -> None:
         html = render_dashboard_html(self.app.state())
 
         for label in (
             "Decision graph",
             "Bitemporal time travel",
-            "Interactive PR review",
+            "Standing Review",
             "Human confirmation",
-            "Memory comparison",
-            "BREAK DEMO ASSUMPTION",
-            "RESTORE DEMO",
+            "Compare with memory removed",
+            "BREAK ASSUMPTION",
+            "RESET SANDBOX",
             "RECORD REPLACEMENT DECISION",
-            "INSPECT DEMO WAIVER",
+            "VIEW WAIVER POLICY",
             "CONFIRM PROPOSAL",
-            "Evidence provenance",
-            "Real-world proof",
-            "Live partner proof",
+            "Evidence identity",
+            "Public repository evaluation",
+            "Live historical verification path",
             "What we now believe was true",
             "What Standing knew then",
         ):
             self.assertIn(label, html)
         self.assertIn("data-graph-target", html)
-        self.assertIn("Workspace / standing control", html)
-        self.assertIn("Review queue", html)
+        self.assertIn("Engineering intent workspace", html)
+        self.assertIn("What requires engineering attention", html)
         self.assertIn(CONTROLLED_DISCLOSURE, html)
         self.assertEqual(self.app.state()["partner_proof"]["acp_job_id"], "77748")
         self.assertIn("app.virtuals.io", html)
@@ -98,6 +132,7 @@ class DashboardTests(unittest.TestCase):
         self.assertIn("139452", html)
         self.assertIn("Standing Requestor", html)
         self.assertIn("139450", html)
+        self.assertIn("Registered agent identities", html)
         self.assertIn("84973", html)
         self.assertIn("basescan.org/tx/", html)
         self.assertNotIn("destination address", html.lower())

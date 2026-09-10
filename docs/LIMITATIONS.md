@@ -1,7 +1,7 @@
 # Standing limitations
 
 This repository now contains the temporal evidence foundation, typed source
-extraction boundary, conservative evaluator, CLI, and local interactive demo.
+extraction boundary, conservative evaluator, CLI, and local interactive sandbox.
 The following limitations are deliberate and must remain visible in any
 submission.
 
@@ -9,7 +9,7 @@ submission.
 
 - The interactive source is controlled fictional data for Fictional Acme
   Corporation. It is operated by Standing, not by a real vendor. The verifier
-  genuinely fetches and extracts the source, but that demonstrates extraction
+  genuinely fetches and extracts the source, but that shows extraction
   integrity, not independent factual accuracy.
 - The checked-in real-world evaluation manifest
   [`docs/evaluation/cases.json`](evaluation/cases.json) contains three
@@ -46,8 +46,8 @@ submission.
 
 - The deployed service has a public landing page at `/` and an interactive
   console at `/console`. It is deployable through `render.yaml` and uses an
-  isolated temporary store in `--demo` mode.
-- **BREAK DEMO ASSUMPTION** is a deterministic local replay. It does not create
+  isolated temporary store in `--sandbox` mode.
+- **BREAK ASSUMPTION** is a deterministic local replay. It does not create
   a new ACP job or EAS attestation. The completed live ACP → extraction → EAS
   path is separately linked from the dashboard and README.
 - Dashboard actions are fixed and constrained. There is no arbitrary signing
@@ -72,5 +72,5 @@ submission.
   no flattering score is reported until a hand-verified corpus and prediction
   files exist. Every miss must be published with its case, expected result,
   actual result, cause, and fix status.
-- Maintainer/design-partner confirmation, a demo video, and final public
+- Maintainer/design-partner confirmation, a sandbox video, and final public
   submission URLs are external artifacts and are not claimed by this repo.

@@ -20,11 +20,29 @@ Changed code src/archive.py
 Standing     EXPIRED — BLOCK
 ```
 
+## Proof snapshot
+
+- **Persistent memory:** separate processes reconstruct the decision and its
+  governed path from Sibyl Memory.
+- **Memory Proof:** the same review with a fresh store keeps the external fact
+  but loses the remembered engineering reason and historical protection.
+- **Public evidence:** three human-reviewed repository/vendor cases are kept
+  separate from the controlled scenarios.
+- **Live historical proof:** completed ACP job `77748`, source extraction, Base
+  EAS observation, Sibyl readback, and ERC-8004 outcome are linked above.
+- **Verification:** the repository carries temporal, reviewer, source-boundary,
+  and adapter tests; [`make verify`](evidence/LATEST.md) records an immutable
+  run artifact.
+
 ## Start here
 
+[Open Standing](https://standing.onrender.com/) ·
+[Open Console](https://standing.onrender.com/console) ·
+[Product walkthrough](docs/WALKTHROUGH.md) ·
+[Public evaluation](docs/EVALUATION.md) ·
+[Source](https://github.com/Jennycruzy/standing) ·
 [Run locally](#run-standing) ·
 [Deploy](https://render.com/deploy?repo=https://github.com/Jennycruzy/standing) ·
-[Demo walkthrough](docs/DEMO.md) ·
 [Architecture](docs/ARCHITECTURE.md) ·
 [Trust model](docs/TRUST-MODEL.md) ·
 [Evaluation](docs/EVALUATION.md)
@@ -38,6 +56,11 @@ Live integration evidence:
 - [ERC-8004 verifier feedback transaction](https://basescan.org/tx/0xb12f670d1c643556b7bb6c45cec12462f9c7f7e41775681b4c1f9b0278146954)
 - [Registered Base EAS schemas](docs/audits/schema-registration.md)
 - [Complete verifier-loop audit](docs/audits/verifier-loop.md)
+
+The public service is an engineering workspace, not a blockchain analytics
+page. Start with the product finding at `/console`; the **Sandbox** navigation
+item is the controlled Fictional Acme scenario, while **Evidence** contains the
+separate live historical verification path.
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jennycruzy/standing)
 
@@ -92,11 +115,11 @@ uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python .
 ```
 
-Start the isolated interactive demonstration:
+Start the isolated product workspace:
 
 ```sh
 .venv/bin/standing boot
-.venv/bin/standing dashboard --demo
+.venv/bin/standing dashboard --sandbox
 ```
 
 Open `http://127.0.0.1:8787/` for the product landing page, then select
@@ -107,7 +130,7 @@ Prove recall across separate processes with one persistent proof database:
 
 ```sh
 PROOF_DB=./standing-proof.db
-.venv/bin/standing --memory-path "$PROOF_DB" demo-seed
+.venv/bin/standing --memory-path "$PROOF_DB" proof-seed
 .venv/bin/standing --memory-path "$PROOF_DB" boot
 .venv/bin/standing --memory-path "$PROOF_DB" review src/archive.py
 ```
@@ -116,19 +139,19 @@ Each invocation exits before the next begins. The final process blocks
 `src/archive.py` using the decision and temporal evidence recalled from the
 same Sibyl-backed store.
 
-The dashboard provides:
+The console provides:
 
 - the highest-priority current engineering finding;
 - a code → decision → assumption → evidence → standing graph;
 - bitemporal time travel for world truth and contemporaneous knowledge;
 - exact-path PR review and explicit human confirmation;
-- a memory-on versus memory-off comparison;
+- a backend comparison with memory present versus memory removed;
 - evidence provenance and three reviewed real-world cases;
-- fixed break, restore, waiver-inspection, and replacement controls; and
+- fixed source-change, reset, waiver-policy, and replacement controls; and
 - direct Virtuals ACP, Base EAS, and ERC-8004 proof links.
 
 The Acme interaction is visibly labelled as a controlled fictional scenario.
-The dashboard control replays the source change locally; it does not pretend to
+The sandbox control replays the source change locally; it does not pretend to
 start a new live transaction. Genuine verifier source extraction and the
 ACP → Base EAS → Sibyl path are proven separately by the linked live records.
 The fixed controls do not expose keys, arbitrary URLs, transaction destinations,
@@ -137,20 +160,20 @@ calldata, or spend amounts.
 ## The load-bearing memory proof
 
 ```sh
-.venv/bin/standing deletion-test
+.venv/bin/standing memory-proof
 ```
 
 ```text
-                         MEMORY ON       MEMORY OFF
+                         MEMORY PRESENT  MEMORY REMOVED
 Decision found           ACME-001        none
 Assumption recovered     >= 365 days     none
 Current external fact    90 days         90 days
 Expiry identified        yes             no
-Protection               BLOCK           history unavailable
+Protection               BLOCK           historical protection unavailable
 ```
 
-The external fact survives deletion. What disappears is the engineering reason
-that connects the fact to the changed code. Without Sibyl, Standing cannot know
+The external fact survives memory removal. What disappears is the engineering
+reason that connects the fact to the changed code. Without Sibyl, Standing cannot know
 why that file depended on the vendor guarantee, so its core protection fails.
 
 Critical memory paths:
@@ -172,7 +195,7 @@ on conversation context.
 ```sh
 .venv/bin/standing review
 .venv/bin/standing review --base main
-.venv/bin/standing review --demo-pr 12
+.venv/bin/standing review --sample-pr 12
 .venv/bin/standing history vendor.acme.retention_days
 .venv/bin/standing condition vendor.acme.retention_days --valid-as-of 2026-03-03
 .venv/bin/standing condition vendor.acme.retention_days --known-as-of 2026-03-03
@@ -249,7 +272,7 @@ the TypeScript adapter passes `tsc --noEmit`.
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md)
-- [Product demonstration](docs/DEMO.md)
+- [Product walkthrough](docs/WALKTHROUGH.md)
 - [Trust model](docs/TRUST-MODEL.md)
 - [Evaluation methodology](docs/EVALUATION.md)
 - [Limitations](docs/LIMITATIONS.md)

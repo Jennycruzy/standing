@@ -4,8 +4,8 @@ This file is the final-day control sheet. Replace the four placeholders before
 submitting:
 
 ```text
-LIVE_URL=<deployed dashboard URL>
-VIDEO_URL=<2–5 minute public demo URL>
+LIVE_URL=https://standing.onrender.com
+WALKTHROUGH_URL=<2–5 minute public product walkthrough URL>
 POST_1_URL=<public launch post URL>
 POST_2_URL=<second public post URL>
 ```
@@ -21,11 +21,12 @@ UNKNOWN, or CONTESTED. Its bitemporal model separately answers what the world
 was doing and what the team could have known at the time, preserving history
 through evidence and decision supersession.
 
-The interactive controlled demo is explicitly fictional and deterministic. It
-proves the complete product workflow, including genuine source extraction. The
-repository also contains three human-reviewed, source-linked real-world cases.
+The interactive controlled sandbox is explicitly fictional and deterministic. It
+shows the complete product workflow while the repository separately contains
+genuine source extraction, completed partner records, and three human-reviewed,
+source-linked public cases.
 
-## Three-minute demo script
+## Three-minute product walkthrough
 
 Keep one story on screen. Do not tour every file or integration.
 
@@ -38,10 +39,10 @@ remain true.” Start a fresh terminal and run:
 date -u
 git rev-parse --short HEAD
 PROOF_DB=./standing-proof.db
-.venv/bin/standing --memory-path "$PROOF_DB" demo-seed
+.venv/bin/standing --memory-path "$PROOF_DB" proof-seed
 .venv/bin/standing --memory-path "$PROOF_DB" boot
 .venv/bin/standing --memory-path "$PROOF_DB" review src/archive.py
-.venv/bin/standing dashboard --demo
+.venv/bin/standing dashboard --sandbox
 ```
 
 Each `standing` invocation exits before the next starts. Point out that the
@@ -57,8 +58,8 @@ answers: what Standing now believes was true, and what Standing knew then.
 
 ### 0:50–1:30 — Break, observe, and block
 
-Point to the **CONTROLLED FICTIONAL DEMO** disclosure, then click **BREAK DEMO
-ASSUMPTION**. Explain exactly what is happening: this safe control
+Point to the **CONTROLLED SCENARIO — FICTIONAL ACME** disclosure, then click
+**BREAK ASSUMPTION**. Explain exactly what is happening: this safe control
 deterministically replays the source-change path locally. Then show the live
 partner-proof links, which separately prove the completed verifier transport:
 
@@ -75,9 +76,10 @@ time, recorded time, and supersession link.
 
 ### 1:30–2:05 — Prove memory is load-bearing
 
-Toggle **MEMORY OFF** and rerun the identical review. The external fact still
-exists, but the decision, original assumption, governed path, and historical
-protection disappear. Toggle memory back on and show the block returns.
+Press **RUN MEMORY PROOF** and show the backend's identical review with a fresh
+empty store. The external fact still exists, but the decision, original
+assumption, governed path, and historical protection disappear in the memory-
+removed arm.
 
 ### 2:05–2:35 — Finish the lifecycle
 
@@ -92,8 +94,8 @@ job and the Base EAS transaction to show the integrations doing the product's
 verification work. Then show the real-world evaluation packet and
 one official vendor source. Say:
 “The controlled flow is deterministic, and these three human-reviewed public
-cases test the same temporal model against genuine engineering decisions and
-vendor changes.” Close with the thesis.
+cases test the same temporal model against public repository evidence, stale
+dependencies, and vendor changes.” Close with the thesis.
 
 ## Public post 1 — product launch
 
@@ -107,9 +109,9 @@ finds the code still governed by expired reasoning, and blocks unsafe changes.
 The key distinction: what was actually true vs what the team could have known
 at the time. Standing never rewrites history when later evidence arrives.
 
-Demo: LIVE_URL
+Live Standing: LIVE_URL
 Code: https://github.com/Jennycruzy/standing
-Video: VIDEO_URL
+Product walkthrough: WALKTHROUGH_URL
 
 @sibylcap @base @virtuals_io #SibylHackathon #BuildInPublic
 ```
@@ -123,11 +125,11 @@ engineering decision → Sibyl Memory → changed code → stale evidence → Vi
 ACP verification → Base EAS observation → temporal acceptance → deterministic
 STANDS / EXPIRED / UNKNOWN / CONTESTED → waiver or replacement
 
-The public Acme interaction is clearly labelled as a controlled fictional demo.
-The repo includes genuine source extraction, temporal tests, a deletion test,
+The public Acme interaction is clearly labelled as a controlled Fictional Acme scenario.
+The repo includes genuine source extraction, temporal tests, fresh-process memory proof,
 the trust model, onchain evidence, and three human-reviewed real-world cases.
 
-Demo: LIVE_URL
+Live Standing: LIVE_URL
 Code: https://github.com/Jennycruzy/standing
 
 @sibylcap @base @virtuals_io
@@ -136,13 +138,13 @@ Code: https://github.com/Jennycruzy/standing
 ## Final checklist
 
 - [ ] Deploy `render.yaml` and verify `/api/state` returns HTTP 200.
-- [ ] Replace all four placeholders at the top of this file.
-- [ ] Record the demo in one continuous 2–5 minute take.
-- [ ] Run `demo-seed`, `boot`, and `review` as separate CLI processes against
+- [ ] Replace `WALKTHROUGH_URL`, `POST_1_URL`, and `POST_2_URL` at the top of this file.
+- [ ] Record the product walkthrough in one continuous 2–5 minute take.
+- [ ] Run `proof-seed`, `boot`, and `review` as separate CLI processes against
       the same proof database.
 - [ ] Show `date -u` or `git rev-parse --short HEAD` in that same unedited shot.
-- [ ] Keep the controlled-demo disclosure visible during the mutation.
-- [ ] Show memory on/off and replacement/allow; do not stop at BLOCKED.
+- [ ] Keep the controlled-scenario disclosure visible during the mutation.
+- [ ] Show Memory Proof and replacement/allow; do not stop at BLOCKED.
 - [ ] Open at least one genuine public vendor source.
 - [ ] Open the completed ACP job and Base EAS transaction from the dashboard.
 - [ ] Publish two public posts and save their URLs.
@@ -156,8 +158,8 @@ Code: https://github.com/Jennycruzy/standing
 .venv/bin/python -m unittest discover -s tests -p 'test_*.py'
 npm --prefix acp-adapter test
 npm --prefix acp-adapter run typecheck
-.venv/bin/standing deletion-test
-.preflight-venv/bin/python scripts/check_release.py --controlled-demo-disclosed
+.venv/bin/standing memory-proof
+.venv/bin/python scripts/check_release.py --controlled-scenario-disclosed
 ```
 
 The real-world corpus gates now pass. The stricter production release check may

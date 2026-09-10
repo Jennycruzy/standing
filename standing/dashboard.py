@@ -1,4 +1,4 @@
-"""Disclosure-first interactive dashboard and constrained demo controller."""
+"""Standing Console and controlled-scenario application."""
 
 from __future__ import annotations
 
@@ -8,29 +8,33 @@ from html import escape
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from time import time
 from typing import Any, Mapping, Sequence
-from urllib.parse import urlparse
+from urllib.parse import unquote, urlparse
 
 from sibyl_memory_client.exceptions import NotFoundError  # type: ignore[import-untyped]
 
-from .memory import MemoryStore
+from .memory import MemoryStore, create_memory_store
 from .model_review import DecisionProposal
 from .reviewer import ReviewerToolError, ReviewerTools
 from .temporal import TemporalObservationError, observation_evidence_hash, parse_timestamp
 
 
 CONTROLLED_DISCLOSURE = (
-    "CONTROLLED DEMO — Fictional Acme Corporation. "
-    "This control replays the source-change path locally; the separately completed "
-    "ACP → source extraction → Base EAS path is linked below."
+    "CONTROLLED SCENARIO — FICTIONAL ACME. "
+    "This sandbox uses fictional Acme data operated by Standing so the lifecycle "
+    "can be reproduced safely. The control below replays the source change locally. "
+    "Completed Virtuals ACP → source extraction → Base EAS records are shown separately "
+    "as live historical proof."
 )
-DEMO_CONDITION = "sandbox.demo.retention_days"
-DEMO_PATH = "src/archive.py"
-DEMO_SOURCE_URL = "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/demo/acme-retention.json"
-DEMO_PROPOSAL_ARTIFACT = "docs/decisions/0001-acp-adapter.md"
-DEMO_EFFECTIVE_INITIAL = 1767225600  # 2026-01-01T00:00:00Z
-DEMO_EFFECTIVE_CHANGED = 1788739200  # 2026-09-07T00:00:00Z
+SANDBOX_CONDITION = "sandbox.acme.retention_days"
+SANDBOX_PATH = "src/archive.py"
+SANDBOX_SOURCE_URL = "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/sandbox/acme-retention.json"
+SANDBOX_PROPOSAL_ARTIFACT = "docs/decisions/0001-acp-adapter.md"
+SANDBOX_DECISION_DATE = parse_timestamp("2026-02-11", label="sandbox decision date")
+SANDBOX_EFFECTIVE_INITIAL = 1767225600  # 2026-01-01T00:00:00Z
+SANDBOX_EFFECTIVE_CHANGED = 1788739200  # 2026-09-07T00:00:00Z
 _SOURCE_CASES_PATH = Path(__file__).resolve().parents[1] / "docs" / "evaluation" / "cases.json"
 _WORKTREE_CASES_PATH = Path.cwd() / "docs" / "evaluation" / "cases.json"
 EVALUATION_CASES_PATH = (
@@ -56,20 +60,20 @@ PARTNER_PROOF = {
 
 
 @dataclass
-class DemoController:
-    """A fixed, local-only controller for the public demo buttons."""
+class SandboxController:
+    """A fixed, local-only controller for the public sandbox buttons."""
 
     store: MemoryStore
     tools: ReviewerTools
 
     @classmethod
-    def create(cls, store: MemoryStore) -> DemoController:
+    def create(cls, store: MemoryStore) -> SandboxController:
         controller = cls(store, ReviewerTools(store))
         controller.seed()
         return controller
 
     def seed(self) -> None:
-        """Create the pre-authored initial demo state in the supplied store."""
+        """Create the pre-authored initial sandbox state in the supplied store."""
 
         try:
             self.store.read_decision("ACME-001")
@@ -87,10 +91,10 @@ class DemoController:
                 "status": "CURRENT",
                 "author": "alice",
                 "approver": "bob",
-                "governed_paths": [DEMO_PATH, "infra/acme.tf"],
+                "governed_paths": [SANDBOX_PATH, "infra/acme.tf"],
                 "conditions": [
                     {
-                        "condition_key": DEMO_CONDITION,
+                        "condition_key": SANDBOX_CONDITION,
                         "predicate": "retention_days >= 365",
                         "provenance": "CONFIRMED",
                         "required": True,
@@ -98,26 +102,26 @@ class DemoController:
                 ],
             },
         )
-        initial = _demo_observation(
-            "demo-initial",
+        initial = _sandbox_observation(
+            "sandbox-initial",
             365,
-            DEMO_EFFECTIVE_INITIAL,
+            SANDBOX_EFFECTIVE_INITIAL,
             "2026-02-11",
         )
         self.tools.record_temporal_observation(initial)
-        self._save_demo_reference(initial)
+        self._save_sandbox_reference(initial)
         evaluation = self.tools.evaluate_standing("ACME-001")
         self.tools.write_standing_change(
             "ACME-001",
             evaluation,
             action="allow",
-            explanation="Initial controlled demo decision was human-approved.",
+            explanation="Initial controlled sandbox decision was human-approved.",
         )
         self.tools.record_decision_proposal(
             DecisionProposal(
                 decision_id="AUDIT-003",
                 title="Keep an audit trail for archive changes",
-                description="A non-blocking proposal retained to demonstrate confirmation workflow.",
+                description="A non-blocking proposal retained to shows confirmation workflow.",
                 governed_paths=("docs/audits/",),
                 conditions=(
                     {
@@ -128,21 +132,21 @@ class DemoController:
                         "unit": None,
                     },
                 ),
-                artifact_path=DEMO_PROPOSAL_ARTIFACT,
+                artifact_path=SANDBOX_PROPOSAL_ARTIFACT,
                 artifact_type="DESIGN_DOCUMENT",
                 artifact_sha256="d" * 64,
-                source_sentence="A controlled pending proposal demonstrates human confirmation.",
+                source_sentence="A controlled pending proposal shows human confirmation.",
                 rationale="This fixed proposal is informational and cannot block until a human confirms it.",
-                model_id="standing-demo-model",
+                model_id="standing-model",
             )
         )
 
     def break_assumption(self) -> None:
         self._ensure_decision()
-        observation = _demo_observation("demo-changed", 90, DEMO_EFFECTIVE_CHANGED, "2026-09-07")
-        if not any(item.get("observation_uid") == observation["observation_uid"] for item in self.tools.read_observations(DEMO_CONDITION)):
+        observation = _sandbox_observation("sandbox-changed", 90, SANDBOX_EFFECTIVE_CHANGED, "2026-09-09")
+        if not any(item.get("observation_uid") == observation["observation_uid"] for item in self.tools.read_observations(SANDBOX_CONDITION)):
             self.tools.record_temporal_observation(observation)
-        self._save_demo_reference(observation)
+        self._save_sandbox_reference(observation)
         evaluation = self.tools.evaluate_standing("ACME-001")
         if evaluation.state.value != "STANDS":
             self.tools.write_standing_change(
@@ -152,17 +156,39 @@ class DemoController:
                 explanation="The fixed controlled source changed from 365 to 90 days.",
             )
 
-    def restore(self) -> None:
+    def reset(self) -> None:
+        """Return the sandbox to its initial state without deleting history."""
+
         self._ensure_decision()
-        observation = _demo_observation("demo-restored", 365, int(time()), "2026-09-09")
+        try:
+            current = self.store.read_decision("ACME-001")
+            body = _entity_body(current)
+            if body.get("status") == "SUPERSEDED":
+                for field in ("superseded_at", "superseded_by", "supersession_reason", "superseded_by_actor", "supersession_recorded_at"):
+                    body.pop(field, None)
+                body["status"] = "CURRENT"
+                self.store.save_decision("ACME-001", body)
+        except NotFoundError as error:
+            raise ReviewerToolError("controlled sandbox decision is not available") from error
+        try:
+            self.store.archive_decision("STORAGE-002", reason="sandbox reset; replacement retained in archive")
+        except (NotFoundError, RuntimeError, ValueError):
+            pass
+        observation = _sandbox_observation(
+            "sandbox-reset",
+            365,
+            int(time()),
+            "2026-09-10",
+            ref_uid="sandbox-changed",
+        )
         self.tools.record_temporal_observation(observation)
-        self._save_demo_reference(observation)
+        self._save_sandbox_reference(observation)
         evaluation = self.tools.evaluate_standing("ACME-001")
         self.tools.write_standing_change(
             "ACME-001",
             evaluation,
             action="allow",
-            explanation="The fixed controlled demo source was restored to 365 days.",
+            explanation="The sandbox was reset to the initial 365-day source state.",
         )
 
     def resolve(self) -> None:
@@ -180,7 +206,7 @@ class DemoController:
                 "description": "Replacement decision for the expired Acme archive assumption.",
                 "author": "alice",
                 "approver": "bob",
-                "governed_paths": [DEMO_PATH, "infra/contoso.tf"],
+                "governed_paths": [SANDBOX_PATH, "infra/contoso.tf"],
                 "conditions": [
                     {
                         "condition_key": "vendor.contoso.archive_supported",
@@ -202,9 +228,9 @@ class DemoController:
                 "accepted_value": True,
                 "value_type": "boolean",
                 "unit": "boolean",
-                "accepted_source_url": DEMO_SOURCE_URL,
-                "observation_uids": ["controlled-contoso-demo"],
-                "basis": "fixed replacement decision demo",
+                "accepted_source_url": SANDBOX_SOURCE_URL,
+                "observation_uids": ["controlled-contoso-sandbox"],
+                "basis": "fixed replacement decision in the sandbox",
                 "evidence_fresh": True,
             },
         )
@@ -217,27 +243,27 @@ class DemoController:
         )
 
     def confirm_proposal(self) -> None:
-        proposal = self._pending_demo_proposal()
+        proposal = self._pending_sandbox_proposal()
         self.tools.confirm_decision_proposal(
             proposal,
-            confirmed_by="demo-human",
+            confirmed_by="sandbox-human",
             confirmation_note="Human reviewed the displayed source sentence and confirmed this proposal.",
             confirmed_at=int(time()),
         )
 
     def reject_proposal(self) -> None:
-        proposal = self._pending_demo_proposal()
+        proposal = self._pending_sandbox_proposal()
         self.tools.reject_decision_proposal(
             proposal,
-            rejected_by="demo-human",
-            reason="Human rejected the displayed proposal for this demo run.",
+            rejected_by="sandbox-human",
+            reason="Human rejected the displayed proposal for this sandbox run.",
             rejected_at=int(time()),
         )
 
     def waiver_preview(self) -> dict[str, Any]:
         return {
             "status": "PREVIEW ONLY",
-            "disclosure": "No waiver is issued by this dashboard action.",
+            "disclosure": "No waiver is issued by this sandbox action.",
             "decision_id": "ACME-001",
             "approved_by": "human approval required",
             "reason": "production incident mitigation",
@@ -249,71 +275,105 @@ class DemoController:
         try:
             self.store.read_decision("ACME-001")
         except NotFoundError as error:
-            raise ReviewerToolError("controlled demo decision is not available") from error
+            raise ReviewerToolError("controlled sandbox decision is not available") from error
 
-    def _pending_demo_proposal(self) -> str:
+    def _pending_sandbox_proposal(self) -> str:
         for entity in self.store.list_decision_proposals():
             body = _entity_body(entity)
             if body.get("status") == "PENDING":
                 proposal_id = entity.get("key", entity.get("name"))
                 if isinstance(proposal_id, str) and proposal_id.strip():
                     return proposal_id
-        raise ReviewerToolError("no pending controlled demo proposal is available")
+        raise ReviewerToolError("no pending controlled sandbox proposal is available")
 
-    def _save_demo_reference(self, observation: Mapping[str, Any]) -> None:
+    def _save_sandbox_reference(self, observation: Mapping[str, Any]) -> None:
         self.store.save_condition_reference(
-            DEMO_CONDITION,
+            SANDBOX_CONDITION,
             {
-                "condition_key": DEMO_CONDITION,
+                "condition_key": SANDBOX_CONDITION,
                 "accepted_value": observation["value"],
                 "value_type": "number",
                 "unit": "days",
                 "effective_from": observation["effective_from"],
                 "accepted_at": observation["recorded_at"],
                 "last_verified_at": observation["recorded_at"],
-                "accepted_source_url": DEMO_SOURCE_URL,
+                "accepted_source_url": SANDBOX_SOURCE_URL,
                 "observation_uids": [observation["observation_uid"]],
-                "basis": "controlled demo source extraction",
+                "basis": "controlled sandbox source extraction",
                 "status": "ACCEPTED",
                 "evidence_fresh": True,
-                "demo_controlled": True,
+                "controlled_scenario": True,
             },
-            metadata={"demo_controlled": True, "source_url": DEMO_SOURCE_URL},
+            metadata={"controlled_scenario": True, "source_url": SANDBOX_SOURCE_URL},
         )
 
 
 class DashboardApp:
     """Small HTTP application used by the local dashboard command."""
 
-    def __init__(self, store: MemoryStore, *, demo: bool) -> None:
+    def __init__(self, store: MemoryStore, *, sandbox: bool) -> None:
         self.store = store
         self.tools = ReviewerTools(store)
-        self.demo = demo
-        self.controller = DemoController.create(store) if demo else None
+        self.sandbox = sandbox
+        self.controller = SandboxController.create(store) if sandbox else None
 
     def state(self) -> dict[str, Any]:
-        return build_dashboard_payload(self.tools, demo=self.demo)
+        return build_dashboard_payload(self.tools, sandbox=self.sandbox)
+
+    def review(self, paths: Sequence[str] = (SANDBOX_PATH,)) -> dict[str, Any]:
+        """Run the deterministic reviewer for the requested changed paths."""
+
+        if not paths:
+            raise ReviewerToolError("at least one changed path is required")
+        reviews = self.tools.review_paths(paths)
+        return _review_payload(paths, reviews)
+
+    def memory_comparison(self) -> dict[str, Any]:
+        """Run the same review with the remembered decision and a fresh store."""
+
+        if not self.sandbox:
+            raise ReviewerToolError("memory comparison is available only in sandbox mode")
+        source = self.source()
+        paths = (SANDBOX_PATH,)
+        memory_on = self.review(paths)
+        with TemporaryDirectory(prefix="standing-memory-removed-") as directory:
+            removed_store = create_memory_store(
+                path=Path(directory) / "memory.db",
+                tenant_id=f"{self.store.tenant_id}:removed",
+            )
+            try:
+                removed_reviews = ReviewerTools(removed_store).review_paths(paths)
+                memory_removed = _review_payload(paths, removed_reviews)
+            finally:
+                removed_store.close()
+
+        return {
+            "memory_on": _memory_view(memory_on, source["retention_days"], memory_present=True),
+            "memory_removed": _memory_view(memory_removed, source["retention_days"], memory_present=False),
+            "same_changed_paths": list(paths),
+            "conclusion": "The external fact survives; the remembered engineering reason connecting it to code does not.",
+        }
 
     def source(self) -> dict[str, Any]:
         payload = self.state()
-        demo = payload["demo"]
-        if not isinstance(demo, dict):
-            raise ReviewerToolError("dashboard demo payload is invalid")
+        sandbox = payload["sandbox"]
+        if not isinstance(sandbox, dict):
+            raise ReviewerToolError("dashboard sandbox payload is invalid")
         return {
             "vendor": "Fictional Acme Corporation",
-            "condition_key": DEMO_CONDITION,
-            "retention_days": demo["current_value"],
+            "condition_key": SANDBOX_CONDITION,
+            "retention_days": sandbox["current_value"],
             "disclosure": CONTROLLED_DISCLOSURE,
-            "demo_controlled": True,
+            "controlled_scenario": True,
         }
 
     def action(self, name: str) -> dict[str, Any]:
-        if not self.demo or self.controller is None:
-            raise ReviewerToolError("demo actions are disabled outside --demo mode")
+        if not self.sandbox or self.controller is None:
+            raise ReviewerToolError("sandbox actions are disabled outside --sandbox mode")
         if name == "break":
             self.controller.break_assumption()
-        elif name == "restore":
-            self.controller.restore()
+        elif name == "reset":
+            self.controller.reset()
         elif name == "resolve":
             self.controller.resolve()
         elif name == "confirm-proposal":
@@ -323,13 +383,69 @@ class DashboardApp:
         elif name == "waiver":
             return self.controller.waiver_preview()
         elif name == "review":
-            pass
+            payload = self.state()
+            payload["review_result"] = self.review()
+            return payload
+        elif name == "memory-comparison":
+            payload = self.state()
+            payload["memory_comparison"] = self.memory_comparison()
+            return payload
         else:
             raise ReviewerToolError("unknown fixed dashboard action")
         return self.state()
 
 
-def build_dashboard_payload(tools: ReviewerTools, *, demo: bool = False) -> dict[str, Any]:
+def _review_payload(paths: Sequence[str], reviews: Sequence[Any]) -> dict[str, Any]:
+    """Serialize reviewer output for the console and product APIs."""
+
+    serialized: list[dict[str, Any]] = []
+    for item in reviews:
+        serialized.append(
+            {
+                "decision_id": item.decision_id,
+                "state": item.evaluation.state.value,
+                "blocks": item.blocks,
+                "action": "BLOCK" if item.blocks else "ALLOW",
+                "evaluation": item.evaluation.as_dict(),
+            }
+        )
+    blocked = any(bool(item["blocks"]) for item in serialized)
+    first = serialized[0] if serialized else {}
+    return {
+        "changed_paths": list(paths),
+        "decisions_found": len(serialized),
+        "decision_id": first.get("decision_id"),
+        "state": first.get("state", "UNKNOWN"),
+        "blocks": blocked,
+        "action": "BLOCK" if blocked else "ALLOW",
+        "decisions": serialized,
+    }
+
+
+def _memory_view(review: Mapping[str, Any], current_fact: Any, *, memory_present: bool) -> dict[str, Any]:
+    """Project an actual backend review into the Memory Proof comparison."""
+
+    decisions = review.get("decisions")
+    first = decisions[0] if isinstance(decisions, Sequence) and decisions else {}
+    evaluation = first.get("evaluation") if isinstance(first, Mapping) else {}
+    conditions = evaluation.get("conditions", []) if isinstance(evaluation, Mapping) else []
+    condition = conditions[0] if isinstance(conditions, Sequence) and conditions else {}
+    decision_id = review.get("decision_id")
+    has_decision = isinstance(decision_id, str) and bool(decision_id)
+    return {
+        "decision_found": decision_id if has_decision else None,
+        "assumption": condition.get("predicate") if isinstance(condition, Mapping) else None,
+        "current_fact": current_fact,
+        "expiry_detected": bool(review.get("blocks")) if has_decision else False,
+        "protection": (
+            review.get("action", "ALLOW")
+            if memory_present or has_decision
+            else "HISTORICAL PROTECTION UNAVAILABLE"
+        ),
+    }
+
+
+def build_dashboard_payload(tools: ReviewerTools, *, sandbox: bool = False) -> dict[str, Any]:
     """Build the product-centered JSON model used by the dashboard."""
 
     decision_payloads: list[dict[str, Any]] = []
@@ -398,10 +514,10 @@ def build_dashboard_payload(tools: ReviewerTools, *, demo: bool = False) -> dict
         and any(bool(condition.get("blocks")) for condition in item["evaluation"].get("conditions", []))
     ]
     primary = findings[0] if findings else (active[0] if active else None)
-    demo_conditions = all_conditions.get(DEMO_CONDITION, {})
+    sandbox_conditions = all_conditions.get(SANDBOX_CONDITION, {})
     current_value = 365
-    if isinstance(demo_conditions, Mapping):
-        reference = demo_conditions.get("reference")
+    if isinstance(sandbox_conditions, Mapping):
+        reference = sandbox_conditions.get("reference")
         if isinstance(reference, Mapping) and isinstance(reference.get("accepted_value"), int):
             current_value = reference["accepted_value"]
     now_unix = int(time())
@@ -422,9 +538,12 @@ def build_dashboard_payload(tools: ReviewerTools, *, demo: bool = False) -> dict
             else "EXPIRED"
         )
         waivers.append(row)
+    real_world = _real_world_payload()
+    activity = _activity_payload(tools)
+    time_travel = _time_travel_payload(tools, sandbox=sandbox)
     return {
-        "controlled_demo": demo,
-        "disclosure": CONTROLLED_DISCLOSURE if demo else None,
+        "controlled_scenario": sandbox,
+        "disclosure": CONTROLLED_DISCLOSURE if sandbox else None,
         "summary": (
             f"{len(findings)} engineering decision(s) no longer have standing."
             if findings
@@ -434,22 +553,101 @@ def build_dashboard_payload(tools: ReviewerTools, *, demo: bool = False) -> dict
         "decisions": decision_payloads,
         "proposals": proposals,
         "waivers": waivers,
-        "real_world": _real_world_payload(),
+        "activity": activity,
+        "real_world": real_world,
+        "evaluation": _evaluation_payload(real_world),
         "partner_proof": dict(PARTNER_PROOF),
-        "demo": {
-            "condition_key": DEMO_CONDITION,
-            "source_url": DEMO_SOURCE_URL,
+        "sandbox": {
+            "condition_key": SANDBOX_CONDITION,
+            "source_url": SANDBOX_SOURCE_URL,
             "current_value": current_value,
             "initial_value": 365,
             "changed_value": 90,
             "disclosure": CONTROLLED_DISCLOSURE,
             "timeline": {
-                "decision_date": DEMO_EFFECTIVE_INITIAL,
-                "change_date": DEMO_EFFECTIVE_CHANGED,
+                "decision_date": SANDBOX_EFFECTIVE_INITIAL,
+                "change_date": SANDBOX_EFFECTIVE_CHANGED,
                 "now": int(time()),
             },
+            "time_travel": time_travel,
         },
+        "review_result": _review_payload(
+            [SANDBOX_PATH],
+            tools.review_paths([SANDBOX_PATH]) if sandbox else (),
+        ),
     }
+
+
+def _time_travel_payload(tools: ReviewerTools, *, sandbox: bool) -> list[dict[str, Any]]:
+    """Return backend-resolved bitemporal points for the console slider.
+
+    The browser may select a point in this already-resolved sequence, but it
+    must not reconstruct valid-time or knowledge-time answers from raw rows.
+    This keeps the console presentation layer from becoming a second temporal
+    resolver with subtly different semantics.
+    """
+
+    if not sandbox:
+        return []
+    points_set = {
+        SANDBOX_EFFECTIVE_INITIAL,
+        SANDBOX_DECISION_DATE,
+        SANDBOX_EFFECTIVE_CHANGED,
+        int(time()),
+    }
+    for raw_observation in tools.read_observations(SANDBOX_CONDITION):
+        effective_from = raw_observation.get("effective_from")
+        if isinstance(effective_from, int):
+            points_set.add(effective_from)
+    points = sorted(points_set)
+    result: list[dict[str, Any]] = []
+    for point in points:
+        try:
+            valid = tools.condition_valid_as_of(
+                SANDBOX_CONDITION,
+                point,
+                accepted_only=True,
+            )
+            known = tools.condition_known_as_of(
+                SANDBOX_CONDITION,
+                point,
+                valid_at=point,
+                accepted_only=True,
+            )
+        except ReviewerToolError as error:
+            result.append(
+                {
+                    "point": point,
+                    "valid": None,
+                    "known": None,
+                    "assessment": f"Temporal answer unavailable: {error}",
+                }
+            )
+            continue
+
+        valid_record = None if valid is None else valid.as_dict()
+        known_record = None if known is None else known.as_dict()
+        if valid_record is None and known_record is None:
+            assessment = "No evidence was recorded for this point."
+        elif valid_record is not None and known_record is not None:
+            if valid_record.get("value") == known_record.get("value"):
+                assessment = "Evidence and Standing's knowledge align at this point."
+            else:
+                assessment = (
+                    "The decision was justified by the evidence available then; "
+                    "later evidence changed the reconstructed world state."
+                )
+        else:
+            assessment = "The outside-world answer and the knowledge answer differ."
+        result.append(
+            {
+                "point": point,
+                "valid": valid_record,
+                "known": known_record,
+                "assessment": assessment,
+            }
+        )
+    return result
 
 
 def _real_world_payload() -> dict[str, Any]:
@@ -506,11 +704,61 @@ def _real_world_payload() -> dict[str, Any]:
         "pending_case_count": pending,
         "cases": cases,
         "disclosure": (
-            "Three human-reviewed public cases are recorded separately from the controlled demonstration."
+            "Three human-reviewed public cases are recorded separately from the controlled scenario."
             if reviewed and not pending
             else "Real-world and controlled evidence are kept separate; pending candidates are not product claims."
         ),
     }
+
+
+def _evaluation_payload(real_world: Mapping[str, Any]) -> dict[str, Any]:
+    """Expose the evaluation split without inventing unrun benchmark scores."""
+
+    controlled_path = Path(__file__).resolve().parents[1] / "docs" / "evaluation" / "adversarial.json"
+    controlled_count = 0
+    try:
+        raw = json.loads(controlled_path.read_text(encoding="utf-8"))
+        raw_cases = raw.get("cases") if isinstance(raw, Mapping) else None
+        if isinstance(raw_cases, list):
+            controlled_count = len(raw_cases)
+    except (OSError, json.JSONDecodeError):
+        controlled_count = 0
+    return {
+        "status": "METRICS NOT PUBLISHED",
+        "real_world_cases": real_world.get("reviewed_case_count", 0),
+        "controlled_scenarios": controlled_count,
+        "arms": ["standing", "no-memory", "grep", "stateless-model", "current-docs-only"],
+        "message": "Prediction artifacts are not included, so no benchmark score is claimed.",
+        "methodology_url": "https://github.com/Jennycruzy/standing/blob/main/docs/EVALUATION.md",
+    }
+
+
+def _activity_payload(tools: ReviewerTools) -> list[dict[str, Any]]:
+    """Turn the Sibyl journal into a compact, human-readable activity feed."""
+
+    rows: list[dict[str, Any]] = []
+    for event in tools.memory.read_standing_changes()[-24:]:
+        if not isinstance(event, Mapping):
+            continue
+        extra = event.get("extra")
+        extra_map = extra if isinstance(extra, Mapping) else {}
+        event_type = extra_map.get("event_type") or event.get("event_type") or "journal event"
+        acted = event.get("acted")
+        acted_map = acted if isinstance(acted, Mapping) else {}
+        explanation = acted_map.get("explanation") or event.get("explanation") or "Recorded in Sibyl Memory."
+        evaluated = event.get("evaluated")
+        evaluated_map = evaluated if isinstance(evaluated, Mapping) else {}
+        decision_id = evaluated_map.get("decision_id") or event.get("decision_id") or "Standing"
+        timestamp = event.get("ts") or event.get("timestamp") or event.get("created_at") or ""
+        rows.append(
+            {
+                "timestamp": str(timestamp),
+                "event": str(event_type).replace("_", " "),
+                "decision_id": str(decision_id),
+                "detail": str(explanation),
+            }
+        )
+    return rows
 
 
 def render_landing_html(payload: Mapping[str, Any], *, page_title: str = "Standing — engineering intent") -> str:
@@ -589,118 +837,132 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title}</title>
   <style>
-    :root {{ color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #070b0d; color: #e7eee9; --green:#65e6ad; --amber:#f3bd61; --red:#ff667d; --line:#24312c; --panel:#0d1412; }}
+    :root {{ color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #101412; color: #f0ede5; --green:#b4d7bd; --green-strong:#8cc89e; --amber:#e4bd7b; --red:#e58f8b; --purple:#b6a7d6; --line:#2d3932; --panel:#171d1a; --panel-2:#1c241f; --muted:#98a69d; }}
     * {{ box-sizing: border-box; }}
-    body {{ margin: 0; background-color: #070b0d; background-image: linear-gradient(rgba(101,230,173,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(101,230,173,.025) 1px, transparent 1px); background-size: 32px 32px; min-height: 100vh; }}
-    body::before {{ content:''; position:fixed; inset:0; pointer-events:none; background:radial-gradient(circle at 80% 0, rgba(32,104,76,.16), transparent 34%); }}
-    main {{ position:relative; max-width: 1440px; margin: 0 auto; padding: 28px 34px 72px; display:grid; grid-template-columns:190px minmax(0,1fr); gap:42px; }}
-    .topbar {{ position:sticky; top:0; z-index:10; display:flex; flex-wrap:wrap; align-items:center; gap:18px; padding:14px max(24px, calc((100vw - 1372px) / 2)); border-bottom:1px solid var(--line); background:rgba(7,11,13,.94); backdrop-filter:blur(14px); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }}
-    .brand {{ color:var(--green); font-weight:900; letter-spacing:.12em; font-size:.9rem; }}
-    .system {{ display:flex; align-items:center; gap:7px; color:#9cafaa; font-size:.69rem; letter-spacing:.04em; }}
-    .pulse {{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); }}
-    nav {{ margin-left:auto; display:flex; flex-wrap:wrap; gap:17px; }}
-    nav a {{ color:#9cafaa; text-decoration:none; font-size:.68rem; letter-spacing:.08em; }} nav a:hover {{ color:var(--green); }}
-    .rail {{ position:sticky; top:82px; align-self:start; padding-top:22px; color:#73837b; font: .67rem/1.5 ui-monospace,monospace; text-transform:uppercase; letter-spacing:.11em; }}
-    .rail-title {{ color:#e7eee9; font-size:.78rem; letter-spacing:.16em; margin-bottom:28px; }} .rail-title span {{ color:var(--green); }}
-    .rail-group {{ margin:0 0 28px; }} .rail-group strong {{ display:block; color:#5e7068; font-size:.59rem; margin-bottom:10px; }} .rail a {{ display:block; color:#9cafaa; text-decoration:none; padding:7px 0 7px 12px; border-left:1px solid transparent; }} .rail a:hover,.rail a.active {{ color:var(--green); border-left-color:var(--green); background:linear-gradient(90deg,rgba(101,230,173,.08),transparent); }} .rail-note {{ border-top:1px solid var(--line); padding-top:14px; text-transform:none; letter-spacing:0; color:#718078; }}
+    body {{ margin: 0; background: #101412; min-height: 100vh; }}
+    body::before {{ content:''; position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at 88% -10%, rgba(111,151,119,.13), transparent 32%), radial-gradient(ellipse at 0% 100%, rgba(164,109,75,.07), transparent 29%); }}
+    main {{ position:relative; max-width: 1540px; margin: 0 auto; padding: 30px 42px 80px; display:grid; grid-template-columns:224px minmax(0,1fr); gap:42px; }}
+    .topbar {{ position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:22px; padding:13px max(28px, calc((100vw - 1456px) / 2)); border-bottom:1px solid var(--line); background:rgba(16,20,18,.94); backdrop-filter:blur(18px); }}
+    .brand {{ color:var(--green); font:600 1.02rem Georgia,serif; letter-spacing:.08em; }}
+    .workspace-name {{ color:#d4d8d1; font-size:.82rem; padding-left:22px; border-left:1px solid var(--line); }}
+    .system {{ display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; }}
+    .pulse {{ width:7px; height:7px; border-radius:50%; background:var(--green-strong); box-shadow:0 0 0 4px rgba(140,200,158,.11); }}
+    nav {{ margin-left:auto; display:flex; align-items:center; gap:8px; }}
+    nav a {{ color:var(--muted); text-decoration:none; font-size:.69rem; letter-spacing:.04em; padding:7px 10px; border-radius:6px; }} nav a:hover, nav a.active {{ color:var(--ink, #101412); background:var(--green); }}
+    .rail {{ position:sticky; top:76px; align-self:start; padding:10px 0 0; color:var(--muted); font-size:.76rem; }}
+    .rail-title {{ color:#f0ede5; font:600 1.02rem Georgia,serif; letter-spacing:.08em; margin-bottom:34px; }} .rail-title span {{ color:var(--green-strong); }}
+    .rail-group {{ margin:0 0 30px; }} .rail-group strong {{ display:block; color:#637168; font-size:.64rem; font-weight:700; margin:0 0 9px 13px; letter-spacing:.12em; text-transform:uppercase; }} .rail a {{ display:flex; align-items:center; gap:9px; color:#a1ada4; text-decoration:none; padding:9px 12px; border-left:2px solid transparent; border-radius:0 7px 7px 0; }} .rail a::before {{ content:' '; width:4px; height:4px; border:1px solid #66756c; border-radius:50%; }} .rail a:hover,.rail a.active {{ color:#f0ede5; border-left-color:var(--green-strong); background:rgba(140,200,158,.09); }} .rail a.active::before {{ background:var(--green-strong); border-color:var(--green-strong); }} .rail-note {{ border-top:1px solid var(--line); padding:16px 12px 0; line-height:1.55; color:#718078; }}
     .console-content {{ min-width:0; }}
-    .hero {{ padding:22px 0 20px; border-bottom:1px solid var(--line); }}
-    .hero-row {{ display:flex; align-items:end; justify-content:space-between; gap:30px; }} .hero-status {{ display:flex; gap:8px; align-items:center; color:#7e9288; font: .66rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.1em; white-space:nowrap; }} .hero-status::before {{ content:""; width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); }}
-    .thesis {{ max-width:760px; color:#9cafaa; font-size:.96rem; line-height:1.6; margin-bottom:0; }}
-    .eyebrow {{ color: var(--green); text-transform: uppercase; letter-spacing: .16em; font: 800 .7rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
+    .hero {{ padding:18px 0 25px; border-bottom:1px solid var(--line); }}
+    .hero-row {{ display:flex; align-items:end; justify-content:space-between; gap:30px; }} .hero-status {{ display:flex; gap:8px; align-items:center; color:#9aa89f; font: .68rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; }} .hero-status::before {{ content:""; width:7px; height:7px; border-radius:50%; background:var(--green-strong); box-shadow:0 0 0 4px rgba(140,200,158,.1); }}
+    .thesis {{ max-width:760px; color:#a5b0a8; font-size:.96rem; line-height:1.65; margin-bottom:0; }}
+    .eyebrow {{ color: var(--green); text-transform: uppercase; letter-spacing: .14em; font: 750 .68rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
     h1, h2, h3 {{ margin: .35rem 0 .8rem; }}
     h1 {{ font:500 clamp(2.25rem, 5vw, 4.4rem)/.95 Georgia,serif; letter-spacing:-.04em; max-width:850px; }}
     h2 {{ font-size: 1.1rem; }}
-    .muted {{ color: #8fa19a; }}
-    .disclosure {{ border: 1px solid #735b2c; border-left:3px solid var(--amber); background: #1b160c; color: #eacb8d; padding: 12px 15px; border-radius: 5px; margin: 14px 0; }}
-    .card {{ background: rgba(13,20,18,.78); border: 1px solid var(--line); border-radius: 3px; padding: 22px; margin-top: 14px; box-shadow: 0 18px 60px rgba(0,0,0,.18); }}
-    .card > h2, .toolbar > h2 {{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-.02em; }}
-    .finding {{ position:relative; border-color:#7d2f40; background:linear-gradient(120deg,rgba(55,20,29,.82),rgba(13,20,18,.97) 65%); padding:30px; overflow:hidden; }}
-    .finding::after {{ content:""; position:absolute; right:-90px; top:-100px; width:270px; height:270px; border:1px solid rgba(239,120,144,.18); border-radius:50%; box-shadow:0 0 0 20px rgba(239,120,144,.025),0 0 0 43px rgba(239,120,144,.02); pointer-events:none; }}
-    .finding.stands {{ border-color:#256a50; background:linear-gradient(120deg,rgba(14,55,40,.88),rgba(13,20,18,.97) 65%); }} .finding.stands::after {{ border-color:rgba(101,230,173,.16); box-shadow:0 0 0 20px rgba(101,230,173,.025),0 0 0 43px rgba(101,230,173,.02); }}
+    .muted {{ color: #98a69d; }}
+    .disclosure {{ border: 1px solid #75613a; border-left:3px solid var(--amber); background: #211c13; color: #e7cf9e; padding: 13px 16px; border-radius: 8px; margin: 14px 0; line-height:1.55; }}
+    .card {{ background: rgba(23,29,26,.88); border: 1px solid var(--line); border-radius: 10px; padding: 25px; margin-top: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.14); }}
+    .card > h2, .toolbar > h2 {{ font-family:Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing:-.025em; font-weight:650; }}
+    .finding {{ position:relative; border-color:#714048; background:rgba(39,27,29,.78); padding:30px; overflow:hidden; }}
+    .finding::after {{ content:""; position:absolute; right:-70px; top:-120px; width:300px; height:300px; border:1px solid rgba(229,143,139,.13); border-radius:50%; pointer-events:none; }}
+    .finding.stands {{ border-color:#3b6a4f; background:rgba(24,42,31,.82); }} .finding.stands::after {{ border-color:rgba(180,215,189,.15); }}
     .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }}
-    .metric {{ background: #09100e; border: 1px solid #202d28; border-radius: 3px; padding: 13px; }}
-    .label {{ color: #81948c; text-transform: uppercase; letter-spacing: .1em; font: 800 .65rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
+    .metric {{ background: var(--panel); border: 1px solid #2a3730; border-radius: 8px; padding: 15px; }}
+    .label {{ color: #819188; text-transform: uppercase; letter-spacing: .1em; font: 750 .63rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
     .value {{ margin-top: 5px; font-size: 1.15rem; font-weight: 800; overflow-wrap: anywhere; }}
-    .expired, .blocked {{ color: var(--red); }} .stands, .allow {{ color: var(--green); }} .unknown, .contested {{ color: var(--amber); }}
-    button {{ border: 1px solid #365248; border-radius: 4px; background: #13241e; color: #e8f5ee; padding: 9px 12px; cursor: pointer; font: 750 .78rem ui-monospace, SFMono-Regular, Menlo, monospace; margin: 4px 4px 0 0; }}
-    button:hover {{ border-color:var(--green); background:#19352b; }} button.danger {{ border-color:#8b3447; background:#431b25; }} button.safe {{ border-color:#277255; background:#123c2e; }}
-    .toolbar {{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }} .toolbar h2::before {{ content:"/ "; color:#53665d; }}
+    .expired, .blocked {{ color: var(--red); }} .stands, .allow {{ color: var(--green); }} .unknown {{ color: var(--amber); }} .contested {{ color: var(--purple); }}
+    button {{ border: 1px solid #52665a; border-radius: 7px; background: #27352c; color: #f0ede5; padding: 10px 13px; cursor: pointer; font: 700 .74rem Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing:.01em; margin: 4px 5px 0 0; }}
+    button:hover {{ border-color:var(--green); background:#344a3a; }} button.danger {{ border-color:#95545c; background:#4a292f; }} button.safe {{ border-color:#557f62; background:#294533; }}
+    .toolbar {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }} .toolbar h2::before {{ content:""; }}
     .graph {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }}
-    .node {{ padding: 12px; background: #0b1713; border: 1px solid #2d493f; border-radius: 5px; min-width: 120px; }}
+    .node {{ padding: 14px; background: #202b24; border: 1px solid #3f5647; border-radius: 8px; min-width: 130px; }}
     button.node {{ text-align: left; color: #e5edf8; font: inherit; }}
     button.node:focus-visible {{ outline: 2px solid #70e0bd; outline-offset: 2px; }}
-    .arrow {{ color: var(--green); font-size: 1.3rem; }}
+    .arrow {{ color: var(--green); font-size: 1.1rem; }}
     .timeline {{ width: 100%; accent-color: var(--green); }}
     .timeline-row {{ display: flex; justify-content: space-between; color: #8fa19a; font-size: .8rem; }}
-    details {{ border-top: 1px solid var(--line); padding: 10px 0; }} summary {{ cursor: pointer; font-weight: 750; }}
+    details {{ border-top: 1px solid var(--line); padding: 13px 0; }} summary {{ cursor: pointer; font-weight: 650; }}
     pre, code {{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }}
     pre {{ white-space: pre-wrap; overflow-wrap: anywhere; color: #b4c8bf; font-size: .78rem; }}
     table {{ width: 100%; border-collapse: collapse; }} th, td {{ text-align: left; padding: 9px; border-bottom: 1px solid var(--line); vertical-align: top; }} th {{ color: #8fa19a; font-size: .7rem; text-transform: uppercase; }}
     a {{ color:var(--green); }}
     blockquote {{ margin-left:0; border-left:2px solid #365248; padding-left:14px; color:#b7c8c0; }}
-    @media (max-width:900px) {{ main {{ grid-template-columns:1fr; gap:0; }} .rail {{ position:static; display:flex; gap:18px; padding:8px 0 16px; border-bottom:1px solid var(--line); }} .rail-group,.rail-note {{ display:none; }} .rail-title {{ margin:0; }} }}
+    .console-section {{ display:none; }} .console-section.active {{ display:block; animation: reveal .22s ease-out; }} @keyframes reveal {{ from {{ opacity:0; transform:translateY(4px); }} to {{ opacity:1; transform:none; }} }}
+    .section-intro {{ display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:18px; }} .section-intro p {{ max-width:620px; margin:0; line-height:1.55; }}
+    .overview-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px; }} .overview-grid .metric {{ min-height:92px; }}
+    .activity-row {{ display:grid; grid-template-columns:150px 170px 1fr; gap:15px; padding:12px 0; border-bottom:1px solid var(--line); align-items:start; }} .activity-row:last-child {{ border-bottom:0; }} .activity-time {{ color:#7e8c84; font: .68rem ui-monospace,monospace; }} .activity-event {{ color:var(--green); text-transform:uppercase; font:700 .64rem ui-monospace,monospace; letter-spacing:.06em; }}
+    .chain {{ display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin-top:18px; }} .chain-step {{ position:relative; padding:14px 15px 14px 0; border-top:1px solid #405247; }} .chain-step:not(:last-child)::after {{ content:'→'; position:absolute; right:12px; top:10px; color:var(--green); }} .chain-step strong {{ display:block; font-size:.82rem; margin-top:5px; }} .chain-step span {{ color:var(--muted); font-size:.75rem; line-height:1.4; }}
+    .provenance-row {{ display:grid; grid-template-columns:140px 1fr; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); }} .provenance-row .label {{ padding-top:3px; }}
+    .comparison-grid {{ display:grid; grid-template-columns:170px repeat(2,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; }} .comparison-grid > * {{ margin:0; border:0; border-radius:0; }} .comparison-head {{ background:#263128; color:#c8d6cc; padding:12px 14px; font:700 .67rem ui-monospace,monospace; letter-spacing:.08em; }} .comparison-label {{ background:#131a16; color:#9aa79e; padding:15px 14px; font-size:.78rem; }} .comparison-grid .metric {{ min-height:0; padding:15px 14px; }}
+    @media (max-width:1100px) {{ main {{ grid-template-columns:190px minmax(0,1fr); gap:28px; padding-left:26px; padding-right:26px; }} .chain {{ grid-template-columns:repeat(3,1fr); }} }}
+    @media (max-width:900px) {{ main {{ grid-template-columns:1fr; gap:0; }} .rail {{ position:static; display:flex; align-items:center; gap:18px; padding:8px 0 16px; border-bottom:1px solid var(--line); }} .rail-group,.rail-note {{ display:none; }} .rail-title {{ margin:0; }} .rail::after {{ content:'Use the navigation above to move through the workspace'; color:#718078; font-size:.72rem; margin-left:auto; }} }}
     @media (max-width:680px) {{ main {{ padding:18px 14px 44px; }} .topbar {{ padding:10px 14px; }} nav {{ width:100%; margin-left:0; }} h1 {{ font-size:2.45rem; }} .hero-row {{ display:block; }} .hero-status {{ margin-top:18px; }} }}
     .off {{ opacity: .58; }}
+    @media (max-width:620px) {{ .overview-grid {{ grid-template-columns:repeat(2,1fr); }} .chain {{ grid-template-columns:1fr; }} .chain-step:not(:last-child)::after {{ content:'↓'; right:auto; left:2px; top:auto; bottom:-13px; }} .activity-row {{ grid-template-columns:1fr; gap:4px; }} }}
   </style>
 </head>
 <body>
-<header class="topbar"><div class="brand">STANDING</div><div class="system"><span class="pulse"></span>SYSTEM ONLINE · TEMPORAL DECISION CONTROL</div><nav><a href="#finding">FINDING</a><a href="#timeline">TIME TRAVEL</a><a href="#review">REVIEW</a><a href="#memory">MEMORY</a><a href="#proof">PROOF</a></nav></header>
+<header class="topbar"><a class="brand" href="/">STANDING</a><span class="workspace-name">Engineering intent workspace</span><div class="system"><span class="pulse"></span>Memory online</div><nav><a href="/" class="home-link">Product</a><a href="/console?view=evidence" data-view="evidence">Evidence</a><a href="/console?view=sandbox" data-view="sandbox">Sandbox</a></nav></header>
 <main>
-  <aside class="rail"><div class="rail-title">stand<span>ing</span></div><div class="rail-group"><strong>Workspace</strong><a class="active" href="#finding">Current finding</a><a href="#review">Review queue</a><a href="#timeline">Time travel</a></div><div class="rail-group"><strong>System record</strong><a href="#memory">Memory</a><a href="#proof">Evidence</a><a href="#provenance">Provenance</a></div><div class="rail-note">A temporal control plane for engineering intent.<br><br>Every decision has a reason. Every reason has a lifespan.</div></aside>
+  <aside class="rail"><div class="rail-title">stand<span>ing</span></div><div class="rail-group"><strong>Workspace</strong><a class="active" href="/console?view=overview" data-view="overview">Overview</a><a href="/console?view=reviews" data-view="reviews">Reviews</a><a href="/console?view=decisions" data-view="decisions">Decisions</a></div><div class="rail-group"><strong>System record</strong><a href="/console?view=evidence" data-view="evidence">Evidence</a><a href="/console?view=timeline" data-view="timeline">Timeline</a><a href="/console?view=evaluation" data-view="evaluation">Evaluation</a><a href="/console?view=activity" data-view="activity">Activity</a></div><div class="rail-group"><strong>Controlled environment</strong><a href="/console?view=sandbox" data-view="sandbox">Sandbox</a></div><div class="rail-note">A temporal system of record for engineering intent.<br><br>Every decision has a reason. Every reason has a lifespan.</div></aside>
   <div class="console-content">
-  <div class="hero"><div class="hero-row"><div><div class="eyebrow">Workspace / standing control</div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div><div class="hero-status">Live review surface</div></div></div>
+  <div class="hero"><div class="hero-row"><div><div class="eyebrow">Standing Console / overview</div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div><div class="hero-status">Product workspace</div></div></div>
   <div id="disclosure"></div>
-  <section id="finding" class="card finding"></section>
-  <section class="card">
+  <section id="finding" class="card finding console-section" data-view="overview"></section>
+  <section id="overviewStats" class="card console-section" data-view="overview"><div class="section-intro"><div><div class="eyebrow">Attention</div><h2>What requires engineering attention</h2></div><p class="muted">Standing keeps current findings, review gates, and evidence freshness in one place.</p></div><div id="overviewStatsGrid" class="overview-grid"></div></section>
+  <section id="graphSection" class="card console-section" data-view="decisions">
     <div class="toolbar"><h2 style="margin-right:auto">Decision graph</h2><span class="muted">Code → decision → assumption → evidence → standing</span></div>
     <div id="graph" class="graph"></div>
   </section>
-  <section id="timeline" class="card">
+  <section id="timeline" class="card console-section" data-view="timeline">
     <div class="toolbar"><h2 style="margin-right:auto">Bitemporal time travel</h2><span id="selectedDate" class="muted"></span></div>
     <input id="timeSlider" class="timeline" type="range" min="0" max="1" value="1" step="1">
     <div class="timeline-row"><span>Decision made</span><span>World changed</span><span>Today</span></div>
     <div id="timeTravel" class="grid" style="margin-top:12px"></div>
   </section>
-  <section id="review" class="card">
-    <div class="toolbar"><h2 style="margin-right:auto">Interactive PR review</h2><span id="reviewResult" class="muted"></span></div>
-    <p class="muted">The review uses the exact stored governed path. Full-text matches alone never block.</p>
+  <section id="review" class="card console-section" data-view="reviews">
+    <div class="section-intro"><div><div class="eyebrow">Standing Review</div><h2>Change review</h2></div><span id="reviewResult" class="muted"></span></div>
+    <p class="muted">The backend reviewer checks the exact stored governed path. Search results are candidates; they never block on their own.</p>
     <div id="prReview"></div>
   </section>
-  <section class="card">
+  <section id="proposalsSection" class="card console-section" data-view="decisions">
     <div class="toolbar"><h2 style="margin-right:auto">Human confirmation</h2><span class="muted">Model proposals never govern code automatically</span></div>
     <div id="proposals"></div>
   </section>
-  <section id="memory" class="card">
-    <div class="toolbar"><h2 style="margin-right:auto">Memory comparison</h2><button id="memoryToggle">MEMORY OFF</button></div>
+  <section id="memory" class="card console-section" data-view="evidence">
+    <div class="section-intro"><div><div class="eyebrow">Memory Proof</div><h2>Compare with memory removed</h2></div><button id="memoryCompare" class="safe">RUN MEMORY PROOF</button></div>
+    <p class="muted">This is a backend ablation: the same changed path is reviewed once with Sibyl context and once with a fresh empty store.</p>
     <div id="memoryComparison"></div>
   </section>
-  <section class="card">
+  <section id="waiverSection" class="card console-section" data-view="activity">
     <div class="toolbar"><h2 style="margin-right:auto">Waiver status</h2><span class="muted">Human-issued, temporary, and automatically expiring</span></div>
     <div id="waivers"></div>
   </section>
-  <section class="card">
-    <div class="toolbar"><h2 style="margin-right:auto">Controlled demo controls</h2><span class="muted">Fixed local workflow; no arbitrary signing</span></div>
+  <section id="activity" class="card console-section" data-view="activity"><div class="section-intro"><div><div class="eyebrow">Journal</div><h2>Activity</h2></div><span class="muted">Recorded in Sibyl Memory</span></div><div id="activityLog"></div></section>
+  <section id="sandbox" class="card console-section" data-view="sandbox">
+    <div class="section-intro"><div><div class="eyebrow">Sandbox controls</div><h2>Controlled scenario</h2></div><span class="muted">Fixed workflow · no arbitrary signing</span></div>
     <div class="disclosure">{escape(CONTROLLED_DISCLOSURE)}</div>
     <div class="toolbar">
-      <button id="break" class="danger">BREAK DEMO ASSUMPTION</button>
-      <button id="restore" class="safe">RESTORE DEMO</button>
+      <button id="break" class="danger">BREAK ASSUMPTION</button>
+      <button id="restore" class="safe">RESET SANDBOX</button>
       <button id="resolve" class="safe">RECORD REPLACEMENT DECISION</button>
-      <button id="reviewAgain">RUN REVIEW AGAIN</button>
-      <button id="waiver">INSPECT DEMO WAIVER</button>
+      <button id="reviewAgain">RUN REVIEW</button>
+      <button id="waiver">VIEW WAIVER POLICY</button>
     </div>
     <div id="actionResult" class="muted" style="margin-top:10px"></div>
   </section>
-  <section class="card"><h2>Real-world proof</h2><div id="realWorld"></div></section>
-  <section id="proof" class="card"><h2>Live partner proof</h2><div id="partnerProof"></div></section>
-  <section id="provenance" class="card"><h2>Evidence provenance</h2><div id="provenance"></div></section>
+  <section id="realWorldSection" class="card console-section" data-view="evaluation"><div class="section-intro"><div><div class="eyebrow">Public repository evaluation</div><h2>Public cases</h2></div><span class="muted">Real evidence kept separate from the sandbox</span></div><div id="realWorld"></div></section>
+  <section id="proof" class="card console-section" data-view="evidence"><div class="section-intro"><div><div class="eyebrow">Live historical verification path</div><h2>Partner evidence</h2></div><span class="muted">Completed records</span></div><div id="partnerProof"></div></section>
+  <section id="provenanceSection" class="card console-section" data-view="evidence"><div class="section-intro"><div><div class="eyebrow">Evidence identity</div><h2>Provenance</h2></div><span class="muted">Human-readable first · raw record on demand</span></div><div id="provenance"></div></section>
   </div>
 </main>
 <script>
 const initial = {encoded};
 let model = initial;
-let memoryOn = true;
 let selectedTime = null;
+const pathViews = {{'/console/reviews':'reviews','/console/decisions':'decisions','/console/evidence':'evidence','/console/timeline':'timeline','/console/evaluation':'evaluation','/console/activity':'activity','/console/sandbox':'sandbox'}};
+let activeView = new URLSearchParams(window.location.search).get('view') || pathViews[window.location.pathname] || 'overview';
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c]));
 const formatDate = (seconds) => seconds ? new Date(Number(seconds) * 1000).toISOString().slice(0,10) : '—';
@@ -709,48 +971,59 @@ function render() {{
   $('summary').textContent = model.summary || 'Standing';
   $('disclosure').innerHTML = model.disclosure ? `<div class="disclosure">${{esc(model.disclosure)}}</div>` : '';
   const finding = primary();
-  if (!finding) {{ $('finding').innerHTML = '<h2>No remembered decisions</h2><p class="muted">Standing has no engineering intent to evaluate yet.</p>'; $('finding').className = 'card finding stands'; }}
+  if (!finding) {{ $('finding').innerHTML = '<h2>No remembered decisions</h2><p class="muted">Standing has no engineering intent to evaluate yet.</p>'; $('finding').className = 'card finding console-section stands'; }}
   else {{
     const ev = finding.evaluation || {{}}; const condition = (ev.conditions || [])[0] || {{}};
-    $('finding').className = 'card finding ' + String(ev.state || '').toLowerCase();
+    $('finding').className = 'card finding console-section ' + String(ev.state || '').toLowerCase();
     $('finding').innerHTML = `<div class="eyebrow">Primary engineering finding</div><h2>${{esc(finding.body.title || finding.decision_id)}}</h2><div class="grid"><div class="metric"><div class="label">Decision</div><div class="value">${{esc(finding.decision_id)}}</div></div><div class="metric"><div class="label">Required</div><div class="value">${{esc(condition.predicate || '—')}}</div></div><div class="metric"><div class="label">Current</div><div class="value">${{esc(condition.accepted_value ?? 'unknown')}}</div></div><div class="metric"><div class="label">Affected</div><div class="value">${{(finding.body.governed_paths || []).length}} files</div></div><div class="metric"><div class="label">Status</div><div class="value ${{String(ev.state || '').toLowerCase()}}">${{esc(ev.state || 'UNKNOWN')}}</div></div></div><p class="muted">${{esc(finding.body.description || '')}}</p>`;
   }}
-  renderGraph(finding); renderTimeTravel(finding); renderPr(finding); renderProposals(); renderMemory(finding); renderWaivers(); renderRealWorld(); renderPartnerProof(); renderProvenance(finding);
+  renderOverview(); renderGraph(finding); renderTimeTravel(finding); renderPr(finding); renderProposals(); renderMemory(); renderWaivers(); renderActivity(); renderRealWorld(); renderPartnerProof(); renderProvenance(finding); setView(activeView);
+}}
+function setView(view) {{
+  const known = ['overview','reviews','decisions','evidence','timeline','evaluation','activity','sandbox'];
+  activeView = known.includes(view) ? view : 'overview';
+  document.querySelectorAll('.console-section').forEach((section) => section.classList.toggle('active', section.dataset.view === activeView));
+  document.querySelectorAll('[data-view]').forEach((item) => item.classList.toggle('active', item.dataset.view === activeView));
+  if (window.location.pathname.startsWith('/console')) history.replaceState(null, '', `/console?view=${{activeView}}`);
+}}
+function renderOverview() {{
+  const decisions = model.decisions || []; const findings = decisions.filter((d) => d.active && d.evaluation?.state !== 'STANDS'); const waivers = model.waivers || []; const real = model.real_world || {{}};
+  $('overviewStatsGrid').innerHTML = `<div class="metric"><div class="label">Needs attention</div><div class="value ${{findings.length ? 'expired' : 'stands'}}">${{findings.length}}</div><p class="muted">Current decisions outside STANDS</p></div><div class="metric"><div class="label">Reviewed paths</div><div class="value">${{esc(model.review_result?.decisions_found ?? 0)}}</div><p class="muted">Exact governed-path matches</p></div><div class="metric"><div class="label">Evidence due</div><div class="value">${{decisions.reduce((n,d) => n + (d.evaluation?.state === 'UNKNOWN' ? 1 : 0), 0)}}</div><p class="muted">Unknown or stale conditions</p></div><div class="metric"><div class="label">Public cases</div><div class="value">${{esc(real.reviewed_case_count ?? 0)}}</div><p class="muted">Hand-reviewed source chains</p></div>`;
 }}
 function renderGraph(finding) {{
   if (!finding) {{ $('graph').innerHTML = '<span class="muted">No graph available.</span>'; return; }}
-  const condition = (finding.conditions || [])[0] || {{}}; const observations = condition.observations || []; const ref = condition.reference || {{}}; const state = (finding.evaluation || {{}}).state || 'UNKNOWN';
+  const condition = (finding.conditions || [])[0] || {{}}; const observations = condition.observations || []; const state = (finding.evaluation || {{}}).state || 'UNKNOWN';
   const node = (target, label, value, className = '') => `<button type="button" class="node ${{className}}" data-graph-target="${{esc(target)}}"><div class="label">${{esc(label)}}</div><b>${{esc(value)}}</b></button>`;
   $('graph').innerHTML = [node('code', 'Code', (finding.body.governed_paths || [])[0] || '—'),`<span class="arrow">↓</span>`,node('decision', 'Decision', finding.decision_id),`<span class="arrow">↓</span>`,node('assumption', 'Assumption', condition.rule?.predicate || '—'),`<span class="arrow">↓</span>`,node('evidence', 'Accepted evidence', `${{observations.length}} observation(s)`),`<span class="arrow">↓</span>`,node('standing', 'Standing', state, String(state).toLowerCase())].join('');
   document.querySelectorAll('[data-graph-target]').forEach((element) => element.addEventListener('click', () => {{
     const target = element.dataset.graphTarget;
-    const section = target === 'code' ? 'prReview' : target === 'evidence' ? 'provenance' : target === 'assumption' ? 'finding' : target === 'standing' ? 'finding' : 'finding';
-    $(section).scrollIntoView({{behavior: 'smooth', block: 'center'}});
+    const view = target === 'code' ? 'reviews' : target === 'evidence' ? 'evidence' : target === 'decision' || target === 'assumption' || target === 'standing' ? 'decisions' : 'overview';
+    setView(view);
     $('actionResult').textContent = `Selected ${{target}} in the decision graph.`;
   }}));
 }}
 function allObservations(finding) {{ return ((finding?.conditions || [])[0]?.observations || []).filter((x) => x && x.effective_from != null); }}
 function renderTimeTravel(finding) {{
-  const rows = allObservations(finding); const demo = model.demo || {{}}; const points = [...new Set(rows.map((x) => Number(x.effective_from)).concat([demo.timeline?.decision_date, demo.timeline?.change_date, demo.timeline?.now].filter(Boolean)))].sort((a,b)=>a-b); const slider = $('timeSlider'); slider.max = String(Math.max(1, points.length - 1)); slider.value = String(selectedTime == null ? points.length - 1 : Math.min(selectedTime, points.length - 1)); const point = points[Number(slider.value)] || Math.floor(Date.now()/1000); selectedTime = Number(slider.value); $('selectedDate').textContent = `Selected: ${{formatDate(point)}}`;
-  const valid = rows.filter((x) => Number(x.effective_from) <= point).sort((a,b) => Number(b.effective_from)-Number(a.effective_from))[0]; const known = rows.filter((x) => Number(x.recorded_at ?? Infinity) <= point && Number(x.effective_from) <= point).sort((a,b) => Number(b.effective_from)-Number(a.effective_from))[0];
-  $('timeTravel').innerHTML = `<div class="metric"><div class="label">What we now believe was true</div><div class="value">${{esc(valid?.value ?? 'unknown')}} ${{esc(valid?.unit || '')}}</div><p class="muted">Valid time: ${{formatDate(valid?.effective_from)}}</p></div><div class="metric"><div class="label">What Standing knew then</div><div class="value">${{esc(known?.value ?? 'not recorded')}}</div><p class="muted">Knowledge cutoff: ${{formatDate(point)}}</p></div><div class="metric"><div class="label">Assessment</div><div class="value">${{valid && known && valid.value !== known.value ? 'Justified from available evidence' : 'Evidence and knowledge align'}}</div><p class="muted">Standing never rewrites the original record.</p></div>`;
+  const timeline = Array.isArray(model.sandbox?.time_travel) ? model.sandbox.time_travel : []; const slider = $('timeSlider'); const last = Math.max(0, timeline.length - 1); slider.max = String(last); slider.value = String(selectedTime == null ? last : Math.min(selectedTime, last)); const row = timeline[Number(slider.value)] || {{}}; const point = Number(row.point || Math.floor(Date.now()/1000)); selectedTime = Number(slider.value); const valid = row.valid || null; const known = row.known || null; $('selectedDate').textContent = `Selected: ${{formatDate(point)}}`;
+  $('timeTravel').innerHTML = `<div class="metric"><div class="label">What we now believe was true</div><div class="value">${{esc(valid?.value ?? 'unknown')}} ${{esc(valid?.unit || '')}}</div><p class="muted">Valid time: ${{formatDate(valid?.effective_from)}}</p></div><div class="metric"><div class="label">What Standing knew then</div><div class="value">${{esc(known?.value ?? 'not recorded')}} ${{esc(known?.unit || '')}}</div><p class="muted">Knowledge cutoff: ${{formatDate(point)}}</p></div><div class="metric"><div class="label">Assessment</div><div class="value">${{esc(row.assessment || 'No temporal answer')}}</div><p class="muted">Standing never rewrites the original record.</p></div>`;
 }}
-function renderPr(finding) {{ const paths = finding?.body?.governed_paths || []; const hit = paths.includes('src/archive.py') || paths.some((p) => 'src/archive.py'.startsWith(String(p).replace('/**','/'))); $('reviewResult').textContent = finding ? (hit ? `${{finding.decision_id}} governs the selected path` : 'No exact governed-path match') : 'No decision found'; $('prReview').innerHTML = `<div class="metric"><div class="label">PR #12 / changed path</div><div class="value">src/archive.py</div><p class="muted">${{hit ? `Result: ${{(finding.evaluation || {{}}).state === 'STANDS' ? 'ALLOW' : 'BLOCK'}}` : 'Historical protection unavailable'}}</p></div>`; }}
+function renderPr() {{ const result = model.review_result || {{}}; const decisions = result.decisions || []; const row = decisions[0] || {{}}; const evaluation = row.evaluation || {{}}; const state = row.state || result.state || 'UNKNOWN'; const action = row.action || result.action || 'ALLOW'; $('reviewResult').textContent = result.decisions_found ? `${{result.decisions_found}} exact governed decision(s) found` : 'No exact governed decision found'; $('prReview').innerHTML = `<div class="grid"><div class="metric"><div class="label">Changed path</div><div class="value"><code>${{esc((result.changed_paths || ['src/archive.py'])[0])}}</code></div><p class="muted">Resolved by the backend reviewer</p></div><div class="metric"><div class="label">Governing decision</div><div class="value">${{esc(row.decision_id || 'None')}}</div><p class="muted">${{esc(evaluation.conditions?.[0]?.predicate || 'No remembered assumption')}}</p></div><div class="metric"><div class="label">Standing</div><div class="value ${{String(state).toLowerCase()}}">${{esc(state)}}</div><p class="muted">${{esc(evaluation.conditions?.[0]?.message || 'No decision governs this path.')}}</p></div><div class="metric"><div class="label">Review action</div><div class="value ${{action === 'BLOCK' ? 'blocked' : 'allow'}}">${{esc(action)}}</div><p class="muted">Exact-path validation is authoritative.</p></div></div>`; }}
 function renderProposals() {{ const proposals = model.proposals || []; if (!proposals.length) {{ $('proposals').innerHTML = '<p class="muted">No decision proposals are waiting for review.</p>'; return; }} $('proposals').innerHTML = proposals.map((p) => `<details><summary>${{esc(p.proposal_id)}} — ${{esc(p.status)}}</summary><p><b>${{esc(p.title || p.decision_id)}}</b></p><p class="muted">Derived from ${{esc(p.artifact_path || 'engineering artifact')}} · ${{esc(p.artifact_type || '')}}</p><blockquote>${{esc(p.source_sentence || 'No source sentence recorded.')}}</blockquote><p class="muted">${{esc(p.rationale || '')}}</p>${{p.status === 'PENDING' ? '<button data-proposal-action="confirm-proposal" class="safe">CONFIRM PROPOSAL</button><button data-proposal-action="reject-proposal" class="danger">REJECT PROPOSAL</button>' : `<span class="value">${{esc(p.status)}}${{p.confirmed_by ? ' by ' + esc(p.confirmed_by) : ''}}</span>`}}</details>`).join(''); document.querySelectorAll('[data-proposal-action]').forEach((button) => button.addEventListener('click', () => action(button.dataset.proposalAction))); }}
-function renderMemory(finding) {{ if (!memoryOn) {{ $('memoryComparison').innerHTML = `<div class="grid"><div class="metric"><div class="label">External fact</div><div class="value">${{esc(model.demo?.current_value ?? 'unknown')}} days</div></div><div class="metric"><div class="label">Governing decision</div><div class="value">None</div></div><div class="metric"><div class="label">Original assumption</div><div class="value">Missing</div></div><div class="metric"><div class="label">Protection</div><div class="value unknown">Historical protection unavailable</div></div></div>`; return; }} $('memoryComparison').innerHTML = `<div class="grid"><div class="metric"><div class="label">Memory ON</div><div class="value">${{esc(finding?.decision_id || 'None')}}</div></div><div class="metric"><div class="label">Assumption recovered</div><div class="value">${{esc((finding?.conditions || [])[0]?.rule?.predicate || 'None')}}</div></div><div class="metric"><div class="label">Expiry detected</div><div class="value ${{finding && finding.evaluation?.state !== 'STANDS' ? 'blocked' : 'stands'}}">${{finding && finding.evaluation?.state !== 'STANDS' ? 'Yes' : 'No'}}</div></div><div class="metric"><div class="label">Protection</div><div class="value">${{finding && finding.evaluation?.state !== 'STANDS' ? 'BLOCK' : 'ALLOW'}}</div></div></div>`; }}
+function renderMemory() {{ const comparison = model.memory_comparison; if (!comparison) {{ $('memoryComparison').innerHTML = '<div class="metric"><div class="label">Ready to run</div><div class="value">Backend ablation pending</div><p class="muted">Run the memory proof to compare the same review with and without remembered intent.</p></div>'; return; }} const on = comparison.memory_on || {{}}; const off = comparison.memory_removed || {{}}; $('memoryComparison').innerHTML = `<div class="comparison-grid"><div class="comparison-head"></div><div class="comparison-head">MEMORY PRESENT</div><div class="comparison-head">MEMORY REMOVED</div><div class="comparison-label">External fact</div><div class="metric">${{esc(on.current_fact)}} days</div><div class="metric">${{esc(off.current_fact)}} days</div><div class="comparison-label">Decision found</div><div class="metric">${{esc(on.decision_found || 'None')}}</div><div class="metric">${{esc(off.decision_found || 'None')}}</div><div class="comparison-label">Original assumption</div><div class="metric">${{esc(on.assumption || 'Missing')}}</div><div class="metric">${{esc(off.assumption || 'Missing')}}</div><div class="comparison-label">Expiry identified</div><div class="metric ${{on.expiry_detected ? 'blocked' : 'stands'}}">${{on.expiry_detected ? 'Yes' : 'No'}}</div><div class="metric">No</div><div class="comparison-label">Protection</div><div class="metric ${{on.protection === 'BLOCK' ? 'blocked' : 'allow'}}">${{esc(on.protection)}}</div><div class="metric unknown">${{esc(off.protection)}}</div></div><p class="muted" style="margin-top:16px">${{esc(comparison.conclusion || '')}}</p>`; }}
 function renderWaivers() {{ const waivers = model.waivers || []; if (!waivers.length) {{ $('waivers').innerHTML = '<p class="muted">No human waiver is recorded. A non-standing result remains blocked.</p>'; return; }} $('waivers').innerHTML = waivers.map((w) => `<div class="metric"><div class="label">${{esc(w.status || 'WAIVER')}}</div><div class="value">${{esc(w.waiver_id || '—')}} · ${{esc(w.decision_id || '—')}}</div><p class="muted">Approved by ${{esc(w.issued_by || '—')}} · expires ${{esc(formatDate(w.expires_at))}} · ${{esc(w.reason || '')}}</p></div>`).join(''); }}
-function renderRealWorld() {{ const proof = model.real_world || {{}}; const cases = proof.cases || []; const statusClass = proof.status === 'REVIEWED' ? 'stands' : 'unknown'; $('realWorld').innerHTML = `<div class="grid"><div class="metric"><div class="label">Status</div><div class="value ${{statusClass}}">${{esc(proof.status || 'PENDING')}}</div></div><div class="metric"><div class="label">Reviewed cases</div><div class="value">${{esc(proof.reviewed_case_count ?? 0)}}</div></div><div class="metric"><div class="label">Pending candidates</div><div class="value">${{esc(proof.pending_case_count ?? cases.length)}}</div></div></div>${{cases.length ? cases.map((c) => `<details><summary>${{esc(c.case_id)}} — ${{esc(c.review_status || 'PENDING HUMAN REVIEW')}}</summary><p class="muted">${{esc(c.repository || '')}}</p><p><a href="${{esc(c.decision_url)}}" target="_blank" rel="noreferrer">Decision artifact</a> · <a href="${{esc(c.historical_ground_truth_url)}}" target="_blank" rel="noreferrer">Historical source</a> · <a href="${{esc(c.current_ground_truth_url)}}" target="_blank" rel="noreferrer">Current source</a></p><p class="muted">${{esc(c.disclosure || '')}}</p></details>`).join('') : '<p class="muted">No source-linked real-world candidate is recorded.</p>'}}`; }}
-function renderPartnerProof() {{ const proof = model.partner_proof || {{}}; const agents = proof.agents || []; $('partnerProof').innerHTML = `<p>${{esc(proof.summary || 'No live partner proof recorded.')}}</p><div class="grid"><div class="metric"><div class="label">Virtuals ACP</div><div class="value">Job ${{esc(proof.acp_job_id || '—')}}</div><p><a href="${{esc(proof.acp_public_url || '#')}}" target="_blank" rel="noreferrer">Open ACP platform ↗</a></p><p class="muted">Technical record: ${{esc(proof.acp_job_url || '—')}} · API access may require credentials.</p></div><div class="metric"><div class="label">Base EAS</div><div class="value">Observation recorded</div><p><a href="${{esc(proof.eas_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open Base transaction ↗</a></p></div><div class="metric"><div class="label">ERC-8004</div><div class="value">Agent #${{esc(proof.erc8004_agent_id || '—')}}</div><p><a href="${{esc(proof.erc8004_identity_url || '#')}}" target="_blank" rel="noreferrer">Open identity registration ↗</a></p><p><a href="${{esc(proof.erc8004_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open feedback ↗</a></p></div></div><div class="metric" style="margin-top:12px"><div class="label">Agent registry</div><div class="value">Two Virtuals profiles discovered</div><p>${{agents.map((agent) => `<span style="display:block;margin-top:7px"><b>${{esc(agent.name)}}</b> · ${{esc(agent.role)}} · profile ID <code>${{esc(agent.virtual_agent_id)}}</code></span>`).join('')}}</p><p><a href="${{esc(proof.acp_directory_url || '#')}}" target="_blank" rel="noreferrer">Open ACP agent directory ↗</a> · <a href="${{esc(proof.acp_scan_url || '#')}}" target="_blank" rel="noreferrer">Open ACP scan ↗</a></p><p class="muted">These are Virtuals registry profile IDs, not asserted ACP Entity IDs.</p></div><details><summary>Evidence identity</summary><pre>${{esc(JSON.stringify({{eas_uid: proof.eas_uid, acp_job_id: proof.acp_job_id, erc8004_agent_id: proof.erc8004_agent_id}}, null, 2))}}</pre></details>`; }}
-function renderProvenance(finding) {{ const rows = allObservations(finding); $('provenance').innerHTML = rows.length ? rows.map((x) => `<details><summary>${{esc(x.observation_uid)}} — ${{esc(x.value)}} ${{esc(x.unit || '')}}</summary><pre>${{esc(JSON.stringify(x, null, 2))}}</pre></details>`).join('') : '<p class="muted">No temporal observations are recorded.</p>'; }}
-async function action(name) {{ try {{ const response = await fetch('/api/demo/' + name, {{method:'POST'}}); const body = await response.json(); if (!response.ok) throw new Error(body.error || 'action failed'); if (name === 'waiver') {{ $('actionResult').textContent = body.disclosure + ' ' + body.status; return; }} model = body; selectedTime = null; $('actionResult').textContent = name === 'break' ? 'Controlled source changed: 365 → 90 days.' : name === 'restore' ? 'Controlled source restored: 90 → 365 days.' : name === 'resolve' ? 'ACME-001 superseded by STORAGE-002.' : name === 'confirm-proposal' ? 'Human confirmation recorded; the proposal is now a decision.' : name === 'reject-proposal' ? 'Human rejection recorded; no decision was created.' : 'Review completed.'; render(); }} catch (error) {{ $('actionResult').textContent = String(error); }} }}
-$('timeSlider').addEventListener('input', () => {{ selectedTime = Number($('timeSlider').value); render(); }}); $('memoryToggle').addEventListener('click', () => {{ memoryOn = !memoryOn; $('memoryToggle').textContent = memoryOn ? 'MEMORY OFF' : 'MEMORY ON'; render(); }}); $('break').addEventListener('click', () => action('break')); $('restore').addEventListener('click', () => action('restore')); $('resolve').addEventListener('click', () => action('resolve')); $('reviewAgain').addEventListener('click', () => action('review')); $('waiver').addEventListener('click', () => action('waiver')); render();
+function renderRealWorld() {{ const proof = model.real_world || {{}}; const cases = proof.cases || []; const evaluation = model.evaluation || {{}}; const statusClass = proof.status === 'REVIEWED' ? 'stands' : 'unknown'; $('realWorld').innerHTML = `<div class="grid"><div class="metric"><div class="label">Review status</div><div class="value ${{statusClass}}">${{esc(proof.status || 'PENDING')}}</div></div><div class="metric"><div class="label">Public cases</div><div class="value">${{esc(proof.reviewed_case_count ?? 0)}}</div></div><div class="metric"><div class="label">Controlled scenarios</div><div class="value">${{esc(evaluation.controlled_scenarios ?? 0)}}</div></div></div><div class="disclosure">Real-world evidence is reported separately from the controlled scenario. No benchmark score is claimed until all prediction artifacts are recorded.</div>${{cases.length ? cases.map((c) => `<details><summary>${{esc(c.case_id)}} · ${{esc(c.review_status || 'PENDING HUMAN REVIEW')}}</summary><p class="muted">${{esc(c.repository || '')}}</p><p><a href="${{esc(c.decision_url)}}" target="_blank" rel="noreferrer">Decision artifact ↗</a> · <a href="${{esc(c.historical_ground_truth_url)}}" target="_blank" rel="noreferrer">Historical source ↗</a> · <a href="${{esc(c.current_ground_truth_url)}}" target="_blank" rel="noreferrer">Current source ↗</a></p><p class="muted">${{esc(c.disclosure || '')}}</p></details>`).join('') : '<p class="muted">No source-linked public case is recorded.</p>'}}`; }}
+function renderPartnerProof() {{ const proof = model.partner_proof || {{}}; const agents = proof.agents || []; $('partnerProof').innerHTML = `<p>${{esc(proof.summary || 'No completed verification record is available.')}}</p><div class="chain"><div class="chain-step"><div class="label">01 · Virtuals ACP</div><strong>Job ${{esc(proof.acp_job_id || '—')}} · completed</strong><span><a href="${{esc(proof.acp_public_url || '#')}}" target="_blank" rel="noreferrer">Open platform ↗</a><br><a href="${{esc(proof.acp_job_url || '#')}}" target="_blank" rel="noreferrer">Technical record ↗</a><br>API access may require credentials.</span></div><div class="chain-step"><div class="label">02 · Verifier</div><strong>Source extracted</strong><span>Typed value returned with extraction provenance.</span></div><div class="chain-step"><div class="label">03 · Base EAS</div><strong>Observation recorded</strong><span><a href="${{esc(proof.eas_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open Base transaction ↗</a></span></div><div class="chain-step"><div class="label">04 · Sibyl</div><strong>Read back and stored</strong><span>Condition reference and standing journal updated.</span></div><div class="chain-step"><div class="label">05 · ERC-8004</div><strong>Outcome recorded</strong><span><a href="${{esc(proof.erc8004_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open feedback ↗</a></span></div></div><div class="metric" style="margin-top:18px"><div class="label">Registered agent identities</div><div class="value">${{agents.length}} Virtuals profiles</div><p>${{agents.map((agent) => `<span style="display:block;margin-top:8px"><b>${{esc(agent.name)}}</b> · ${{esc(agent.role)}} · profile <code>${{esc(agent.virtual_agent_id)}}</code></span>`).join('')}}</p><p><a href="${{esc(proof.acp_directory_url || '#')}}" target="_blank" rel="noreferrer">Open agent directory ↗</a> · <a href="${{esc(proof.acp_scan_url || '#')}}" target="_blank" rel="noreferrer">Open ACP scan ↗</a></p><p class="muted">Registry profile IDs are displayed as identities; no ACP Entity ID is inferred from them.</p></div><details><summary>Evidence identity</summary><pre>${{esc(JSON.stringify({{eas_uid: proof.eas_uid, acp_job_id: proof.acp_job_id, erc8004_agent_id: proof.erc8004_agent_id}}, null, 2))}}</pre></details>`; }}
+function renderProvenance(finding) {{ const rows = allObservations(finding); $('provenance').innerHTML = rows.length ? rows.map((x) => `<details><summary>${{esc(x.observation_uid)}} · ${{esc(x.value)}} ${{esc(x.unit || '')}}</summary><div class="provenance-row"><div class="label">Value</div><div>${{esc(x.value)}} ${{esc(x.unit || '')}}</div></div><div class="provenance-row"><div class="label">Effective</div><div>${{formatDate(x.effective_from)}}</div></div><div class="provenance-row"><div class="label">Observed / recorded</div><div>${{formatDate(x.observed_at)}} / ${{formatDate(x.recorded_at)}}</div></div><div class="provenance-row"><div class="label">Source</div><div><a href="${{esc(x.source_url || '#')}}" target="_blank" rel="noreferrer">${{esc(x.source_url || 'not recorded')}} ↗</a></div></div><div class="provenance-row"><div class="label">Extraction</div><div><code>${{esc(x.extraction_method || '—')}} · ${{esc(x.extraction_version || '—')}}</code></div></div><div class="provenance-row"><div class="label">Evidence hash</div><div><code>${{esc(x.evidence_hash || '—')}}</code></div></div><p class="muted">${{esc(x.notes || '')}}</p><details><summary>View raw record</summary><pre>${{esc(JSON.stringify(x, null, 2))}}</pre></details></details>`).join('') : '<p class="muted">No temporal observations are recorded.</p>'; }}
+function renderActivity() {{ const rows = model.activity || []; $('activityLog').innerHTML = rows.length ? rows.map((row) => `<div class="activity-row"><div class="activity-time">${{esc(row.timestamp || 'journal time')}}</div><div class="activity-event">${{esc(row.event || 'journal event')}}</div><div><b>${{esc(row.decision_id || 'Standing')}}</b><div class="muted">${{esc(row.detail || '')}}</div></div></div>`).join('') : '<p class="muted">No activity has been recorded yet.</p>'; }}
+async function action(name) {{ try {{ const response = await fetch('/api/sandbox/' + name, {{method:'POST'}}); const body = await response.json(); if (!response.ok) throw new Error(body.error || 'action failed'); if (name === 'waiver') {{ $('actionResult').textContent = body.disclosure + ' ' + body.status; setView('sandbox'); return; }} model = body; selectedTime = null; const messages = {{'break':'Controlled source changed: 365 → 90 days; the backend re-evaluated ACME-001.','reset':'Sandbox reset: ACME-001 is standing again.','resolve':'ACME-001 superseded by STORAGE-002.','confirm-proposal':'Human confirmation recorded; the proposal is now a decision.','reject-proposal':'Human rejection recorded; no decision was created.','review':'Backend review completed.','memory-comparison':'Memory proof completed against a fresh store.'}}; $('actionResult').textContent = messages[name] || 'Action completed.'; if (name === 'memory-comparison') setView('evidence'); else if (name === 'review') setView('reviews'); render(); }} catch (error) {{ $('actionResult').textContent = String(error); }} }}
+document.querySelectorAll('[data-view]').forEach((item) => item.addEventListener('click', (event) => {{ if (item.tagName.toLowerCase() !== 'a' || item.getAttribute('href')?.startsWith('/console')) event.preventDefault(); setView(item.dataset.view); }})); $('timeSlider').addEventListener('input', () => {{ selectedTime = Number($('timeSlider').value); render(); }}); $('memoryCompare').addEventListener('click', () => action('memory-comparison')); $('break').addEventListener('click', () => action('break')); $('restore').addEventListener('click', () => action('reset')); $('resolve').addEventListener('click', () => action('resolve')); $('reviewAgain').addEventListener('click', () => action('review')); $('waiver').addEventListener('click', () => action('waiver')); render();
 </script>
 </body>
 </html>'''
 
 
 def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8787) -> None:
-    """Serve the dashboard and its fixed demo endpoints."""
+    """Serve the Standing product surface and controlled-scenario endpoints."""
 
     class Handler(BaseHTTPRequestHandler):
         def do_GET(self) -> None:  # noqa: N802
@@ -760,10 +1033,51 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
                     _respond_html(self, render_landing_html(app.state()))
                 elif parsed.path == "/console":
                     _respond_html(self, render_dashboard_html(app.state()))
+                elif parsed.path in {
+                    "/console/reviews",
+                    "/console/decisions",
+                    "/console/evidence",
+                    "/console/timeline",
+                    "/console/evaluation",
+                    "/console/activity",
+                    "/console/sandbox",
+                }:
+                    _respond_html(self, render_dashboard_html(app.state()))
                 elif parsed.path == "/api/state":
                     _respond_json(self, app.state())
-                elif parsed.path == "/api/demo-source":
+                elif parsed.path == "/api/sandbox-source":
                     _respond_json(self, app.source())
+                elif parsed.path == "/api/decisions":
+                    _respond_json(self, {"decisions": app.state()["decisions"]})
+                elif parsed.path.startswith("/api/decisions/"):
+                    decision_id = unquote(parsed.path[len("/api/decisions/"):]).strip("/")
+                    decision = next(
+                        (item for item in app.state()["decisions"] if item.get("decision_id") == decision_id),
+                        None,
+                    )
+                    if decision is None:
+                        _respond_json(self, {"error": "decision not found"}, status=HTTPStatus.NOT_FOUND)
+                    else:
+                        _respond_json(self, decision)
+                elif parsed.path == "/api/reviews":
+                    _respond_json(self, app.review())
+                elif parsed.path.startswith("/api/evidence/"):
+                    condition_key = unquote(parsed.path[len("/api/evidence/"):]).strip("/")
+                    history = app.tools.condition_history(condition_key)
+                    current = app.tools.current_condition(condition_key)
+                    _respond_json(
+                        self,
+                        {
+                            "condition_key": condition_key,
+                            "current": None if current is None else current.as_dict(),
+                            "history": [item.as_dict() for item in history],
+                        },
+                    )
+                elif parsed.path == "/api/evaluation":
+                    state = app.state()
+                    _respond_json(self, state["evaluation"])
+                elif parsed.path == "/api/partner-proof":
+                    _respond_json(self, dict(PARTNER_PROOF))
                 else:
                     _respond_json(self, {"error": "not found"}, status=HTTPStatus.NOT_FOUND)
             except (OSError, ValueError, ReviewerToolError, TemporalObservationError) as error:
@@ -772,7 +1086,7 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
         def do_POST(self) -> None:  # noqa: N802
             try:
                 parsed = urlparse(self.path)
-                prefix = "/api/demo/"
+                prefix = "/api/sandbox/"
                 if not parsed.path.startswith(prefix):
                     _respond_json(self, {"error": "not found"}, status=HTTPStatus.NOT_FOUND)
                     return
@@ -794,29 +1108,38 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
         server.server_close()
 
 
-def _demo_observation(uid: str, value: int, effective_from: int, recorded_date: str) -> dict[str, Any]:
+def _sandbox_observation(
+    uid: str,
+    value: int,
+    effective_from: int,
+    recorded_date: str,
+    *,
+    ref_uid: str | None = None,
+) -> dict[str, Any]:
     recorded_at = parse_timestamp(recorded_date, label="recorded_at")
     body: dict[str, Any] = {
-        "condition_key": DEMO_CONDITION,
+        "condition_key": SANDBOX_CONDITION,
         "value": value,
         "value_type": "number",
         "unit": "days",
         "effective_from": effective_from,
         "observed_at": recorded_at,
         "recorded_at": recorded_at,
-        "source_url": DEMO_SOURCE_URL,
+        "source_url": SANDBOX_SOURCE_URL,
         "source_domain": "raw.githubusercontent.com",
         "source_type": "vendor_primary",
-        "attester": "standing-demo-attester",
-        "operator_id": "standing-demo-operator",
+        "attester": "standing-attester",
+        "operator_id": "standing-operator",
         "extraction_method": "JSON_PATH",
         "extraction_version": "retention-json-v1",
         "observation_uid": uid,
+        "ref_uid": ref_uid,
         "evidence_hash": observation_evidence_hash(
-            {"condition_key": DEMO_CONDITION, "value": value, "effective_from": effective_from}
+            {"condition_key": SANDBOX_CONDITION, "value": value, "effective_from": effective_from}
         ),
         "notes": CONTROLLED_DISCLOSURE,
-        "demo_controlled": True,
+        "accepted": True,
+        "controlled_scenario": True,
     }
     return body
 

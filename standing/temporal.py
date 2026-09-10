@@ -18,7 +18,7 @@ import math
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from time import time
-from typing import Any, Mapping, Sequence, cast
+from typing import Any, Mapping, Sequence
 from urllib.parse import urlparse
 
 
@@ -61,7 +61,7 @@ class TemporalObservation:
     confidence: float | None = None
     revoked: bool = False
     accepted: bool | None = None
-    demo_controlled: bool = False
+    controlled_scenario: bool = False
     observer_address: str | None = None
     publisher_id: str | None = None
     provenance: Mapping[str, Any] | None = None
@@ -135,8 +135,10 @@ class TemporalObservation:
         revoked_value = _optional_bool(raw.get("revoked", raw.get("is_revoked", False)), "revoked")
         revoked = False if revoked_value is None else revoked_value
         accepted = _optional_bool(raw.get("accepted"), "accepted")
-        demo_value = _optional_bool(raw.get("demo_controlled", False), "demo_controlled")
-        demo_controlled = False if demo_value is None else demo_value
+        controlled_scenario_value = _optional_bool(
+            raw.get("controlled_scenario", False), "controlled_scenario"
+        )
+        controlled_scenario = False if controlled_scenario_value is None else controlled_scenario_value
         observer_address = _optional_string(raw.get("observer_address"), "observer_address")
         publisher_id = _optional_string(raw.get("publisher_id"), "publisher_id")
         provenance = raw.get("provenance")
@@ -170,7 +172,7 @@ class TemporalObservation:
             confidence=confidence,
             revoked=revoked,
             accepted=accepted,
-            demo_controlled=demo_controlled,
+            controlled_scenario=controlled_scenario,
             observer_address=observer_address,
             publisher_id=publisher_id,
             provenance=dict(provenance) if isinstance(provenance, Mapping) else None,
@@ -300,7 +302,7 @@ class TemporalObservation:
             "confidence": self.confidence,
             "revoked": self.revoked,
             "accepted": self.accepted,
-            "demo_controlled": self.demo_controlled,
+            "controlled_scenario": self.controlled_scenario,
         }
         if self.observer_address is not None:
             result["observer_address"] = self.observer_address
@@ -810,7 +812,7 @@ def _optional_nonnegative_int(value: Any, label: str) -> int | None:
         raise TemporalObservationError(f"{label} must be a non-negative integer")
     if value < 0:
         raise TemporalObservationError(f"{label} must be a non-negative integer")
-    return cast(int, value)
+    return value
 
 
 def _canonical_json(value: Any) -> str:

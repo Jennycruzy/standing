@@ -33,7 +33,7 @@ The measurement command never fills missing predictions and never accepts
 prediction IDs that are absent from the corpus:
 
 ```sh
-.preflight-venv/bin/python scripts/evaluate_dataset.py \
+.venv/bin/python scripts/evaluate_dataset.py \
   --dataset docs/evaluation/cases.json \
   --predictions /path/to/predictions.json \
   --require-real

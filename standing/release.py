@@ -10,9 +10,9 @@ from .evaluation import EvaluationDataset
 
 @dataclass(frozen=True)
 class ReleaseEvidence:
-    """Evidence claims required before presenting a non-demo release."""
+    """Evidence claims required before presenting a non-sandbox release."""
 
-    controlled_demo_disclosed: bool
+    controlled_scenario_disclosed: bool
     real_vendor_expiry_present: bool
     real_evaluation_case_count: int
     independent_operator_ids: tuple[str, ...]
@@ -22,7 +22,7 @@ class ReleaseEvidence:
         cls,
         dataset: EvaluationDataset,
         *,
-        controlled_demo_disclosed: bool,
+        controlled_scenario_disclosed: bool,
         real_vendor_expiry_present: bool | None = None,
         independent_operator_ids: tuple[str, ...],
     ) -> ReleaseEvidence:
@@ -33,7 +33,7 @@ class ReleaseEvidence:
         """
 
         return cls(
-            controlled_demo_disclosed=controlled_demo_disclosed,
+            controlled_scenario_disclosed=controlled_scenario_disclosed,
             real_vendor_expiry_present=(
                 dataset.has_real_vendor_expiry
                 if real_vendor_expiry_present is None
@@ -45,7 +45,7 @@ class ReleaseEvidence:
 
     def as_dict(self) -> dict[str, Any]:
         return {
-            "controlled_demo_disclosed": self.controlled_demo_disclosed,
+            "controlled_scenario_disclosed": self.controlled_scenario_disclosed,
             "real_vendor_expiry_present": self.real_vendor_expiry_present,
             "real_evaluation_case_count": self.real_evaluation_case_count,
             "independent_operator_ids": list(self.independent_operator_ids),
@@ -82,8 +82,8 @@ def check_release_gates(
         raise ValueError("real_evaluation_case_count must be non-negative")
 
     reasons: list[str] = []
-    if not evidence.controlled_demo_disclosed:
-        reasons.append("The controlled-demo disclosure is not visible in the release evidence.")
+    if not evidence.controlled_scenario_disclosed:
+        reasons.append("The controlled-scenario disclosure is not visible in the release evidence.")
     if not evidence.real_vendor_expiry_present:
         reasons.append("A real vendor-expiry case is required before release.")
     if evidence.real_evaluation_case_count < minimum_real_evaluation_cases:

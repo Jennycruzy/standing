@@ -1,12 +1,12 @@
 {
   "conditions": {
-    "sandbox.demo.retention_days": {
+    "sandbox.acme.retention_days": {
       "mode": "source_extract",
-      "source_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/demo/acme-retention.json",
-      "note": "CONTROLLED DEMO DATA — Fictional Acme Corporation; source operated by Standing; not vendor evidence.",
+      "source_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/sandbox/acme-retention.json",
+      "note": "CONTROLLED SCENARIO — FICTIONAL ACME. Source operated by Standing for deterministic exploration; not vendor evidence.",
       "value_type": "number",
-      "disclosure": "CONTROLLED DEMO DATA",
-      "demo_controlled": true,
+      "disclosure": "CONTROLLED SCENARIO — FICTIONAL ACME",
+      "controlled_scenario": true,
       "extraction": {
         "method": "JSON_PATH",
         "value_path": "retention_days",
@@ -17,7 +17,7 @@
       },
       "source_binding": {
         "allowed_hosts": ["raw.githubusercontent.com"],
-        "canonical_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/demo/acme-retention.json",
+        "canonical_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/sandbox/acme-retention.json",
         "publisher_id": "standing-owner",
         "source_type": "vendor_primary",
         "value_type": "number",

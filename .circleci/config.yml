@@ -1,0 +1,19 @@
+version: 2.1
+
+jobs:
+  verify:
+    docker:
+      - image: cimg/python:3.12-node
+    steps:
+      - checkout
+      - run:
+          name: Install Python package and verification tools
+          command: python -m pip install --upgrade pip && python -m pip install '.[dev]'
+      - run:
+          name: Verify Standing
+          command: make verify
+
+workflows:
+  verification:
+    jobs:
+      - verify

@@ -1616,7 +1616,7 @@ def _accepted_condition_reference(
             "recorded_at": chosen.recorded_at,
             "evidence_hash": chosen.evidence_hash,
             "ref_uid": chosen.ref_uid,
-            "demo_controlled": chosen.demo_controlled,
+            "controlled_scenario": chosen.controlled_scenario,
             "last_verified_at": accepted_at,
             "evidence_fresh": True,
         }

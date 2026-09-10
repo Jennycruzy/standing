@@ -73,23 +73,23 @@ whether fixed
 ```
 
 No real-case misses or scores are being hidden: the manifest contains three
-operator-reviewed cases, but predictions have not yet been recorded and
+human-reviewed cases, but predictions have not yet been recorded and
 therefore no real score is claimed. The unit and adapter suites provide
 implementation regressions, not a substitute for external evaluation.
 
 ## Commands
 
 ```sh
-.preflight-venv/bin/python scripts/evaluate_dataset.py \
+.venv/bin/python scripts/evaluate_dataset.py \
   --dataset docs/evaluation/adversarial.json \
   --predictions /path/to/adversarial-predictions.json
 
-.preflight-venv/bin/python scripts/evaluate_dataset.py \
+.venv/bin/python scripts/evaluate_dataset.py \
   --dataset docs/evaluation/cases.json \
   --predictions /path/to/real-predictions.json \
   --require-real
 
-.preflight-venv/bin/python scripts/evaluate_arms.py \
+.venv/bin/python scripts/evaluate_arms.py \
   --dataset docs/evaluation/cases.json \
   --predictions /path/to/five-arm-predictions.json \
   --require-real

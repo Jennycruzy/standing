@@ -35,13 +35,13 @@ def main() -> int:
         dataset = EvaluationDataset.load(args.dataset)
         evidence = ReleaseEvidence.from_dataset(
             dataset,
-            controlled_demo_disclosed=True,
+            controlled_scenario_disclosed=True,
             real_vendor_expiry_present=False,
             independent_operator_ids=(),
         )
         html = render_console_html(
             snapshot,
-            controlled_demo_disclosed=True,
+            controlled_scenario_disclosed=True,
             release_gate=check_release_gates(evidence),
         )
     except (ReviewerToolError, ValueError, OSError, json.JSONDecodeError) as error:

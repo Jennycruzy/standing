@@ -4,9 +4,9 @@ Date: 2026-09-09
 
 The console is a static, read-only projection of the persisted revision and
 standing journal. It supports a historical `--as-of` timestamp and visibly
-labels the owner-controlled sandbox whenever demo evidence is rendered. It
+labels the owner-controlled sandbox whenever sandbox evidence is rendered. It
 also shows the release gate and its reasons, so an attractive page cannot imply
-that the current controlled demo is trusted standing.
+that the current controlled sandbox is trusted standing.
 
 Lifecycle events such as waiver issuance are retained in the history but do
 not replace the latest event that contains a standing state. A human waiver

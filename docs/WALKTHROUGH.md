@@ -1,8 +1,8 @@
-# Standing demo
+# Standing product walkthrough
 
-The local demo tells one story: remember a decision, change the fact that
-justified it, block dependent code, preserve the timeline, and replace the
-expired decision.
+This walkthrough tells one product story: Standing remembers a decision,
+tracks the fact behind it, blocks code when that fact expires, preserves the
+timeline, and records the replacement decision.
 
 ## Start it
 
@@ -12,15 +12,15 @@ From the repository root:
 date -u
 git rev-parse --short HEAD
 PROOF_DB=./standing-proof.db
-.venv/bin/standing --memory-path "$PROOF_DB" demo-seed
+.venv/bin/standing --memory-path "$PROOF_DB" proof-seed
 .venv/bin/standing --memory-path "$PROOF_DB" boot
 .venv/bin/standing --memory-path "$PROOF_DB" review src/archive.py
-.venv/bin/standing dashboard --demo
+.venv/bin/standing dashboard --sandbox
 ```
 
-The first command writes the controlled state and exits. The next two commands
-are new OS processes that must recall the decision and block from the same
-Sibyl-backed database. The dashboard then uses a separate temporary database;
+`proof-seed`, `boot`, and `review` are separate OS processes. The first writes
+the controlled state; the next processes reconstruct it from the same
+Sibyl-backed store. The dashboard then uses a separate isolated sandbox store;
 it does not mutate the proof database.
 
 Open `http://127.0.0.1:8787/` for the product landing page, then open
@@ -37,24 +37,28 @@ Current: 365 days
 The page always displays:
 
 ```text
-CONTROLLED DEMO — Fictional Acme Corporation.
-This control replays the source-change path locally; the separately completed
-ACP → source extraction → Base EAS path is linked below.
+CONTROLLED SCENARIO — FICTIONAL ACME
+This sandbox uses fictional Acme data operated by Standing so the lifecycle
+can be reproduced safely. The control replays the source change locally.
+Completed Virtuals ACP → source extraction → Base EAS records are shown
+separately as live historical proof.
 ```
 
 ## Walkthrough
 
 1. Use the time-travel slider to compare `valid_as_of` and `known_as_of`.
-2. Press **BREAK DEMO ASSUMPTION**. This constrained control deterministically
-   replays the source change from 365 to 90 days locally, and the evidence
-   chain retains both effective periods. It does not claim to start a new live
-   ACP job.
+2. Open **Sandbox** and press **BREAK ASSUMPTION**. This fixed control
+   deterministically replays the source change from 365 to 90 days locally,
+   and the evidence chain retains both effective periods. It does not claim to
+   start a new ACP job.
 3. Inspect the decision graph and provenance entries. The evaluator changes
    ACME-001 to `EXPIRED`; the exact `src/archive.py` path is shown as blocked.
-4. Toggle **MEMORY OFF**. The external fact remains visible, but no governing
-   decision or original assumption is recovered. The UI calls the historical
-   protection unavailable rather than fabricating an approval.
-5. Press **INSPECT DEMO WAIVER**. This is a preview only; no waiver is issued
+4. Press **RUN MEMORY PROOF**. The backend runs the same changed-path review
+   with Sibyl present and with a fresh empty store. The fact remains visible,
+   but no governing decision or original assumption is recovered in the second
+   arm. The UI calls the historical protection unavailable rather than
+   fabricating an approval.
+5. Press **VIEW WAIVER POLICY**. This is a preview only; no waiver is issued
    and no model action can approve one.
 6. Press **RECORD REPLACEMENT DECISION**. ACME-001 becomes `SUPERSEDED` and
    STORAGE-002 becomes the active replacement. The old decision remains in
@@ -64,7 +68,7 @@ ACP → source extraction → Base EAS path is linked below.
    EAS observation, and ERC-8004 feedback links. Those records prove the
    separate live source-extraction and onchain transport path.
 
-**RESTORE DEMO** is a reset control for another run. It is not needed after the
+**RESET SANDBOX** is a reset control for another run. It is not needed after the
 replacement decision completes the story.
 
 The public buttons are pre-authored local workflow actions. They do not accept
@@ -77,7 +81,7 @@ The deletion comparison runs the same changed-path scenario against a seeded
 store and an empty store:
 
 ```sh
-.venv/bin/standing deletion-test
+.venv/bin/standing memory-proof
 ```
 
 Temporal evidence can be inspected directly:
@@ -91,7 +95,7 @@ Temporal evidence can be inspected directly:
 
 ## Disclosure
 
-This is a deterministic controlled demonstration, not the real-world proof
-case. The repository contains three operator-reviewed, source-linked real-world
+This is a deterministic controlled scenario, not the real-world proof
+case. The repository contains three human-reviewed, source-linked real-world
 cases. Production trust requirements are documented separately in the trust
 model and limitations; they should not interrupt the product walkthrough.

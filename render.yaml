@@ -1,10 +1,10 @@
 services:
   - type: web
-    name: standing-demo
+    name: standing
     runtime: python
     plan: free
-    buildCommand: python -m pip install .
-    startCommand: standing dashboard --demo --host 0.0.0.0 --port $PORT
+    buildCommand: python -m pip install '.[dev]' && python -m pytest -q && python -m mypy --strict standing
+    startCommand: standing dashboard --sandbox --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/state
     autoDeployTrigger: commit
     envVars:
