@@ -773,6 +773,7 @@ def render_landing_html(payload: Mapping[str, Any], *, page_title: str = "Standi
     title_text = "The reasoning behind every change."
     current = "—"
     required = "—"
+    state_note = "standing now"
     if isinstance(finding, Mapping):
         decision_id = str(finding.get("decision_id", "—"))
         body = finding.get("body")
@@ -781,6 +782,7 @@ def render_landing_html(payload: Mapping[str, Any], *, page_title: str = "Standi
             title_text = str(body.get("title", title_text))
         if isinstance(evaluation, Mapping):
             state = str(evaluation.get("state", state))
+            state_note = "standing now" if state == "STANDS" else f"{state.lower()} · path at risk"
             conditions = evaluation.get("conditions")
             if isinstance(conditions, Sequence) and conditions:
                 condition = conditions[0]
@@ -793,27 +795,32 @@ def render_landing_html(payload: Mapping[str, Any], *, page_title: str = "Standi
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title}</title>
   <style>
-    :root {{ color-scheme: dark; --ink:#0b0e0d; --ink-2:#111715; --paper:#e9e2d5; --muted:#9aa49c; --line:#2a342f; --mint:#8ee7bd; --copper:#d69a67; --rose:#ef7890; font-family:Inter,ui-sans-serif,system-ui,sans-serif; }}
-    * {{ box-sizing:border-box; }} html {{ scroll-behavior:smooth; }} body {{ margin:0; min-height:100vh; color:var(--paper); background:var(--ink); overflow-x:hidden; }}
-    body::before {{ content:""; position:fixed; inset:-30%; pointer-events:none; background:radial-gradient(ellipse at 75% 12%,rgba(90,157,126,.18),transparent 28%),radial-gradient(ellipse at 20% 82%,rgba(146,83,53,.1),transparent 24%); filter:blur(20px); }}
+    :root {{ color-scheme:dark; font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; background:#0d100e; color:#e9ece5; --bg:#0d100e; --paper:#e9ece5; --muted:#99a39a; --faint:#68736a; --line:#29312b; --line-strong:#405046; --sage:#b9d5bb; --sage-strong:#8fc79a; --copper:#d9a77c; --red:#e9958b; }}
+    * {{ box-sizing:border-box; }} html {{ scroll-behavior:smooth; }} body {{ margin:0; min-height:100vh; color:var(--paper); background:var(--bg); overflow-x:hidden; }}
+    body::before {{ content:""; position:fixed; inset:0; pointer-events:none; opacity:.4; background-image:linear-gradient(rgba(185,213,187,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(185,213,187,.025) 1px,transparent 1px); background-size:48px 48px; mask-image:linear-gradient(to bottom,black,transparent 82%); }}
+    body::after {{ content:""; position:fixed; inset:0; pointer-events:none; background:radial-gradient(circle at 80% -10%,rgba(125,173,134,.10),transparent 30%),radial-gradient(circle at 4% 100%,rgba(180,112,72,.05),transparent 25%); }}
     .wrap {{ position:relative; max-width:1240px; margin:auto; padding:0 30px; }}
-    nav {{ position:relative; z-index:2; border-bottom:1px solid var(--line); }} .nav-in {{ min-height:76px; display:flex; align-items:center; gap:24px; }}
-    .brand {{ color:var(--paper); font:600 1.22rem Georgia,serif; letter-spacing:.02em; }} .brand span {{ color:var(--mint); }} .nav-links {{ margin-left:auto; display:flex; gap:26px; align-items:center; }} .nav-links a {{ color:var(--muted); text-decoration:none; font-size:.84rem; }} .nav-links a:hover {{ color:var(--paper); }}
-    .nav-cta,.cta {{ display:inline-flex; align-items:center; justify-content:center; text-decoration:none; border:1px solid var(--mint); color:var(--ink); background:var(--mint); padding:11px 17px; border-radius:999px; font-weight:750; font-size:.82rem; }} .nav-cta:hover,.cta:hover {{ background:#b9f5d5; }}
-    .hero {{ position:relative; padding:94px 0 100px; }} .hero-grid {{ display:grid; grid-template-columns:1.02fr .98fr; gap:78px; align-items:center; }}
-    .eyebrow {{ color:var(--copper); text-transform:uppercase; letter-spacing:.18em; font:700 .68rem ui-monospace,monospace; }} h1 {{ margin:20px 0 24px; max-width:720px; font:500 clamp(3.2rem,7vw,6.6rem)/.94 Georgia,serif; letter-spacing:-.055em; }} h1 em {{ color:var(--mint); font-style:italic; }} .lede {{ color:var(--muted); max-width:520px; font-size:1.12rem; line-height:1.7; }} .hero-actions {{ display:flex; gap:13px; flex-wrap:wrap; margin-top:32px; }} .ghost {{ color:var(--paper); border:1px solid #4a5951; background:transparent; }} .ghost:hover {{ border-color:var(--paper); background:rgba(255,255,255,.04); }}
-    .signal {{ position:relative; min-height:390px; border:1px solid #394a41; background:linear-gradient(145deg,rgba(21,35,29,.9),rgba(10,15,13,.96)); padding:23px; box-shadow:0 35px 90px rgba(0,0,0,.35); overflow:hidden; }} .signal::before {{ content:""; position:absolute; width:360px; height:360px; border:1px solid rgba(142,231,189,.18); border-radius:50%; right:-150px; top:-130px; box-shadow:0 0 0 28px rgba(142,231,189,.03),0 0 0 58px rgba(142,231,189,.025); }} .signal::after {{ content:""; position:absolute; left:-20%; right:-20%; top:52%; height:1px; background:linear-gradient(90deg,transparent,var(--mint),transparent); opacity:.45; animation:scan 5s ease-in-out infinite; }} @keyframes scan {{ 0%,100% {{ transform:translateY(-90px); opacity:0; }} 50% {{ transform:translateY(90px); opacity:.65; }} }}
-    .signal-top {{ display:flex; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:17px; color:var(--muted); font:700 .67rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.1em; }} .live {{ color:var(--mint); }} .live::before {{ content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--mint); box-shadow:0 0 14px var(--mint); margin-right:8px; }} .signal h2 {{ position:relative; margin:48px 0 8px; font:500 2.1rem/1.04 Georgia,serif; max-width:400px; }} .signal p {{ position:relative; color:var(--muted); margin:0; font-size:.92rem; }} .signal-rule {{ position:relative; display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; margin-top:48px; }} .signal-rule .line {{ height:1px; background:linear-gradient(90deg,var(--mint),#46564d); }} .signal-rule .line:last-child {{ background:linear-gradient(90deg,#46564d,var(--rose)); }} .signal-rule .point {{ width:10px; height:10px; border-radius:50%; background:var(--mint); box-shadow:0 0 0 5px rgba(142,231,189,.12); }} .signal-rule .point.bad {{ background:var(--rose); box-shadow:0 0 0 5px rgba(239,120,144,.12); }} .signal-labels {{ display:flex; justify-content:space-between; margin-top:12px; color:var(--muted); font: .7rem ui-monospace,monospace; }}
-    .proof-strip {{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:21px 0; }} .proof-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }} .proof-item {{ color:var(--muted); font-size:.78rem; }} .proof-item strong {{ display:block; color:var(--paper); font:500 1.45rem Georgia,serif; margin-bottom:4px; }}
-    section {{ position:relative; padding:88px 0; border-bottom:1px solid var(--line); }} .section-grid {{ display:grid; grid-template-columns:.8fr 1.2fr; gap:80px; }} h3 {{ margin:16px 0; font:500 clamp(2rem,4vw,3.5rem)/1 Georgia,serif; letter-spacing:-.035em; }} .copy {{ color:var(--muted); font-size:1.02rem; line-height:1.75; max-width:620px; }} .steps {{ display:grid; gap:0; border-top:1px solid var(--line); }} .step {{ display:grid; grid-template-columns:54px 1fr; gap:20px; padding:21px 0; border-bottom:1px solid var(--line); }} .step-no {{ color:var(--copper); font: .75rem ui-monospace,monospace; }} .step strong {{ display:block; font-size:1rem; margin-bottom:5px; }} .step span {{ color:var(--muted); font-size:.88rem; }}
-    footer {{ padding:30px 0 52px; color:var(--muted); font-size:.78rem; }} footer a {{ color:var(--mint); text-decoration:none; }}
-    @media(max-width:820px) {{ .hero {{ padding:62px 0 70px; }} .hero-grid,.section-grid {{ grid-template-columns:1fr; gap:46px; }} h1 {{ font-size:clamp(3rem,15vw,5rem); }} .proof-grid {{ grid-template-columns:repeat(2,1fr); }} .nav-links a:not(.nav-cta) {{ display:none; }} }} @media(max-width:480px) {{ .wrap {{ padding:0 19px; }} .signal {{ min-height:350px; }} .proof-grid {{ gap:16px; }} }}
+    nav {{ position:relative; z-index:2; border-bottom:1px solid var(--line); }} .nav-in {{ min-height:70px; display:flex; align-items:center; gap:18px; }}
+    .brand {{ display:inline-flex; align-items:center; gap:10px; color:var(--paper); font-size:.78rem; font-weight:750; letter-spacing:.16em; text-decoration:none; }} .brand-mark {{ position:relative; width:21px; height:21px; display:grid; place-items:center; border:1px solid var(--sage-strong); border-radius:50%; }} .brand-mark::before {{ content:""; width:6px; height:6px; border-radius:50%; background:var(--sage); box-shadow:0 0 14px rgba(185,213,187,.42); }}
+    .nav-links {{ margin-left:auto; display:flex; gap:7px; align-items:center; }} .nav-links a {{ color:var(--muted); padding:8px 10px; border:1px solid transparent; border-radius:3px; text-decoration:none; font-size:.7rem; letter-spacing:.04em; }} .nav-links a:hover {{ color:var(--paper); border-color:var(--line-strong); background:rgba(185,213,187,.06); }}
+    .nav-cta,.cta {{ display:inline-flex; align-items:center; justify-content:center; text-decoration:none; border:1px solid var(--sage-strong); color:#102015; background:var(--sage); padding:11px 16px; border-radius:3px; font-weight:750; font-size:.7rem; letter-spacing:.05em; text-transform:uppercase; }} .nav-cta:hover,.cta:hover {{ color:#102015; background:#d8eed8; }}
+    .hero {{ position:relative; padding:88px 0 92px; }} .hero-grid {{ display:grid; grid-template-columns:1fr .92fr; gap:76px; align-items:center; }}
+    .eyebrow {{ color:var(--copper); text-transform:uppercase; letter-spacing:.16em; font:700 .61rem ui-monospace,monospace; }} h1 {{ margin:19px 0 23px; max-width:680px; color:var(--paper); font:500 clamp(3rem,6vw,5.6rem)/.94 Georgia,serif; letter-spacing:-.055em; }} h1 em {{ color:var(--sage); font-style:italic; }} .lede {{ color:var(--muted); max-width:520px; font-size:1.04rem; line-height:1.72; }} .hero-actions {{ display:flex; gap:10px; flex-wrap:wrap; margin-top:30px; }} .ghost {{ color:var(--paper); border:1px solid var(--line-strong); background:transparent; }} .ghost:hover {{ color:var(--paper); border-color:var(--paper); background:rgba(255,255,255,.035); }}
+    .signal {{ position:relative; min-height:390px; padding:24px; border:1px solid var(--line-strong); border-left:2px solid var(--sage-strong); background:rgba(20,25,21,.92); box-shadow:0 24px 70px rgba(0,0,0,.18); }} .signal::before {{ content:""; position:absolute; top:0; right:0; width:42%; height:1px; background:linear-gradient(90deg,transparent,var(--copper)); opacity:.7; }}
+    .signal-top {{ display:flex; justify-content:space-between; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--line); color:var(--muted); font:700 .61rem ui-monospace,monospace; letter-spacing:.09em; text-transform:uppercase; }} .live {{ color:var(--sage); white-space:nowrap; }} .live::before {{ content:""; display:inline-block; width:6px; height:6px; margin-right:8px; border-radius:50%; background:var(--sage-strong); }}
+    .signal-decision {{ padding:34px 0 26px; }} .signal-id {{ color:var(--copper); font:700 .67rem ui-monospace,monospace; letter-spacing:.1em; }} .signal h2 {{ margin:10px 0 8px; color:var(--paper); font:500 1.88rem/1.08 Georgia,serif; letter-spacing:-.025em; }} .signal p {{ margin:0; color:var(--muted); font-size:.82rem; line-height:1.55; }}
+    .signal-ledger {{ border-top:1px solid var(--line); }} .signal-row {{ display:grid; grid-template-columns:72px 1fr auto; align-items:center; gap:12px; padding:14px 0; border-bottom:1px solid var(--line); }} .signal-row > span:first-child {{ color:var(--faint); font:700 .59rem ui-monospace,monospace; letter-spacing:.12em; }} .signal-row strong {{ color:var(--sage); font:650 1.12rem ui-monospace,monospace; }} .signal-row > span:last-child {{ color:var(--muted); font-size:.68rem; text-align:right; }} .signal-row.bad strong {{ color:var(--red); }} .signal-row.bad > span:last-child {{ color:#bd8b86; }}
+    .signal-foot {{ display:flex; justify-content:space-between; gap:12px; padding-top:18px; color:var(--faint); font: .63rem ui-monospace,monospace; }} .signal-foot code {{ color:#b9c7bb; }}
+    .proof-strip {{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:19px 0; }} .proof-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }} .proof-item {{ color:var(--muted); font-size:.73rem; line-height:1.45; }} .proof-item strong {{ display:block; margin-bottom:5px; color:var(--paper); font:650 1.16rem Georgia,serif; }}
+    section {{ position:relative; padding:86px 0; border-bottom:1px solid var(--line); }} .section-grid {{ display:grid; grid-template-columns:.8fr 1.2fr; gap:80px; }} h3 {{ margin:16px 0; color:var(--paper); font:500 clamp(2rem,4vw,3.4rem)/1 Georgia,serif; letter-spacing:-.04em; }} .copy {{ color:var(--muted); font-size:.98rem; line-height:1.75; max-width:620px; }} .steps {{ display:grid; gap:0; border-top:1px solid var(--line); }} .step {{ display:grid; grid-template-columns:54px 1fr; gap:20px; padding:20px 0; border-bottom:1px solid var(--line); }} .step-no {{ color:var(--copper); font: .68rem ui-monospace,monospace; }} .step strong {{ display:block; margin-bottom:5px; color:var(--paper); font-size:.93rem; }} .step span {{ color:var(--muted); font-size:.82rem; line-height:1.55; }}
+    footer {{ padding:28px 0 48px; color:var(--muted); font-size:.72rem; }} footer a {{ color:var(--sage); text-decoration:none; }}
+    @media(max-width:820px) {{ .hero {{ padding:62px 0 70px; }} .hero-grid,.section-grid {{ grid-template-columns:1fr; gap:46px; }} h1 {{ font-size:clamp(3rem,15vw,5rem); }} .proof-grid {{ grid-template-columns:repeat(2,1fr); }} .nav-links a:not(.nav-cta) {{ display:none; }} }} @media(max-width:480px) {{ .wrap {{ padding:0 19px; }} .signal {{ min-height:350px; padding:19px; }} .proof-grid {{ gap:16px; }} .signal-row {{ grid-template-columns:58px 1fr; }} .signal-row > span:last-child {{ grid-column:2; text-align:left; }} }}
   </style>
 </head>
 <body>
-  <nav><div class="wrap nav-in"><a class="brand" href="/">stand<span>ing</span></a><div class="nav-links"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="/console" class="nav-cta">Open console ↗</a></div></div></nav>
+  <nav><div class="wrap nav-in"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span><span>STANDING</span></a><div class="nav-links"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="/console" class="nav-cta">Open console ↗</a></div></div></nav>
   <main>
-    <section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow">Temporal engineering control</div><h1>Code remembers.<br><em>Reasoning should too.</em></h1><p class="lede">Standing keeps the assumptions behind technical decisions alive. When the world changes, it finds the code still depending on yesterday’s certainty.</p><div class="hero-actions"><a class="cta" href="/console">Enter the console ↗</a><a class="cta ghost" href="#how">See the mechanism ↓</a></div></div><div class="signal"><div class="signal-top"><span>Standing / live monitor</span><span class="live">memory online</span></div><h2>{escape(title_text)}</h2><p>{escape(decision_id)} · current decision state: {escape(state)}</p><div class="signal-rule"><span class="line"></span><span class="point"></span><span class="line"></span><span class="point bad"></span></div><div class="signal-labels"><span>THEN · {escape(required)}</span><span>NOW · {escape(current)} days</span></div></div></div></section>
+    <section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow">Temporal engineering control</div><h1>Code remembers.<br><em>Reasoning should too.</em></h1><p class="lede">Standing keeps the assumptions behind technical decisions alive. When the world changes, it finds the code still depending on yesterday’s certainty.</p><div class="hero-actions"><a class="cta" href="/console">Enter the console ↗</a><a class="cta ghost" href="#how">See the mechanism ↓</a></div></div><div class="signal"><div class="signal-top"><span>Decision / archive retention</span><span class="live">controlled scenario</span></div><div class="signal-decision"><div class="signal-id">{escape(decision_id)}</div><h2>{escape(title_text)}</h2><p>One assumption connects a vendor fact to the code that depends on it.</p></div><div class="signal-ledger"><div class="signal-row"><span>THEN</span><strong>365 days</strong><span>decision recorded</span></div><div class="signal-row bad"><span>NOW</span><strong>{escape(current)} days</strong><span>{escape(state_note)}</span></div></div><div class="signal-foot"><span>governed path</span><code>src/archive.py</code></div></div></div></section>
     <div class="proof-strip"><div class="wrap proof-grid"><div class="proof-item"><strong>bitemporal</strong>valid time + knowledge time</div><div class="proof-item"><strong>exact paths</strong>intent connected to code</div><div class="proof-item"><strong>fail closed</strong>unknown never passes</div><div class="proof-item"><strong>onchain proof</strong>ACP · EAS · Sibyl</div></div></div>
     <section id="how"><div class="wrap section-grid"><div><div class="eyebrow">The idea</div><h3>A decision has standing only while its reasons remain true.</h3></div><div><p class="copy">Most systems can tell you what changed. Standing tells you what that change means for the decisions your team already made—and whether a new code change is still safe to merge.</p><div class="steps"><div class="step"><div class="step-no">01</div><div><strong>Remember the why</strong><span>Human-confirmed decisions, assumptions, and governed paths live in Sibyl Memory.</span></div></div><div class="step"><div class="step-no">02</div><div><strong>Verify the world</strong><span>Stale evidence triggers a verifier; typed observations are recorded through Base EAS.</span></div></div><div class="step"><div class="step-no">03</div><div><strong>Re-evaluate the code</strong><span>Standing resolves change versus conflict, then returns STANDS, EXPIRED, UNKNOWN, or CONTESTED.</span></div></div></div></div></div></section>
     <section id="proof"><div class="wrap section-grid"><div><div class="eyebrow">See it happen</div><h3>From drift to a safe replacement.</h3><p class="copy">Open the console to move through the complete lifecycle: inspect the original decision, travel through its evidence, break the assumption, see the exact path block, then record what replaced it.</p><a class="cta" href="/console">Open Standing console ↗</a></div><div class="signal" style="min-height:280px"><div class="signal-top"><span>Evidence chain</span><span class="live">verified path</span></div><div class="steps" style="margin-top:34px;border-top:0"><div class="step"><div class="step-no">A</div><div><strong>Decision → assumption</strong><span>{escape(decision_id)} · {escape(required)}</span></div></div><div class="step"><div class="step-no">B</div><div><strong>Observation → standing</strong><span>365 days → 90 days · evidence remains historical</span></div></div><div class="step"><div class="step-no">C</div><div><strong>Block → replacement</strong><span>Exact governed path · supersession · ALLOW</span></div></div></div></div></div></section>
@@ -830,6 +837,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     # persisted decision text cannot terminate the script tag.
     encoded = encoded.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     title = escape(page_title, quote=True)
+    mode_label = "SANDBOX" if payload.get("controlled_scenario") else "LIVE WORKSPACE"
     return f'''<!doctype html>
 <html lang="en">
 <head>
@@ -837,77 +845,161 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title}</title>
   <style>
-    :root {{ color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #101412; color: #f0ede5; --green:#b4d7bd; --green-strong:#8cc89e; --amber:#e4bd7b; --red:#e58f8b; --purple:#b6a7d6; --line:#2d3932; --panel:#171d1a; --panel-2:#1c241f; --muted:#98a69d; }}
+    :root {{
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #0d100e;
+      color: #e9ece5;
+      --bg: #0d100e;
+      --surface: #141815;
+      --surface-raised: #191e1a;
+      --surface-soft: #101410;
+      --ink: #e9ece5;
+      --muted: #98a298;
+      --faint: #667067;
+      --line: #2a322b;
+      --line-strong: #3e4b41;
+      --sage: #b9d5bb;
+      --sage-strong: #8fc79a;
+      --copper: #d9a77c;
+      --amber: #e6c27d;
+      --red: #e9958b;
+      --purple: #c1b1da;
+    }}
     * {{ box-sizing: border-box; }}
-    body {{ margin: 0; background: #101412; min-height: 100vh; }}
-    body::before {{ content:''; position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at 88% -10%, rgba(111,151,119,.13), transparent 32%), radial-gradient(ellipse at 0% 100%, rgba(164,109,75,.07), transparent 29%); }}
-    main {{ position:relative; max-width: 1540px; margin: 0 auto; padding: 30px 42px 80px; display:grid; grid-template-columns:224px minmax(0,1fr); gap:42px; }}
-    .topbar {{ position:sticky; top:0; z-index:10; display:flex; align-items:center; gap:22px; padding:13px max(28px, calc((100vw - 1456px) / 2)); border-bottom:1px solid var(--line); background:rgba(16,20,18,.94); backdrop-filter:blur(18px); }}
-    .brand {{ color:var(--green); font:600 1.02rem Georgia,serif; letter-spacing:.08em; }}
-    .workspace-name {{ color:#d4d8d1; font-size:.82rem; padding-left:22px; border-left:1px solid var(--line); }}
-    .system {{ display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.68rem; letter-spacing:.06em; text-transform:uppercase; }}
-    .pulse {{ width:7px; height:7px; border-radius:50%; background:var(--green-strong); box-shadow:0 0 0 4px rgba(140,200,158,.11); }}
-    nav {{ margin-left:auto; display:flex; align-items:center; gap:8px; }}
-    nav a {{ color:var(--muted); text-decoration:none; font-size:.69rem; letter-spacing:.04em; padding:7px 10px; border-radius:6px; }} nav a:hover, nav a.active {{ color:var(--ink, #101412); background:var(--green); }}
-    .rail {{ position:sticky; top:76px; align-self:start; padding:10px 0 0; color:var(--muted); font-size:.76rem; }}
-    .rail-title {{ color:#f0ede5; font:600 1.02rem Georgia,serif; letter-spacing:.08em; margin-bottom:34px; }} .rail-title span {{ color:var(--green-strong); }}
-    .rail-group {{ margin:0 0 30px; }} .rail-group strong {{ display:block; color:#637168; font-size:.64rem; font-weight:700; margin:0 0 9px 13px; letter-spacing:.12em; text-transform:uppercase; }} .rail a {{ display:flex; align-items:center; gap:9px; color:#a1ada4; text-decoration:none; padding:9px 12px; border-left:2px solid transparent; border-radius:0 7px 7px 0; }} .rail a::before {{ content:' '; width:4px; height:4px; border:1px solid #66756c; border-radius:50%; }} .rail a:hover,.rail a.active {{ color:#f0ede5; border-left-color:var(--green-strong); background:rgba(140,200,158,.09); }} .rail a.active::before {{ background:var(--green-strong); border-color:var(--green-strong); }} .rail-note {{ border-top:1px solid var(--line); padding:16px 12px 0; line-height:1.55; color:#718078; }}
+    html {{ scroll-behavior: smooth; }}
+    body {{ margin: 0; min-height: 100vh; background: var(--bg); color: var(--ink); }}
+    body::before {{ content:""; position:fixed; inset:0; pointer-events:none; opacity:.42; background-image:linear-gradient(rgba(183,213,187,.026) 1px, transparent 1px),linear-gradient(90deg,rgba(183,213,187,.026) 1px, transparent 1px); background-size:48px 48px; mask-image:linear-gradient(to bottom, black, transparent 82%); }}
+    body::after {{ content:""; position:fixed; inset:0; pointer-events:none; background:radial-gradient(circle at 76% -12%,rgba(125,173,134,.10),transparent 30%),radial-gradient(circle at 7% 100%,rgba(180,112,72,.055),transparent 25%); }}
+    a {{ color:var(--sage); text-decoration:none; }}
+    a:hover {{ color:#e4f1e4; }}
+    code, pre, .label, .eyebrow, .system, .topbar-context, .release-mark, .activity-time, .activity-event {{ font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }}
+    .topbar {{ position:sticky; top:0; z-index:10; min-height:68px; display:flex; align-items:center; gap:18px; padding:0 max(28px, calc((100vw - 1480px) / 2)); border-bottom:1px solid var(--line); background:rgba(13,16,14,.90); backdrop-filter:blur(18px); }}
+    .brand {{ display:inline-flex; align-items:center; gap:10px; color:var(--ink); font-size:.78rem; font-weight:750; letter-spacing:.16em; }}
+    .brand-mark {{ position:relative; width:22px; height:22px; display:grid; place-items:center; border:1px solid var(--sage-strong); border-radius:50%; }}
+    .brand-mark::before {{ content:""; width:6px; height:6px; background:var(--sage); border-radius:50%; box-shadow:0 0 16px rgba(185,213,187,.48); }}
+    .workspace-name {{ padding-left:18px; border-left:1px solid var(--line); color:var(--muted); font-size:.73rem; letter-spacing:.04em; }}
+    .topbar-context {{ color:var(--copper); font-size:.64rem; letter-spacing:.08em; }}
+    .topbar-right {{ margin-left:auto; display:flex; align-items:center; gap:20px; }}
+    .system {{ display:flex; align-items:center; gap:8px; color:var(--muted); font-size:.62rem; letter-spacing:.10em; }}
+    .pulse {{ width:6px; height:6px; border-radius:50%; background:var(--sage-strong); box-shadow:0 0 0 4px rgba(143,199,154,.10); }}
+    .release-mark {{ color:var(--faint); font-size:.59rem; letter-spacing:.06em; }}
+    nav {{ display:flex; align-items:center; gap:4px; }}
+    nav a {{ color:var(--muted); padding:8px 10px; border:1px solid transparent; border-radius:3px; font-size:.67rem; letter-spacing:.04em; }}
+    nav a:hover, nav a.active {{ color:var(--ink); border-color:var(--line-strong); background:rgba(185,213,187,.07); }}
+    main {{ position:relative; max-width:1540px; margin:0 auto; padding:36px 42px 96px; display:grid; grid-template-columns:226px minmax(0,1fr); gap:48px; }}
+    .rail {{ position:sticky; top:94px; align-self:start; min-height:calc(100vh - 130px); padding-right:24px; border-right:1px solid var(--line); color:var(--muted); font-size:.75rem; }}
+    .rail-context {{ padding:2px 12px 24px; border-bottom:1px solid var(--line); margin-bottom:24px; }}
+    .rail-kicker {{ color:var(--copper); font:700 .59rem ui-monospace,monospace; letter-spacing:.14em; text-transform:uppercase; }}
+    .rail-name {{ margin-top:12px; color:var(--ink); font:500 1.42rem/1.05 Georgia,serif; letter-spacing:-.03em; }}
+    .rail-state {{ display:flex; align-items:center; gap:8px; margin-top:16px; color:var(--faint); font: .62rem ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; }}
+    .rail-state::before {{ content:""; width:6px; height:6px; background:var(--sage-strong); border-radius:50%; }}
+    .rail-group {{ margin:0 0 28px; }}
+    .rail-group strong {{ display:block; margin:0 0 9px 12px; color:var(--faint); font-size:.59rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }}
+    .rail a {{ display:flex; align-items:center; gap:11px; color:#9da89e; padding:9px 12px; border-left:2px solid transparent; border-radius:0 3px 3px 0; }}
+    .rail a::before {{ content:attr(data-icon); width:17px; color:#667268; font: .58rem ui-monospace,monospace; letter-spacing:0; }}
+    .rail a:hover, .rail a.active {{ color:var(--ink); border-left-color:var(--sage-strong); background:rgba(143,199,154,.075); }}
+    .rail a.active::before {{ color:var(--sage-strong); }}
+    .rail-footer {{ position:absolute; left:12px; right:24px; bottom:0; padding-top:16px; border-top:1px solid var(--line); color:var(--faint); font-size:.68rem; line-height:1.55; }}
+    .rail-footer-label {{ display:block; margin-bottom:6px; color:var(--muted); font:700 .59rem ui-monospace,monospace; letter-spacing:.12em; text-transform:uppercase; }}
     .console-content {{ min-width:0; }}
-    .hero {{ padding:18px 0 25px; border-bottom:1px solid var(--line); }}
-    .hero-row {{ display:flex; align-items:end; justify-content:space-between; gap:30px; }} .hero-status {{ display:flex; gap:8px; align-items:center; color:#9aa89f; font: .68rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.08em; white-space:nowrap; }} .hero-status::before {{ content:""; width:7px; height:7px; border-radius:50%; background:var(--green-strong); box-shadow:0 0 0 4px rgba(140,200,158,.1); }}
-    .thesis {{ max-width:760px; color:#a5b0a8; font-size:.96rem; line-height:1.65; margin-bottom:0; }}
-    .eyebrow {{ color: var(--green); text-transform: uppercase; letter-spacing: .14em; font: 750 .68rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
-    h1, h2, h3 {{ margin: .35rem 0 .8rem; }}
-    h1 {{ font:500 clamp(2.25rem, 5vw, 4.4rem)/.95 Georgia,serif; letter-spacing:-.04em; max-width:850px; }}
-    h2 {{ font-size: 1.1rem; }}
-    .muted {{ color: #98a69d; }}
-    .disclosure {{ border: 1px solid #75613a; border-left:3px solid var(--amber); background: #211c13; color: #e7cf9e; padding: 13px 16px; border-radius: 8px; margin: 14px 0; line-height:1.55; }}
-    .card {{ background: rgba(23,29,26,.88); border: 1px solid var(--line); border-radius: 10px; padding: 25px; margin-top: 16px; box-shadow: 0 16px 48px rgba(0,0,0,.14); }}
-    .card > h2, .toolbar > h2 {{ font-family:Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing:-.025em; font-weight:650; }}
-    .finding {{ position:relative; border-color:#714048; background:rgba(39,27,29,.78); padding:30px; overflow:hidden; }}
-    .finding::after {{ content:""; position:absolute; right:-70px; top:-120px; width:300px; height:300px; border:1px solid rgba(229,143,139,.13); border-radius:50%; pointer-events:none; }}
-    .finding.stands {{ border-color:#3b6a4f; background:rgba(24,42,31,.82); }} .finding.stands::after {{ border-color:rgba(180,215,189,.15); }}
-    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }}
-    .metric {{ background: var(--panel); border: 1px solid #2a3730; border-radius: 8px; padding: 15px; }}
-    .label {{ color: #819188; text-transform: uppercase; letter-spacing: .1em; font: 750 .63rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
-    .value {{ margin-top: 5px; font-size: 1.15rem; font-weight: 800; overflow-wrap: anywhere; }}
-    .expired, .blocked {{ color: var(--red); }} .stands, .allow {{ color: var(--green); }} .unknown {{ color: var(--amber); }} .contested {{ color: var(--purple); }}
-    button {{ border: 1px solid #52665a; border-radius: 7px; background: #27352c; color: #f0ede5; padding: 10px 13px; cursor: pointer; font: 700 .74rem Inter, ui-sans-serif, system-ui, sans-serif; letter-spacing:.01em; margin: 4px 5px 0 0; }}
-    button:hover {{ border-color:var(--green); background:#344a3a; }} button.danger {{ border-color:#95545c; background:#4a292f; }} button.safe {{ border-color:#557f62; background:#294533; }}
-    .toolbar {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }} .toolbar h2::before {{ content:""; }}
-    .graph {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }}
-    .node {{ padding: 14px; background: #202b24; border: 1px solid #3f5647; border-radius: 8px; min-width: 130px; }}
-    button.node {{ text-align: left; color: #e5edf8; font: inherit; }}
-    button.node:focus-visible {{ outline: 2px solid #70e0bd; outline-offset: 2px; }}
-    .arrow {{ color: var(--green); font-size: 1.1rem; }}
-    .timeline {{ width: 100%; accent-color: var(--green); }}
-    .timeline-row {{ display: flex; justify-content: space-between; color: #8fa19a; font-size: .8rem; }}
-    details {{ border-top: 1px solid var(--line); padding: 13px 0; }} summary {{ cursor: pointer; font-weight: 650; }}
-    pre, code {{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }}
-    pre {{ white-space: pre-wrap; overflow-wrap: anywhere; color: #b4c8bf; font-size: .78rem; }}
-    table {{ width: 100%; border-collapse: collapse; }} th, td {{ text-align: left; padding: 9px; border-bottom: 1px solid var(--line); vertical-align: top; }} th {{ color: #8fa19a; font-size: .7rem; text-transform: uppercase; }}
-    a {{ color:var(--green); }}
-    blockquote {{ margin-left:0; border-left:2px solid #365248; padding-left:14px; color:#b7c8c0; }}
-    .console-section {{ display:none; }} .console-section.active {{ display:block; animation: reveal .22s ease-out; }} @keyframes reveal {{ from {{ opacity:0; transform:translateY(4px); }} to {{ opacity:1; transform:none; }} }}
+    .hero {{ padding:4px 0 30px; border-bottom:1px solid var(--line); }}
+    .breadcrumb {{ display:flex; align-items:center; gap:9px; color:var(--faint); font: .61rem ui-monospace,monospace; letter-spacing:.11em; text-transform:uppercase; }}
+    .breadcrumb .eyebrow {{ color:var(--sage-strong); }}
+    .breadcrumb .slash {{ color:var(--line-strong); }}
+    .hero-row {{ display:flex; align-items:end; justify-content:space-between; gap:36px; margin-top:24px; }}
+    .hero-status {{ display:flex; gap:8px; align-items:center; color:#b1bbb2; font: .63rem ui-monospace,monospace; letter-spacing:.10em; text-transform:uppercase; white-space:nowrap; }}
+    .hero-status::before {{ content:""; width:6px; height:6px; border-radius:50%; background:var(--sage-strong); }}
+    .hero-aside {{ min-width:166px; padding-left:22px; border-left:1px solid var(--line); }}
+    .hero-aside .label {{ color:var(--faint); }}
+    .hero-aside strong {{ display:block; margin-top:9px; color:var(--sage); font-size:.86rem; letter-spacing:.05em; }}
+    .hero-aside span:last-child {{ display:block; margin-top:6px; color:var(--faint); font-size:.68rem; }}
+    .thesis {{ max-width:720px; margin:14px 0 0; color:#a6afa7; font-size:.91rem; line-height:1.65; }}
+    .eyebrow {{ color:var(--sage-strong); text-transform:uppercase; letter-spacing:.13em; font:750 .62rem ui-monospace,monospace; }}
+    h1, h2, h3 {{ margin:.35rem 0 .8rem; }}
+    h1 {{ max-width:850px; color:var(--ink); font:500 clamp(2.4rem,4.6vw,4.15rem)/.98 Georgia,serif; letter-spacing:-.045em; }}
+    h2 {{ color:#e3e8e0; font-size:1.05rem; letter-spacing:-.015em; }}
+    .muted {{ color:var(--muted); }}
+    .disclosure {{ margin:15px 0 0; padding:12px 15px; border:1px solid #635437; border-left:2px solid var(--amber); background:rgba(44,36,21,.52); color:#dfc78f; font-size:.77rem; line-height:1.55; }}
+    .card {{ margin-top:18px; padding:26px; border:1px solid var(--line); border-radius:3px; background:rgba(20,24,21,.88); box-shadow:0 22px 70px rgba(0,0,0,.12); }}
+    .card > h2, .toolbar > h2 {{ font-family:Inter,ui-sans-serif,system-ui,sans-serif; font-weight:650; }}
+    .finding {{ position:relative; overflow:hidden; padding:30px; border-color:#654047; border-left:2px solid var(--red); background:linear-gradient(108deg,rgba(44,29,31,.78),rgba(20,24,21,.94) 70%); }}
+    .finding.stands {{ border-color:#3a5e46; border-left-color:var(--sage-strong); background:linear-gradient(108deg,rgba(26,45,32,.74),rgba(20,24,21,.94) 70%); }}
+    .finding-head {{ display:flex; align-items:flex-start; justify-content:space-between; gap:28px; }}
+    .finding-id {{ margin-top:10px; color:var(--copper); font:700 .72rem ui-monospace,monospace; letter-spacing:.10em; }}
+    .finding-title {{ max-width:650px; margin:8px 0 0; color:#f1f3ed; font-size:1.52rem; line-height:1.16; letter-spacing:-.025em; }}
+    .finding-description {{ max-width:650px; margin:10px 0 0; color:#a7b1a8; font-size:.84rem; line-height:1.55; }}
+    .finding-posture {{ min-width:148px; padding-left:22px; border-left:1px solid rgba(236,149,139,.28); text-align:right; }}
+    .finding.stands .finding-posture {{ border-left-color:rgba(143,199,154,.28); }}
+    .finding-posture .label {{ color:#8f9890; }}
+    .status-mark {{ margin-top:8px; color:var(--red); font:700 1.25rem ui-monospace,monospace; letter-spacing:.06em; }}
+    .status-mark.stands {{ color:var(--sage); }}
+    .status-mark.unknown {{ color:var(--amber); }}
+    .status-mark.contested {{ color:var(--purple); }}
+    .finding-posture p {{ margin:7px 0 0; color:#8d978f; font-size:.68rem; line-height:1.45; }}
+    .finding-rule {{ display:flex; align-items:center; gap:11px; margin:27px 0 23px; color:#8f9990; font: .65rem ui-monospace,monospace; }}
+    .finding-rule .rule-line {{ height:1px; flex:1; background:linear-gradient(90deg,var(--sage-strong),#536458); }}
+    .finding-rule .rule-line:last-of-type {{ background:linear-gradient(90deg,#536458,var(--red)); }}
+    .finding-rule .rule-point {{ width:7px; height:7px; border:1px solid var(--sage-strong); background:var(--surface); border-radius:50%; }}
+    .finding-rule .rule-point.bad {{ border-color:var(--red); background:var(--red); box-shadow:0 0 0 4px rgba(233,149,139,.10); }}
+    .finding-rule strong {{ color:var(--ink); font-weight:650; }}
+    .finding-ledger {{ display:grid; grid-template-columns:1.35fr 1fr 1fr 1.2fr; border-top:1px solid rgba(255,255,255,.10); }}
+    .ledger-cell {{ min-height:86px; padding:16px 18px 4px 0; border-bottom:1px solid rgba(255,255,255,.09); }}
+    .ledger-cell + .ledger-cell {{ padding-left:18px; border-left:1px solid rgba(255,255,255,.09); }}
+    .ledger-value {{ display:block; margin-top:9px; color:#e6ebe4; font-size:.86rem; line-height:1.42; overflow-wrap:anywhere; }}
+    .ledger-value.bad {{ color:var(--red); }}
+    .ledger-value.good {{ color:var(--sage); }}
+    .ledger-note {{ display:block; margin-top:6px; color:#849087; font-size:.67rem; line-height:1.4; }}
+    .finding-footer {{ display:flex; align-items:center; justify-content:space-between; gap:16px; padding-top:17px; color:#8e9890; font-size:.72rem; }}
+    .finding-footer .footer-state {{ color:var(--red); font:700 .63rem ui-monospace,monospace; letter-spacing:.08em; }}
+    .finding.stands .finding-footer .footer-state {{ color:var(--sage); }}
+    .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }}
+    .metric {{ min-width:0; padding:15px; border:1px solid #29342c; border-radius:2px; background:var(--surface-soft); }}
+    .label {{ color:#7f8b82; text-transform:uppercase; letter-spacing:.10em; font:750 .59rem ui-monospace,monospace; }}
+    .value {{ margin-top:7px; color:#e5ebe3; font-size:1.03rem; font-weight:700; overflow-wrap:anywhere; }}
+    .expired, .blocked {{ color:var(--red); }} .stands, .allow {{ color:var(--sage); }} .unknown {{ color:var(--amber); }} .contested {{ color:var(--purple); }}
+    button {{ margin:4px 7px 0 0; padding:10px 13px; border:1px solid #516256; border-radius:2px; background:#202a23; color:var(--ink); cursor:pointer; font:700 .68rem Inter,ui-sans-serif,system-ui,sans-serif; letter-spacing:.07em; text-transform:uppercase; }}
+    button:hover {{ border-color:var(--sage); background:#2c3b30; }} button.danger {{ border-color:#86535a; background:#39252a; color:#f1c5c0; }} button.safe {{ border-color:#4d7659; background:#22392a; color:#c9e2cc; }}
+    button:focus-visible, a:focus-visible {{ outline:2px solid var(--sage); outline-offset:3px; }}
+    .toolbar {{ display:flex; flex-wrap:wrap; align-items:center; gap:8px; }} .toolbar h2 {{ margin-right:auto; }}
+    .graph {{ display:flex; flex-wrap:wrap; align-items:stretch; gap:0; padding-top:14px; }}
+    .node {{ position:relative; min-width:142px; max-width:220px; padding:14px 15px; border:1px solid #3b4a40; border-radius:2px; background:#18201a; text-align:left; }}
+    .node::after {{ content:""; position:absolute; left:0; right:0; bottom:-1px; height:2px; background:var(--sage-strong); opacity:.38; }}
+    button.node {{ color:#e7eee7; font:inherit; }} button.node:hover {{ border-color:var(--sage-strong); background:#1d2a20; }}
+    .node-index {{ display:block; margin-bottom:10px; color:var(--copper); font:700 .59rem ui-monospace,monospace; }}
+    .node b {{ display:block; margin-top:6px; color:#e6ebe4; font-size:.78rem; line-height:1.35; overflow-wrap:anywhere; }}
+    button.node.expired::after, button.node.blocked::after {{ background:var(--red); }}
+    .arrow {{ display:grid; place-items:center; min-width:32px; color:#718476; font-size:.82rem; }}
+    .timeline {{ width:100%; margin:20px 0 8px; accent-color:var(--sage-strong); }}
+    .timeline-row {{ display:flex; justify-content:space-between; color:#818d84; font: .62rem ui-monospace,monospace; letter-spacing:.04em; text-transform:uppercase; }}
+    .time-travel-grid {{ margin-top:18px; }}
+    .time-travel-card {{ min-height:132px; padding:18px; border:1px solid var(--line); background:var(--surface-soft); }}
+    .time-travel-card .value {{ font-size:1.38rem; }}
+    .time-travel-card.world {{ border-top:2px solid var(--copper); }} .time-travel-card.known {{ border-top:2px solid var(--sage-strong); }} .time-travel-card.assessment {{ border-top:2px solid #788678; }}
+    details {{ padding:14px 0; border-top:1px solid var(--line); }} details:last-child {{ border-bottom:1px solid var(--line); }} summary {{ color:#dce4dd; cursor:pointer; font-size:.82rem; font-weight:650; }}
+    pre {{ margin:12px 0 0; white-space:pre-wrap; overflow-wrap:anywhere; color:#b8c9bc; font: .72rem/1.6 ui-monospace,monospace; }}
+    table {{ width:100%; border-collapse:collapse; }} th, td {{ padding:11px 9px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }} th {{ color:#829087; font:700 .59rem ui-monospace,monospace; letter-spacing:.10em; text-transform:uppercase; }}
+    blockquote {{ margin:13px 0; padding-left:14px; border-left:2px solid #496053; color:#bdc9c0; line-height:1.55; }}
+    .console-section {{ display:none; }} .console-section.active {{ display:block; animation:reveal .18s ease-out; }} @keyframes reveal {{ from {{ opacity:0; transform:translateY(3px); }} to {{ opacity:1; transform:none; }} }}
     .section-intro {{ display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:18px; }} .section-intro p {{ max-width:620px; margin:0; line-height:1.55; }}
-    .overview-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:16px; }} .overview-grid .metric {{ min-height:92px; }}
-    .activity-row {{ display:grid; grid-template-columns:150px 170px 1fr; gap:15px; padding:12px 0; border-bottom:1px solid var(--line); align-items:start; }} .activity-row:last-child {{ border-bottom:0; }} .activity-time {{ color:#7e8c84; font: .68rem ui-monospace,monospace; }} .activity-event {{ color:var(--green); text-transform:uppercase; font:700 .64rem ui-monospace,monospace; letter-spacing:.06em; }}
-    .chain {{ display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin-top:18px; }} .chain-step {{ position:relative; padding:14px 15px 14px 0; border-top:1px solid #405247; }} .chain-step:not(:last-child)::after {{ content:'→'; position:absolute; right:12px; top:10px; color:var(--green); }} .chain-step strong {{ display:block; font-size:.82rem; margin-top:5px; }} .chain-step span {{ color:var(--muted); font-size:.75rem; line-height:1.4; }}
-    .provenance-row {{ display:grid; grid-template-columns:140px 1fr; gap:12px; padding:9px 0; border-bottom:1px solid var(--line); }} .provenance-row .label {{ padding-top:3px; }}
-    .comparison-grid {{ display:grid; grid-template-columns:170px repeat(2,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:8px; overflow:hidden; }} .comparison-grid > * {{ margin:0; border:0; border-radius:0; }} .comparison-head {{ background:#263128; color:#c8d6cc; padding:12px 14px; font:700 .67rem ui-monospace,monospace; letter-spacing:.08em; }} .comparison-label {{ background:#131a16; color:#9aa79e; padding:15px 14px; font-size:.78rem; }} .comparison-grid .metric {{ min-height:0; padding:15px 14px; }}
-    @media (max-width:1100px) {{ main {{ grid-template-columns:190px minmax(0,1fr); gap:28px; padding-left:26px; padding-right:26px; }} .chain {{ grid-template-columns:repeat(3,1fr); }} }}
-    @media (max-width:900px) {{ main {{ grid-template-columns:1fr; gap:0; }} .rail {{ position:static; display:flex; align-items:center; gap:18px; padding:8px 0 16px; border-bottom:1px solid var(--line); }} .rail-group,.rail-note {{ display:none; }} .rail-title {{ margin:0; }} .rail::after {{ content:'Use the navigation above to move through the workspace'; color:#718078; font-size:.72rem; margin-left:auto; }} }}
-    @media (max-width:680px) {{ main {{ padding:18px 14px 44px; }} .topbar {{ padding:10px 14px; }} nav {{ width:100%; margin-left:0; }} h1 {{ font-size:2.45rem; }} .hero-row {{ display:block; }} .hero-status {{ margin-top:18px; }} }}
-    .off {{ opacity: .58; }}
-    @media (max-width:620px) {{ .overview-grid {{ grid-template-columns:repeat(2,1fr); }} .chain {{ grid-template-columns:1fr; }} .chain-step:not(:last-child)::after {{ content:'↓'; right:auto; left:2px; top:auto; bottom:-13px; }} .activity-row {{ grid-template-columns:1fr; gap:4px; }} }}
+    .overview-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:15px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }}
+    .overview-grid .metric {{ min-height:92px; padding:16px 18px 14px 0; border:0; border-radius:0; background:transparent; }} .overview-grid .metric + .metric {{ padding-left:18px; border-left:1px solid var(--line); }}
+    .activity-row {{ display:grid; grid-template-columns:132px 190px 1fr; gap:15px; padding:13px 0; border-bottom:1px solid var(--line); align-items:start; }} .activity-row:last-child {{ border-bottom:0; }} .activity-time {{ color:#7e8a81; font-size:.63rem; }} .activity-event {{ color:var(--sage); font-size:.61rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }}
+    .chain {{ display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin-top:20px; }} .chain-step {{ position:relative; min-height:134px; padding:15px 19px 12px 0; border-top:1px solid #405247; }} .chain-step + .chain-step {{ padding-left:19px; border-left:1px solid var(--line); }} .chain-step:not(:last-child)::after {{ content:'→'; position:absolute; right:-7px; top:10px; z-index:1; color:var(--sage-strong); background:var(--surface); padding:0 3px; }} .chain-step strong {{ display:block; margin-top:8px; color:#e3ebe4; font-size:.78rem; line-height:1.35; }} .chain-step span {{ display:block; margin-top:8px; color:var(--muted); font-size:.69rem; line-height:1.5; }}
+    .provenance-row {{ display:grid; grid-template-columns:145px 1fr; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }} .provenance-row .label {{ padding-top:3px; }}
+    .comparison-grid {{ display:grid; grid-template-columns:170px repeat(2,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:2px; overflow:hidden; }} .comparison-grid > * {{ margin:0; border:0; border-radius:0; }} .comparison-head {{ background:#202a23; color:#c8d9ca; padding:12px 14px; font:700 .61rem ui-monospace,monospace; letter-spacing:.09em; }} .comparison-label {{ background:#111612; color:#9aa79e; padding:15px 14px; font-size:.74rem; }} .comparison-grid .metric {{ min-height:0; padding:15px 14px; }}
+    .off {{ opacity:.58; }}
+    @media (max-width:1120px) {{ main {{ grid-template-columns:200px minmax(0,1fr); gap:30px; padding-left:28px; padding-right:28px; }} .chain {{ grid-template-columns:repeat(3,1fr); }} .finding-ledger {{ grid-template-columns:repeat(2,1fr); }} .ledger-cell + .ledger-cell {{ padding-left:0; border-left:0; }} .ledger-cell:nth-child(even) {{ padding-left:18px; border-left:1px solid rgba(255,255,255,.09); }} }}
+    @media (max-width:900px) {{ main {{ grid-template-columns:1fr; gap:0; }} .rail {{ position:static; min-height:0; display:flex; align-items:center; gap:18px; padding:0 0 15px; border-right:0; border-bottom:1px solid var(--line); }} .rail-context {{ min-width:175px; margin:0; padding:0 18px 0 0; border:0; }} .rail-name {{ margin-top:7px; font-size:1.18rem; }} .rail-state {{ margin-top:9px; }} .rail-group,.rail-footer {{ display:none; }} .rail::after {{ content:'Use the navigation above to move through the workspace'; margin-left:auto; color:var(--faint); font-size:.68rem; }} .finding-head {{ display:block; }} .finding-posture {{ margin-top:20px; padding:14px 0 0; border-left:0; border-top:1px solid rgba(236,149,139,.25); text-align:left; }} .finding.stands .finding-posture {{ border-top-color:rgba(143,199,154,.25); }} }}
+    @media (max-width:680px) {{ main {{ padding:22px 14px 55px; }} .topbar {{ flex-wrap:wrap; gap:10px; padding:12px 14px; }} .workspace-name,.release-mark {{ display:none; }} .topbar-right {{ width:100%; margin-left:0; justify-content:space-between; }} nav {{ margin-left:auto; }} nav a {{ padding:7px 8px; }} .hero {{ padding-top:5px; }} .hero-row {{ display:block; }} .hero-aside {{ margin-top:22px; padding:14px 0 0; border-left:0; border-top:1px solid var(--line); }} h1 {{ font-size:2.7rem; }} .card {{ padding:20px 17px; }} .finding {{ padding:22px 18px; }} .finding-ledger {{ grid-template-columns:1fr; }} .ledger-cell,.ledger-cell:nth-child(even) {{ padding-left:0; border-left:0; }} .graph {{ display:grid; grid-template-columns:1fr; gap:0; }} .node {{ max-width:none; }} .arrow {{ min-height:26px; transform:rotate(90deg); }} .chain {{ grid-template-columns:1fr; }} .chain-step,.chain-step + .chain-step {{ min-height:0; padding:14px 0; border-left:0; }} .chain-step:not(:last-child)::after {{ content:'↓'; right:auto; left:1px; top:auto; bottom:-8px; }} .activity-row {{ grid-template-columns:1fr; gap:4px; }} .comparison-grid {{ grid-template-columns:1fr; }} .comparison-head:not(:first-child) {{ display:none; }} .comparison-label {{ border-top:1px solid var(--line) !important; }} .comparison-grid .metric {{ border-bottom:1px solid var(--line); }} .overview-grid {{ grid-template-columns:repeat(2,1fr); }} .overview-grid .metric:nth-child(odd) {{ padding-left:0; }} .overview-grid .metric:nth-child(even) {{ padding-left:14px; }} .overview-grid .metric:nth-child(n+3) {{ border-top:1px solid var(--line); }} }}
   </style>
 </head>
 <body>
-<header class="topbar"><a class="brand" href="/">STANDING</a><span class="workspace-name">Engineering intent workspace</span><div class="system"><span class="pulse"></span>Memory online</div><nav><a href="/" class="home-link">Product</a><a href="/console?view=evidence" data-view="evidence">Evidence</a><a href="/console?view=sandbox" data-view="sandbox">Sandbox</a></nav></header>
+<header class="topbar"><a class="brand" href="/"><span class="brand-mark" aria-hidden="true"></span><span>STANDING</span></a><span class="workspace-name">Engineering intent workspace <span class="topbar-context">/ {escape(mode_label)}</span></span><div class="topbar-right"><div class="system"><span class="pulse"></span><span>Sibyl connected</span></div><span class="release-mark">EVIDENCE LEDGER</span><nav><a href="/" class="home-link">Product</a><a href="/console?view=evidence" data-view="evidence">Evidence</a><a href="/console?view=sandbox" data-view="sandbox">Sandbox</a></nav></div></header>
 <main>
-  <aside class="rail"><div class="rail-title">stand<span>ing</span></div><div class="rail-group"><strong>Workspace</strong><a class="active" href="/console?view=overview" data-view="overview">Overview</a><a href="/console?view=reviews" data-view="reviews">Reviews</a><a href="/console?view=decisions" data-view="decisions">Decisions</a></div><div class="rail-group"><strong>System record</strong><a href="/console?view=evidence" data-view="evidence">Evidence</a><a href="/console?view=timeline" data-view="timeline">Timeline</a><a href="/console?view=evaluation" data-view="evaluation">Evaluation</a><a href="/console?view=activity" data-view="activity">Activity</a></div><div class="rail-group"><strong>Controlled environment</strong><a href="/console?view=sandbox" data-view="sandbox">Sandbox</a></div><div class="rail-note">A temporal system of record for engineering intent.<br><br>Every decision has a reason. Every reason has a lifespan.</div></aside>
+  <aside class="rail"><div class="rail-context"><div class="rail-kicker">Workspace</div><div class="rail-name">Engineering<br>intent</div><div class="rail-state">Memory online</div></div><div class="rail-group"><strong>Workspace</strong><a class="active" data-icon="01" href="/console?view=overview" data-view="overview">Overview</a><a data-icon="02" href="/console?view=reviews" data-view="reviews">Reviews</a><a data-icon="03" href="/console?view=decisions" data-view="decisions">Decisions</a></div><div class="rail-group"><strong>System record</strong><a data-icon="04" href="/console?view=evidence" data-view="evidence">Evidence</a><a data-icon="05" href="/console?view=timeline" data-view="timeline">Timeline</a><a data-icon="06" href="/console?view=evaluation" data-view="evaluation">Evaluation</a><a data-icon="07" href="/console?view=activity" data-view="activity">Activity</a></div><div class="rail-group"><strong>Controlled environment</strong><a data-icon="08" href="/console?view=sandbox" data-view="sandbox">Sandbox</a></div><div class="rail-footer"><span class="rail-footer-label">Sibyl journal</span>Decision context, evidence, and review state stay linked.</div></aside>
   <div class="console-content">
-  <div class="hero"><div class="hero-row"><div><div class="eyebrow">Standing Console / overview</div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div><div class="hero-status">Product workspace</div></div></div>
+  <div class="hero"><div class="breadcrumb"><span class="eyebrow">Standing Console</span><span class="slash">/</span><span>Overview</span></div><div class="hero-row"><div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div><div class="hero-aside"><div class="label">System posture</div><strong id="postureMark">RECONSTRUCTING</strong><span>Decision state from the backend ledger</span></div></div></div>
   <div id="disclosure"></div>
   <section id="finding" class="card finding console-section" data-view="overview"></section>
   <section id="overviewStats" class="card console-section" data-view="overview"><div class="section-intro"><div><div class="eyebrow">Attention</div><h2>What requires engineering attention</h2></div><p class="muted">Standing keeps current findings, review gates, and evidence freshness in one place.</p></div><div id="overviewStatsGrid" class="overview-grid"></div></section>
@@ -971,11 +1063,16 @@ function render() {{
   $('summary').textContent = model.summary || 'Standing';
   $('disclosure').innerHTML = model.disclosure ? `<div class="disclosure">${{esc(model.disclosure)}}</div>` : '';
   const finding = primary();
+  const currentState = String(finding?.evaluation?.state || 'UNKNOWN');
+  $('postureMark').textContent = currentState === 'STANDS' ? 'STANDING' : currentState;
+  $('postureMark').className = `hero-posture-value ${{currentState.toLowerCase()}}`;
   if (!finding) {{ $('finding').innerHTML = '<h2>No remembered decisions</h2><p class="muted">Standing has no engineering intent to evaluate yet.</p>'; $('finding').className = 'card finding console-section stands'; }}
   else {{
-    const ev = finding.evaluation || {{}}; const condition = (ev.conditions || [])[0] || {{}};
+    const ev = finding.evaluation || {{}}; const condition = (ev.conditions || [])[0] || {{}}; const reference = (finding.conditions || [])[0]?.reference || {{}};
+    const status = String(ev.state || 'UNKNOWN'); const current = reference.accepted_value ?? condition.accepted_value ?? 'unknown'; const unit = reference.unit || condition.unit || 'days';
+    const paths = Array.isArray(finding.body?.governed_paths) ? finding.body.governed_paths : []; const action = ev.action || (status === 'STANDS' ? 'ALLOW' : 'BLOCK');
     $('finding').className = 'card finding console-section ' + String(ev.state || '').toLowerCase();
-    $('finding').innerHTML = `<div class="eyebrow">Primary engineering finding</div><h2>${{esc(finding.body.title || finding.decision_id)}}</h2><div class="grid"><div class="metric"><div class="label">Decision</div><div class="value">${{esc(finding.decision_id)}}</div></div><div class="metric"><div class="label">Required</div><div class="value">${{esc(condition.predicate || '—')}}</div></div><div class="metric"><div class="label">Current</div><div class="value">${{esc(condition.accepted_value ?? 'unknown')}}</div></div><div class="metric"><div class="label">Affected</div><div class="value">${{(finding.body.governed_paths || []).length}} files</div></div><div class="metric"><div class="label">Status</div><div class="value ${{String(ev.state || '').toLowerCase()}}">${{esc(ev.state || 'UNKNOWN')}}</div></div></div><p class="muted">${{esc(finding.body.description || '')}}</p>`;
+    $('finding').innerHTML = `<div class="finding-head"><div><div class="eyebrow">Current decision</div><div class="finding-id">${{esc(finding.decision_id)}}</div><h2 class="finding-title">${{esc(finding.body.title || finding.decision_id)}}</h2><p class="finding-description">${{esc(finding.body.description || '')}}</p></div><div class="finding-posture"><div class="label">Posture</div><div class="status-mark ${{status.toLowerCase()}}">${{esc(status)}}</div><p>${{esc(action)}} · ${{paths.length}} governed path(s)</p></div></div><div class="finding-rule"><span class="rule-line"></span><span class="rule-point"></span><strong>${{esc(condition.predicate || 'Required condition')}}</strong><span class="rule-point bad"></span><span class="rule-line"></span></div><div class="finding-ledger"><div class="ledger-cell"><div class="label">Reason</div><span class="ledger-value">${{esc(finding.body.description || 'Decision rationale recorded in Sibyl.')}}</span></div><div class="ledger-cell"><div class="label">Required</div><span class="ledger-value"><code>${{esc(condition.predicate || '—')}}</code></span><span class="ledger-note">Human-confirmed condition</span></div><div class="ledger-cell"><div class="label">Current evidence</div><span class="ledger-value ${{status === 'STANDS' ? 'good' : 'bad'}}">${{esc(current)}} ${{esc(unit)}}</span><span class="ledger-note">Effective ${{formatDate(reference.effective_from || condition.effective_from)}}</span></div><div class="ledger-cell"><div class="label">Governed code</div><span class="ledger-value"><code>${{esc(paths.join(' · ') || 'No path recorded')}}</code></span><span class="ledger-note">Exact-path validation</span></div></div><div class="finding-footer"><span class="footer-state">${{esc(status)}} / ${{esc(action)}}</span><a href="/console?view=reviews">Open affected review ↗</a></div>`;
   }}
   renderOverview(); renderGraph(finding); renderTimeTravel(finding); renderPr(finding); renderProposals(); renderMemory(); renderWaivers(); renderActivity(); renderRealWorld(); renderPartnerProof(); renderProvenance(finding); setView(activeView);
 }}
@@ -988,13 +1085,13 @@ function setView(view) {{
 }}
 function renderOverview() {{
   const decisions = model.decisions || []; const findings = decisions.filter((d) => d.active && d.evaluation?.state !== 'STANDS'); const waivers = model.waivers || []; const real = model.real_world || {{}};
-  $('overviewStatsGrid').innerHTML = `<div class="metric"><div class="label">Needs attention</div><div class="value ${{findings.length ? 'expired' : 'stands'}}">${{findings.length}}</div><p class="muted">Current decisions outside STANDS</p></div><div class="metric"><div class="label">Reviewed paths</div><div class="value">${{esc(model.review_result?.decisions_found ?? 0)}}</div><p class="muted">Exact governed-path matches</p></div><div class="metric"><div class="label">Evidence due</div><div class="value">${{decisions.reduce((n,d) => n + (d.evaluation?.state === 'UNKNOWN' ? 1 : 0), 0)}}</div><p class="muted">Unknown or stale conditions</p></div><div class="metric"><div class="label">Public cases</div><div class="value">${{esc(real.reviewed_case_count ?? 0)}}</div><p class="muted">Hand-reviewed source chains</p></div>`;
+  $('overviewStatsGrid').innerHTML = `<div class="metric"><div class="label">Needs attention</div><div class="value ${{findings.length ? 'expired' : 'stands'}}">${{findings.length}}</div><p class="muted">Decisions outside STANDS</p></div><div class="metric"><div class="label">Paths checked</div><div class="value">${{esc(model.review_result?.decisions_found ?? 0)}}</div><p class="muted">Exact governed-path matches</p></div><div class="metric"><div class="label">Evidence due</div><div class="value">${{decisions.reduce((n,d) => n + (d.evaluation?.state === 'UNKNOWN' ? 1 : 0), 0)}}</div><p class="muted">Unknown or stale conditions</p></div><div class="metric"><div class="label">Public cases</div><div class="value">${{esc(real.reviewed_case_count ?? 0)}}</div><p class="muted">Hand-reviewed source chains</p></div>`;
 }}
 function renderGraph(finding) {{
   if (!finding) {{ $('graph').innerHTML = '<span class="muted">No graph available.</span>'; return; }}
   const condition = (finding.conditions || [])[0] || {{}}; const observations = condition.observations || []; const state = (finding.evaluation || {{}}).state || 'UNKNOWN';
-  const node = (target, label, value, className = '') => `<button type="button" class="node ${{className}}" data-graph-target="${{esc(target)}}"><div class="label">${{esc(label)}}</div><b>${{esc(value)}}</b></button>`;
-  $('graph').innerHTML = [node('code', 'Code', (finding.body.governed_paths || [])[0] || '—'),`<span class="arrow">↓</span>`,node('decision', 'Decision', finding.decision_id),`<span class="arrow">↓</span>`,node('assumption', 'Assumption', condition.rule?.predicate || '—'),`<span class="arrow">↓</span>`,node('evidence', 'Accepted evidence', `${{observations.length}} observation(s)`),`<span class="arrow">↓</span>`,node('standing', 'Standing', state, String(state).toLowerCase())].join('');
+  const node = (target, index, label, value, className = '') => `<button type="button" class="node ${{className}}" data-graph-target="${{esc(target)}}"><span class="node-index">${{esc(index)}}</span><div class="label">${{esc(label)}}</div><b>${{esc(value)}}</b></button>`;
+  $('graph').innerHTML = [node('code', '01', 'Code', (finding.body.governed_paths || [])[0] || '—'),`<span class="arrow">→</span>`,node('decision', '02', 'Decision', finding.decision_id),`<span class="arrow">→</span>`,node('assumption', '03', 'Assumption', condition.rule?.predicate || '—'),`<span class="arrow">→</span>`,node('evidence', '04', 'Accepted evidence', `${{observations.length}} observation(s)`),`<span class="arrow">→</span>`,node('standing', '05', 'Standing', state, String(state).toLowerCase())].join('');
   document.querySelectorAll('[data-graph-target]').forEach((element) => element.addEventListener('click', () => {{
     const target = element.dataset.graphTarget;
     const view = target === 'code' ? 'reviews' : target === 'evidence' ? 'evidence' : target === 'decision' || target === 'assumption' || target === 'standing' ? 'decisions' : 'overview';
@@ -1005,7 +1102,7 @@ function renderGraph(finding) {{
 function allObservations(finding) {{ return ((finding?.conditions || [])[0]?.observations || []).filter((x) => x && x.effective_from != null); }}
 function renderTimeTravel(finding) {{
   const timeline = Array.isArray(model.sandbox?.time_travel) ? model.sandbox.time_travel : []; const slider = $('timeSlider'); const last = Math.max(0, timeline.length - 1); slider.max = String(last); slider.value = String(selectedTime == null ? last : Math.min(selectedTime, last)); const row = timeline[Number(slider.value)] || {{}}; const point = Number(row.point || Math.floor(Date.now()/1000)); selectedTime = Number(slider.value); const valid = row.valid || null; const known = row.known || null; $('selectedDate').textContent = `Selected: ${{formatDate(point)}}`;
-  $('timeTravel').innerHTML = `<div class="metric"><div class="label">What we now believe was true</div><div class="value">${{esc(valid?.value ?? 'unknown')}} ${{esc(valid?.unit || '')}}</div><p class="muted">Valid time: ${{formatDate(valid?.effective_from)}}</p></div><div class="metric"><div class="label">What Standing knew then</div><div class="value">${{esc(known?.value ?? 'not recorded')}} ${{esc(known?.unit || '')}}</div><p class="muted">Knowledge cutoff: ${{formatDate(point)}}</p></div><div class="metric"><div class="label">Assessment</div><div class="value">${{esc(row.assessment || 'No temporal answer')}}</div><p class="muted">Standing never rewrites the original record.</p></div>`;
+  $('timeTravel').innerHTML = `<div class="time-travel-card world"><div class="label">What we now believe was true</div><div class="value">${{esc(valid?.value ?? 'unknown')}} ${{esc(valid?.unit || '')}}</div><p class="muted">Valid time: ${{formatDate(valid?.effective_from)}}</p></div><div class="time-travel-card known"><div class="label">What Standing knew then</div><div class="value">${{esc(known?.value ?? 'not recorded')}} ${{esc(known?.unit || '')}}</div><p class="muted">Knowledge cutoff: ${{formatDate(point)}}</p></div><div class="time-travel-card assessment"><div class="label">Assessment</div><div class="value">${{esc(row.assessment || 'No temporal answer')}}</div><p class="muted">Standing never rewrites the original record.</p></div>`;
 }}
 function renderPr() {{ const result = model.review_result || {{}}; const decisions = result.decisions || []; const row = decisions[0] || {{}}; const evaluation = row.evaluation || {{}}; const state = row.state || result.state || 'UNKNOWN'; const action = row.action || result.action || 'ALLOW'; $('reviewResult').textContent = result.decisions_found ? `${{result.decisions_found}} exact governed decision(s) found` : 'No exact governed decision found'; $('prReview').innerHTML = `<div class="grid"><div class="metric"><div class="label">Changed path</div><div class="value"><code>${{esc((result.changed_paths || ['src/archive.py'])[0])}}</code></div><p class="muted">Resolved by the backend reviewer</p></div><div class="metric"><div class="label">Governing decision</div><div class="value">${{esc(row.decision_id || 'None')}}</div><p class="muted">${{esc(evaluation.conditions?.[0]?.predicate || 'No remembered assumption')}}</p></div><div class="metric"><div class="label">Standing</div><div class="value ${{String(state).toLowerCase()}}">${{esc(state)}}</div><p class="muted">${{esc(evaluation.conditions?.[0]?.message || 'No decision governs this path.')}}</p></div><div class="metric"><div class="label">Review action</div><div class="value ${{action === 'BLOCK' ? 'blocked' : 'allow'}}">${{esc(action)}}</div><p class="muted">Exact-path validation is authoritative.</p></div></div>`; }}
 function renderProposals() {{ const proposals = model.proposals || []; if (!proposals.length) {{ $('proposals').innerHTML = '<p class="muted">No decision proposals are waiting for review.</p>'; return; }} $('proposals').innerHTML = proposals.map((p) => `<details><summary>${{esc(p.proposal_id)}} — ${{esc(p.status)}}</summary><p><b>${{esc(p.title || p.decision_id)}}</b></p><p class="muted">Derived from ${{esc(p.artifact_path || 'engineering artifact')}} · ${{esc(p.artifact_type || '')}}</p><blockquote>${{esc(p.source_sentence || 'No source sentence recorded.')}}</blockquote><p class="muted">${{esc(p.rationale || '')}}</p>${{p.status === 'PENDING' ? '<button data-proposal-action="confirm-proposal" class="safe">CONFIRM PROPOSAL</button><button data-proposal-action="reject-proposal" class="danger">REJECT PROPOSAL</button>' : `<span class="value">${{esc(p.status)}}${{p.confirmed_by ? ' by ' + esc(p.confirmed_by) : ''}}</span>`}}</details>`).join(''); document.querySelectorAll('[data-proposal-action]').forEach((button) => button.addEventListener('click', () => action(button.dataset.proposalAction))); }}
