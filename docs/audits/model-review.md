@@ -19,8 +19,6 @@ and observation payloads for a separate caller-controlled write.
 - [`standing/model_review.py`](../../standing/model_review.py) contains the
   typed transport, review proposal, extraction proposal, and confirmation
   boundary.
-- [`scripts/run_model_review.py`](../../scripts/run_model_review.py) performs a
-  read-only model review over local memory and never writes a standing change.
 - [`tests/test_model_review.py`](../../tests/test_model_review.py) covers
   structured output, identifier validation, source binding, human confirmation,
   snapshot hashing, and missing credentials.
@@ -35,7 +33,7 @@ The current controlled-scenario evidence and release gates remain unchanged.
 
 ## Current validation addendum (10 September 2026)
 
-The model boundary remains advisory, but the persistence handoff is now wired:
+The model boundary remains advisory, but the persistence boundary is now wired:
 [`ReviewerTools.record_confirmed_extraction`](../../standing/reviewer.py) writes
 the human-confirmed, source-hashed bitemporal observation and journals the
 confirmation. It does not bypass acceptance or promote a condition. The
