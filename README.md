@@ -32,6 +32,8 @@ Standing     EXPIRED — BLOCK
 Live integration evidence:
 
 - [Virtuals ACP platform](https://app.virtuals.io/) — completed verifier job `77748` (the technical API record is credential-gated)
+- [Virtuals ACP agent directory](https://app.virtuals.io/acp/agents) — `Standing Verifier` profile `139452` and `Standing Requestor` profile `139450`
+- [ERC-8004 Standing identity registration](https://basescan.org/tx/0xb1a5586929a8b02fb6a4527551124ce290328eda684aa18a424a78e2de64e733) — agent ID `84973`
 - [Base EAS observation transaction](https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff)
 - [ERC-8004 verifier feedback transaction](https://basescan.org/tx/0xb12f670d1c643556b7bb6c45cec12462f9c7f7e41775681b4c1f9b0278146954)
 - [Registered Base EAS schemas](docs/audits/schema-registration.md)
