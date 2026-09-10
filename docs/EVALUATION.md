@@ -11,14 +11,13 @@ public source for the justification, a hand-verified historical/current
 ground-truth chain, effective and capture times, and a SHA-256 hash of the
 captured source snapshot. `synthetic: false` is mandatory.
 
-The manifest currently contains three source-linked real candidates, including GitHub's
-retirement of `actions/upload-artifact@v3` in a public repository review. It is
-marked `human_reviewed: false`, so it is not counted in release metrics until a
-human independently verifies the decision, path, historical/current chain,
-and expected state. Therefore this workspace still reports no real-world
-precision, recall, false-block rate, or missed-expiry rate. The release
-checker remains blocked until reviewed cases and independent operator evidence
-exist.
+The manifest contains three source-linked real cases, including GitHub's
+retirement of `actions/upload-artifact@v3` and AWS Lambda's Node.js 16
+deprecation. Jennycruzy reviewed each decision, path, historical/current chain,
+and expected state. This is operator review, not maintainer confirmation or
+independent evaluation. Scores remain unpublished until predictions for the
+defined evaluation arms are recorded. The release checker remains blocked on
+independent verifier evidence even though the real-case gates now pass.
 
 ## Controlled adversarial corpus
 
@@ -73,9 +72,9 @@ why Standing failed
 whether fixed
 ```
 
-No real-case misses or scores are being hidden: the manifest contains one
-source-linked candidate, but there are currently no human-reviewed real cases
-and therefore no real score. The unit and adapter suites provide
+No real-case misses or scores are being hidden: the manifest contains three
+operator-reviewed cases, but predictions have not yet been recorded and
+therefore no real score is claimed. The unit and adapter suites provide
 implementation regressions, not a substitute for external evaluation.
 
 ## Commands
@@ -96,6 +95,6 @@ implementation regressions, not a substitute for external evaluation.
   --require-real
 ```
 
-The second command should fail until the pending candidate is human-reviewed
-and the corpus reaches the configured minimum. That failure is a release
-safeguard, not an evaluation result.
+The real-case corpus now reaches the configured minimum. Evaluation still
+requires complete predictions, and the separate release checker remains a
+safeguard for independent observer evidence.

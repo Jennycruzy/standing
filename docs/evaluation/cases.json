@@ -13,7 +13,7 @@
       "source_sha256": "3c8873632b08b9b52711618046ea000b217af23026111aadb7ae397a3bc9cee4",
       "expected_state": "EXPIRED",
       "synthetic": false,
-      "notes": "Source-linked public case: the repository review identifies actions/upload-artifact@v3 in .github/workflows/security.yml, and GitHub's published retirement makes the v3-dependent decision expired for GitHub.com. This is not maintainer confirmation or PMF evidence. human_reviewed remains false until an engineer independently reviews and promotes the case.",
+      "notes": "Source-linked public case: the repository review identifies actions/upload-artifact@v3 in .github/workflows/security.yml, and GitHub's published retirement makes the v3-dependent decision expired for GitHub.com. Operator-reviewed; this is not maintainer confirmation, independent evaluation, or PMF evidence.",
       "historical_ground_truth_url": "https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/",
       "historical_ground_truth_effective_at": 1713311709,
       "historical_source_sha256": "e6aa542274211ec6b22d40fd47e5dc7a40e05cbfcf03e565dca6f13139709873",
@@ -28,7 +28,9 @@
       ],
       "historical_claim": "actions/upload-artifact@v3 was configured; GitHub announced that v3 would stop working for GitHub.com customers on 2025-01-30.",
       "current_claim": "GitHub.com workflows must use actions/upload-artifact@v4 or later; v3 is retired.",
-      "human_reviewed": false
+      "human_reviewed": true,
+      "reviewed_at": 1789028014,
+      "reviewed_by": "Jennycruzy"
     },
     {
       "case_id": "slsa-generator-artifact-v3-compatibility",
@@ -42,7 +44,7 @@
       "source_sha256": "b1e4e3648ae76ade13f06387a4a74f36b1b1011acb574cab06b2e2fa5ceb31ad",
       "expected_state": "EXPIRED",
       "synthetic": false,
-      "notes": "The repository explicitly documented a v3 compatibility dependency. Its v2.0.0 changelog records the v4 replacement, and GitHub retired v3 for GitHub.com. This candidate remains excluded from release metrics until human review.",
+      "notes": "The repository explicitly documented a v3 compatibility dependency. Its v2.0.0 changelog records the v4 replacement, and GitHub retired v3 for GitHub.com. Operator-reviewed; not maintainer confirmation or independent evaluation.",
       "historical_ground_truth_url": "https://github.com/slsa-framework/slsa-github-generator/blob/main/internal/builders/docker/README.md",
       "historical_ground_truth_effective_at": 1713311709,
       "historical_source_sha256": "330b8e1d2acecfa4159c6d240e94ee58f1437f2c7c795293212d720e6c0e444e",
@@ -55,7 +57,9 @@
       "governed_paths": ["internal/builders/docker/README.md"],
       "historical_claim": "The documented container workflow required the v3 artifact compatibility path.",
       "current_claim": "The project migrated to v4 and GitHub.com retired the v3 artifact actions.",
-      "human_reviewed": false
+      "human_reviewed": true,
+      "reviewed_at": 1789028014,
+      "reviewed_by": "Jennycruzy"
     },
     {
       "case_id": "aws-lambda-nextjs-node16-deprecation",
@@ -69,7 +73,7 @@
       "source_sha256": "cdf6bf22b903515b7c5eee923f295d4124889d645a15b741d145df46e7bcb88e",
       "expected_state": "EXPIRED",
       "synthetic": false,
-      "notes": "The AWS sample explicitly requires Node.js 16 and its SAM template pins nodejs16.x. AWS lists the runtime as deprecated. This candidate remains excluded from release metrics until human review.",
+      "notes": "The AWS sample explicitly requires Node.js 16 and its SAM template pins nodejs16.x. AWS lists the runtime as deprecated. Operator-reviewed; not maintainer confirmation or independent evaluation.",
       "historical_ground_truth_url": "https://github.com/aws-samples/aws-lambda-nextjs/blob/main/nextjs-lambda-sam/template.yaml",
       "historical_ground_truth_effective_at": 1672876800,
       "historical_source_sha256": "283ea84968ad00b44c991a06b0d06c56eb3fb4893a8ca60ab853b4c2f66a9318",
@@ -82,7 +86,9 @@
       "governed_paths": ["nextjs-lambda-sam/template.yaml"],
       "historical_claim": "The sample required Node.js 16 and configured the Lambda runtime as nodejs16.x.",
       "current_claim": "AWS deprecated the managed nodejs16.x Lambda runtime on 2024-06-12.",
-      "human_reviewed": false
+      "human_reviewed": true,
+      "reviewed_at": 1789028014,
+      "reviewed_by": "Jennycruzy"
     }
   ]
 }

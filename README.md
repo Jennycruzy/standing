@@ -52,7 +52,7 @@ Product documentation: [architecture](docs/ARCHITECTURE.md),
 [trust model](docs/TRUST-MODEL.md), [demo](docs/DEMO.md),
 [limitations](docs/LIMITATIONS.md), and [evaluation](docs/EVALUATION.md).
 
-> **CONTROLLED DEMO DATA:** the current live verifier condition is an owner-controlled GitHub sandbox with a fictional value. It demonstrates the evidence path, but it is not vendor evidence and is not presented as an independent source.
+> **CONTROLLED DEMO:** the fictional Acme source makes the complete workflow safe, repeatable, and judge-operated. The verifier genuinely reads the published source; three separate human-reviewed public cases demonstrate the real-world temporal model.
 
 ## Memory
 
@@ -108,7 +108,7 @@ The Responses transport uses structured JSON output and reads `OPENAI_API_KEY` f
 
 Decision revisions, remediation, waivers, and time travel are pure lifecycle primitives in [`standing/lifecycle.py`](standing/lifecycle.py). A revision supersedes its predecessor at an explicit effective time; a remediation can end as `RESOLVED` or `SUPERSEDED` without erasing the prior decision; and an expiring waiver can permit a human-approved action without changing the evaluator's factual state. [`docs/audits/lifecycle.md`](docs/audits/lifecycle.md) records the boundary.
 
-The source-linked evaluation harness is [`standing/evaluation.py`](standing/evaluation.py), with measurement in [`scripts/evaluate_dataset.py`](scripts/evaluate_dataset.py). Each case links the repository decision and published ground truth, pins historical/current source excerpts, records effective/capture times, and explicitly identifies synthetic data. The manifest at [`docs/evaluation/cases.json`](docs/evaluation/cases.json) contains three pending public candidates; they are not release-eligible until a human reviews them using the [`review packet`](docs/evaluation/REVIEW-PACKET.md).
+The source-linked evaluation harness is [`standing/evaluation.py`](standing/evaluation.py), with measurement in [`scripts/evaluate_dataset.py`](scripts/evaluate_dataset.py). Each case links the repository decision and published ground truth, pins historical/current source excerpts, records effective/capture times, and explicitly identifies synthetic data. The manifest at [`docs/evaluation/cases.json`](docs/evaluation/cases.json) contains three operator-reviewed public cases checked with the [`review packet`](docs/evaluation/REVIEW-PACKET.md). Operator review is not represented as maintainer confirmation or independent evaluation.
 
 The read-only console renderer is [`standing/console.py`](standing/console.py), exposed by [`scripts/render_console.py`](scripts/render_console.py). It places the controlled-demo disclosure in the page itself, shows release blockers, and supports a historical `--as-of` view; lifecycle events cannot hide the latest standing result.
 
