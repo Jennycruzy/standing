@@ -1,0 +1,13 @@
+Standing evaluation decision excerpt
+Source: https://github.com/pallets/flask/blob/main/pyproject.toml
+Repository commit: 6a2f545bfd8ed31e19066a299296917e034aca58
+Repository commit date: 2026-07-30T17:29:33Z
+
+Relevant package metadata:
+
+  [project]
+  name = "Flask"
+  requires-python = ">=3.10"
+
+The project installation guide also says: Flask supports Python 3.10 and
+newer. This is an explicit compatibility statement, not an inferred ADR.

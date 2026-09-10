@@ -1,0 +1,11 @@
+Standing evaluation decision excerpt
+Source: https://github.com/actions/checkout/blob/main/README.md
+Captured: 2026-09-10
+
+Relevant usage excerpt:
+
+  - uses: actions/checkout@v7
+
+The repository README identifies v7 as the current checkout action major.
+This is a current compatibility/release record, not an inferred historical
+architectural rationale.

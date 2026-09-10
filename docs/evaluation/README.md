@@ -1,12 +1,13 @@
 # Source-linked evaluation corpus
 
 `cases.json` is the real-world release corpus manifest. It currently contains
-three source-linked cases, marked `human_reviewed: true`, covering two
-GitHub Actions compatibility/retirement findings and an AWS Lambda runtime
-deprecation. The first is deliberately classified as a stale dependency
-finding because its artifact is a later repository review, not original
-decision rationale. Jennycruzy reviewed the linked artifacts, governed paths,
-vendor sources, effective dates, and expected states using the
+eight source-linked cases, marked `human_reviewed: true`, covering five
+vendor-expiry findings and three current compatibility records. The first
+existing case is deliberately classified as a stale dependency finding because
+its artifact is a later repository review, not original decision rationale.
+The two added AWS runtime cases are explicit stale configuration findings, not
+inferred architecture decisions. Jennycruzy reviewed the linked artifacts,
+governed paths, vendor sources, effective dates, and expected states using the
 [review packet](REVIEW-PACKET.md).
 
 `adversarial.json` is a separate synthetic corpus of 17 deterministic failure

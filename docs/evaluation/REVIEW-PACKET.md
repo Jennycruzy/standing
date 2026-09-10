@@ -46,6 +46,65 @@ For each case:
 - Check: the sample requires Node.js 16 and configures `nodejs16.x`; AWS lists
   that runtime as deprecated from 2024-06-12.
 
+## Case 4 — AWS SAM CRUD sample on Python 3.8
+
+- Decision artifact: [SAM template at the reviewed commit](https://github.com/aws-samples/sam-python-crud-sample/blob/6e4de8e76d6af3f4715a5f0f847ae99ab3368acc/template.yaml)
+- Governed path: `template.yaml`
+- Vendor source: [AWS Lambda runtime lifecycle](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)
+- Proposed expected state: `EXPIRED`
+- Check: the template pins its CRUD functions to `python3.8`; AWS lists
+  `python3.8` as deprecated from 2024-10-14.
+
+This is labelled a stale runtime configuration finding, not an inferred
+architectural rationale.
+
+## Case 5 — AWS Java 8 DynamoDB sample
+
+- Decision artifact: [reviewed README commit](https://github.com/aws-samples/lambda-java8-dynamodb/blob/15a015dda4d63df2b03e30e00057bc7cc432776d/README.md)
+- Governed path: `README.md`
+- Vendor source: [AWS Lambda runtime lifecycle](https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html)
+- Proposed expected state: `EXPIRED`
+- Check: the sample explicitly describes an API built with the Java 8 Lambda
+  runtime; AWS lists `java8` as deprecated from 2024-01-08.
+
+This is labelled an explicit stale runtime finding, not an inferred original
+architecture rationale.
+
+## Case 6 — Vite Node.js engine compatibility
+
+- Decision artifact: [Vite package metadata at the reviewed commit](https://github.com/vitejs/vite/blob/434e8e9495436a60789f2b588a04a6a24a3d1661/packages/vite/package.json)
+- Governed path: `packages/vite/package.json`
+- Current runtime source: [Node.js release schedule](https://nodejs.org/en/about/previous-releases)
+- Proposed expected state: `STANDS`
+- Check: Vite accepts Node `>=22.12.0`; Node.js lists the v22 line as LTS.
+
+This is labelled an explicit package compatibility record, not an inferred
+ADR.
+
+## Case 7 — Flask Python runtime compatibility
+
+- Decision artifact: [Flask package metadata at the reviewed commit](https://github.com/pallets/flask/blob/6a2f545bfd8ed31e19066a299296917e034aca58/pyproject.toml)
+- Governed paths: `pyproject.toml`, `docs/installation.rst`
+- Current runtime source: [Python version status](https://devguide.python.org/versions/)
+- Proposed expected state: `STANDS`
+- Check: Flask supports Python 3.10 and newer; Python 3.12 remains in security
+  support through 2028-10.
+
+This is labelled an explicit package compatibility record, not an inferred
+ADR.
+
+## Case 8 — GitHub Actions checkout current release
+
+- Decision artifact: [checkout usage documentation](https://github.com/actions/checkout/blob/v7.0.1/README.md)
+- Governed path: `README.md`
+- Current release source: [checkout v7.0.1 release](https://github.com/actions/checkout/releases/tag/v7.0.1)
+- Proposed expected state: `STANDS`
+- Check: the public README uses `actions/checkout@v7`, and v7.0.1 is a
+  published, non-prerelease release on the current major line.
+
+This is labelled a current release record, not an inferred historical
+architecture rationale.
+
 ## Important boundary
 
 Operator review establishes that the corpus labels were checked. It does not

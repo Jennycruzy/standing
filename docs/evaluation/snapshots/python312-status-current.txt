@@ -1,0 +1,10 @@
+Standing evaluation source excerpt
+Source: https://devguide.python.org/versions/
+Captured: 2026-09-10
+
+Relevant Python version-status row:
+
+3.12 | PEP 693 | security | 2023-10-02 | 2028-10
+
+Python 3.12 is within Flask's >=3.10 compatibility range and remains in the
+Python project's security-support phase.

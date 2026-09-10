@@ -23,7 +23,7 @@ through evidence and decision supersession.
 
 The interactive controlled sandbox is explicitly fictional and deterministic. It
 shows the complete product workflow while the repository separately contains
-genuine source extraction, completed partner records, and three human-reviewed,
+genuine source extraction, completed partner records, and eight human-reviewed,
 source-linked public cases.
 
 ## Three-minute product walkthrough
@@ -93,9 +93,10 @@ Open **Live historical proof** in the dashboard. Open the public Virtuals ACP
 scan, point to completed job `77748`, and open the Base EAS transaction to show
 the integrations doing the product's verification work. Then show the real-world evaluation packet and
 one official vendor source. Say:
-“The controlled flow is deterministic, and these three human-reviewed public
+“The controlled flow is deterministic, and these eight human-reviewed public
 cases test the same temporal model against public repository evidence, stale
-dependencies, and vendor changes.” Close with the thesis.
+dependencies, runtime expiry, and current compatibility records.” Close with
+the thesis.
 
 ### 2:50–3:00 — Close
 
@@ -132,7 +133,7 @@ STANDS / EXPIRED / UNKNOWN / CONTESTED → waiver or replacement
 
 The public Acme interaction is clearly labelled as a controlled Fictional Acme scenario.
 The repo includes genuine source extraction, temporal tests, fresh-process memory proof,
-the trust model, onchain evidence, and three human-reviewed real-world cases.
+the trust model, onchain evidence, and eight human-reviewed real-world cases.
 
 Live Standing: LIVE_URL
 Code: https://github.com/Jennycruzy/standing

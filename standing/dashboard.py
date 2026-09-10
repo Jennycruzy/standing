@@ -710,7 +710,7 @@ def _real_world_payload() -> dict[str, Any]:
         "pending_case_count": pending,
         "cases": cases,
         "disclosure": (
-            "Three human-reviewed public cases are recorded separately from the controlled scenario."
+            f"{reviewed} human-reviewed public cases are recorded separately from the controlled scenario."
             if reviewed and not pending
             else "Real-world and controlled evidence are kept separate; pending candidates are not product claims."
         ),

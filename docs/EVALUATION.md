@@ -11,11 +11,12 @@ public source for the justification, a hand-verified historical/current
 ground-truth chain, effective and capture times, and a SHA-256 hash of the
 captured source snapshot. `synthetic: false` is mandatory.
 
-The manifest contains three source-linked real cases, including GitHub's
-retirement of `actions/upload-artifact@v3` and AWS Lambda's Node.js 16
-deprecation. The first is explicitly a stale dependency finding based on a
-later repository review, not an original historical rationale. The other two
-contain explicit historical compatibility or runtime requirements. Jennycruzy
+The manifest contains eight source-linked real cases: five explicit vendor
+runtime/dependency expiry findings and three current compatibility records.
+The first existing case is explicitly a stale dependency finding based on a
+later repository review, not an original historical rationale. The two added
+AWS runtime cases are explicit stale configuration findings. The three
+standing cases are package or release compatibility records. Jennycruzy
 reviewed each path, evidence chain, and expected state. Scores remain
 unpublished until predictions for the defined evaluation arms are recorded.
 
@@ -72,7 +73,7 @@ why Standing failed
 whether fixed
 ```
 
-No real-case misses or scores are being hidden: the manifest contains three
+No real-case misses or scores are being hidden: the manifest contains eight
 human-reviewed cases, but predictions have not yet been recorded and
 therefore no real score is claimed. The unit and adapter suites provide
 implementation regressions, not a substitute for external evaluation.

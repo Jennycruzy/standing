@@ -1,0 +1,10 @@
+Standing evaluation decision excerpt
+Source: https://github.com/aws-samples/lambda-java8-dynamodb/blob/master/README.md
+Repository commit: 15a015dda4d63df2b03e30e00057bc7cc432776d
+Repository commit date: 2017-09-21T16:20:47Z
+
+Relevant repository statement:
+
+This code base is an example API built with the Java 8 runtime for AWS Lambda,
+in the context of a common use case: an API backed by Amazon DynamoDB as its
+data store.

@@ -28,7 +28,7 @@ false-block rate, missed-expiry rate, `UNKNOWN` rate, `CONTESTED` rate, and
 miss list. A mismatch may include `why` and `fixed` so every miss can be
 published with its diagnosis and repair status.
 
-The real-world corpus has three human-reviewed source-linked cases, but arm
+The real-world corpus has eight human-reviewed source-linked cases, but arm
 predictions have not been recorded, so there are no real-world arm scores. The separate controlled
 adversarial corpus is suitable for harness smoke tests only; its results must
 be labelled synthetic and must not be presented as product-market evidence.

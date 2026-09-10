@@ -1,0 +1,13 @@
+Standing evaluation source excerpt
+Source: https://github.com/actions/checkout/releases/tag/v7.0.1
+Release published: 2026-07-20T15:10:05Z
+
+Relevant release record:
+
+tag_name: v7.0.1
+target_commitish: main
+draft: false
+prerelease: false
+
+The current public release is v7.0.1, so a repository using
+actions/checkout@v7 is on the current major release line.

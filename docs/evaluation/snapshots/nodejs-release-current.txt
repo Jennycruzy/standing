@@ -1,0 +1,11 @@
+Standing evaluation source excerpt
+Source: https://nodejs.org/en/about/previous-releases
+Captured: 2026-09-10
+
+Relevant Node.js release schedule rows:
+
+v22 | Jod | Apr 24, 2024 | Jul 28, 2026 | LTS
+v24 | Krypton | May 06, 2025 | Sep 07, 2026 | LTS
+
+The page states that production applications should use Active LTS or
+Maintenance LTS releases. Node 22 LTS satisfies Vite's >=22.12.0 branch.

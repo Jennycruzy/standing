@@ -1,0 +1,10 @@
+Standing evaluation source excerpt
+Source: https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html
+Captured: 2026-09-10
+
+Relevant AWS Lambda deprecated-runtimes table row:
+
+Java 8 | java8 | Amazon Linux | Jan 8, 2024 | Feb 8, 2024 | Mar 3, 2027
+
+AWS explains that after deprecation it may no longer apply security updates,
+and functions using that runtime are no longer eligible for technical support.

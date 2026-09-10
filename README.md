@@ -26,7 +26,7 @@ Standing     EXPIRED — BLOCK
   governed path from Sibyl Memory.
 - **Memory Proof:** the same review with a fresh store keeps the external fact
   but loses the remembered engineering reason and historical protection.
-- **Public evidence:** three human-reviewed repository/vendor cases are kept
+- **Public evidence:** eight human-reviewed repository/vendor cases are kept
   separate from the controlled scenarios.
 - **Live historical proof:** completed ACP job `77748`, source extraction, Base
   EAS observation, Sibyl readback, and ERC-8004 outcome are linked below.
@@ -148,7 +148,7 @@ The console provides:
 - bitemporal time travel for world truth and contemporaneous knowledge;
 - exact-path PR review and explicit human confirmation;
 - a backend comparison with memory present versus memory removed;
-- evidence provenance and three reviewed real-world cases;
+- evidence provenance and eight reviewed real-world cases;
 - fixed source-change, reset, waiver-policy, and replacement controls; and
 - direct Virtuals ACP, Base EAS, and ERC-8004 proof links.
 
@@ -249,7 +249,7 @@ and [`acp-adapter/src/extraction.ts`](acp-adapter/src/extraction.ts).
 
 Standing keeps two evaluation sets separate:
 
-- [Three human-reviewed real-world cases](docs/evaluation/cases.json), linking
+- [Eight human-reviewed real-world cases](docs/evaluation/cases.json), linking
   public engineering artifacts to primary vendor history.
 - [Seventeen controlled adversarial cases](docs/evaluation/adversarial.json),
   covering supersession, same-period conflict, late evidence, wrong units,
@@ -268,7 +268,7 @@ npm --prefix acp-adapter test
 npm --prefix acp-adapter run typecheck
 ```
 
-Current verified result: **155 Python tests and 9 TypeScript tests pass**, and
+Current verified result: **157 Python tests and 9 TypeScript tests pass**, and
 the TypeScript adapter passes `tsc --noEmit`.
 
 ## Trust boundaries
@@ -278,7 +278,7 @@ the TypeScript adapter passes `tsc --noEmit`.
 - Completed ACP, Base EAS, Sibyl, and ERC-8004 records are presented separately
   as live historical proof. Standing keeps same-owner evidence `CONTESTED`
   rather than treating a successful transaction as truth.
-- The three public cases are human-reviewed source chains, not an aggregate
+- The eight public cases are human-reviewed source chains, not an aggregate
   accuracy claim. Real and controlled evaluation remain separate.
 - Unsupported required predicates return `UNKNOWN`. Human confirmation is
   required for governing decisions, and only a human can issue a waiver.
