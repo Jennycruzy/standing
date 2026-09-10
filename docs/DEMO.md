@@ -23,7 +23,8 @@ are new OS processes that must recall the decision and block from the same
 Sibyl-backed database. The dashboard then uses a separate temporary database;
 it does not mutate the proof database.
 
-Open `http://127.0.0.1:8787/`.
+Open `http://127.0.0.1:8787/` for the product landing page, then open
+`http://127.0.0.1:8787/console` for the interactive console.
 
 The page begins with:
 

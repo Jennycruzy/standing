@@ -44,9 +44,9 @@ submission.
 
 ## Product and operations
 
-- The dashboard is deployable through `render.yaml`; the public deployment URL
-  is an external submission artifact. It uses an isolated temporary store in
-  `--demo` mode.
+- The deployed service has a public landing page at `/` and an interactive
+  console at `/console`. It is deployable through `render.yaml` and uses an
+  isolated temporary store in `--demo` mode.
 - **BREAK DEMO ASSUMPTION** is a deterministic local replay. It does not create
   a new ACP job or EAS attestation. The completed live ACP → extraction → EAS
   path is separately linked from the dashboard and README.

@@ -2,7 +2,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from standing.dashboard import CONTROLLED_DISCLOSURE, DashboardApp, render_dashboard_html
+from standing.dashboard import CONTROLLED_DISCLOSURE, DashboardApp, render_dashboard_html, render_landing_html
 from standing.memory import create_memory_store
 
 
@@ -93,6 +93,13 @@ class DashboardTests(unittest.TestCase):
         self.assertIn("basescan.org/tx/", html)
         self.assertNotIn("destination address", html.lower())
         self.assertNotIn("private key", html.lower())
+
+    def test_landing_page_has_product_story_and_console_entry(self) -> None:
+        html = render_landing_html(self.app.state())
+
+        for label in ("Code remembers", "Reasoning should too", "Open console", "bitemporal", "Evidence chain"):
+            self.assertIn(label, html)
+        self.assertIn('href="/console"', html)
 
     def test_waiver_control_is_preview_only(self) -> None:
         result = self.app.action("waiver")

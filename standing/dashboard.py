@@ -504,6 +504,67 @@ def _real_world_payload() -> dict[str, Any]:
     }
 
 
+def render_landing_html(payload: Mapping[str, Any], *, page_title: str = "Standing — engineering intent") -> str:
+    """Render the public product introduction for the deployed service."""
+
+    encoded = json.dumps(dict(payload), ensure_ascii=False, sort_keys=True, default=str)
+    encoded = encoded.replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
+    title = escape(page_title, quote=True)
+    finding = payload.get("primary_finding")
+    state = "UNKNOWN"
+    decision_id = "—"
+    title_text = "The reasoning behind every change."
+    current = "—"
+    required = "—"
+    if isinstance(finding, Mapping):
+        decision_id = str(finding.get("decision_id", "—"))
+        body = finding.get("body")
+        evaluation = finding.get("evaluation")
+        if isinstance(body, Mapping):
+            title_text = str(body.get("title", title_text))
+        if isinstance(evaluation, Mapping):
+            state = str(evaluation.get("state", state))
+            conditions = evaluation.get("conditions")
+            if isinstance(conditions, Sequence) and conditions:
+                condition = conditions[0]
+                if isinstance(condition, Mapping):
+                    current = str(condition.get("accepted_value", "unknown"))
+                    required = str(condition.get("predicate", required))
+    return f'''<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{title}</title>
+  <style>
+    :root {{ color-scheme: dark; --ink:#0b0e0d; --ink-2:#111715; --paper:#e9e2d5; --muted:#9aa49c; --line:#2a342f; --mint:#8ee7bd; --copper:#d69a67; --rose:#ef7890; font-family:Inter,ui-sans-serif,system-ui,sans-serif; }}
+    * {{ box-sizing:border-box; }} html {{ scroll-behavior:smooth; }} body {{ margin:0; min-height:100vh; color:var(--paper); background:var(--ink); overflow-x:hidden; }}
+    body::before {{ content:""; position:fixed; inset:-30%; pointer-events:none; background:radial-gradient(ellipse at 75% 12%,rgba(90,157,126,.18),transparent 28%),radial-gradient(ellipse at 20% 82%,rgba(146,83,53,.1),transparent 24%); filter:blur(20px); }}
+    .wrap {{ position:relative; max-width:1240px; margin:auto; padding:0 30px; }}
+    nav {{ position:relative; z-index:2; border-bottom:1px solid var(--line); }} .nav-in {{ min-height:76px; display:flex; align-items:center; gap:24px; }}
+    .brand {{ color:var(--paper); font:600 1.22rem Georgia,serif; letter-spacing:.02em; }} .brand span {{ color:var(--mint); }} .nav-links {{ margin-left:auto; display:flex; gap:26px; align-items:center; }} .nav-links a {{ color:var(--muted); text-decoration:none; font-size:.84rem; }} .nav-links a:hover {{ color:var(--paper); }}
+    .nav-cta,.cta {{ display:inline-flex; align-items:center; justify-content:center; text-decoration:none; border:1px solid var(--mint); color:var(--ink); background:var(--mint); padding:11px 17px; border-radius:999px; font-weight:750; font-size:.82rem; }} .nav-cta:hover,.cta:hover {{ background:#b9f5d5; }}
+    .hero {{ position:relative; padding:94px 0 100px; }} .hero-grid {{ display:grid; grid-template-columns:1.02fr .98fr; gap:78px; align-items:center; }}
+    .eyebrow {{ color:var(--copper); text-transform:uppercase; letter-spacing:.18em; font:700 .68rem ui-monospace,monospace; }} h1 {{ margin:20px 0 24px; max-width:720px; font:500 clamp(3.2rem,7vw,6.6rem)/.94 Georgia,serif; letter-spacing:-.055em; }} h1 em {{ color:var(--mint); font-style:italic; }} .lede {{ color:var(--muted); max-width:520px; font-size:1.12rem; line-height:1.7; }} .hero-actions {{ display:flex; gap:13px; flex-wrap:wrap; margin-top:32px; }} .ghost {{ color:var(--paper); border:1px solid #4a5951; background:transparent; }} .ghost:hover {{ border-color:var(--paper); background:rgba(255,255,255,.04); }}
+    .signal {{ position:relative; min-height:390px; border:1px solid #394a41; background:linear-gradient(145deg,rgba(21,35,29,.9),rgba(10,15,13,.96)); padding:23px; box-shadow:0 35px 90px rgba(0,0,0,.35); overflow:hidden; }} .signal::before {{ content:""; position:absolute; width:360px; height:360px; border:1px solid rgba(142,231,189,.18); border-radius:50%; right:-150px; top:-130px; box-shadow:0 0 0 28px rgba(142,231,189,.03),0 0 0 58px rgba(142,231,189,.025); }} .signal::after {{ content:""; position:absolute; left:-20%; right:-20%; top:52%; height:1px; background:linear-gradient(90deg,transparent,var(--mint),transparent); opacity:.45; animation:scan 5s ease-in-out infinite; }} @keyframes scan {{ 0%,100% {{ transform:translateY(-90px); opacity:0; }} 50% {{ transform:translateY(90px); opacity:.65; }} }}
+    .signal-top {{ display:flex; justify-content:space-between; border-bottom:1px solid var(--line); padding-bottom:17px; color:var(--muted); font:700 .67rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.1em; }} .live {{ color:var(--mint); }} .live::before {{ content:""; display:inline-block; width:7px; height:7px; border-radius:50%; background:var(--mint); box-shadow:0 0 14px var(--mint); margin-right:8px; }} .signal h2 {{ position:relative; margin:48px 0 8px; font:500 2.1rem/1.04 Georgia,serif; max-width:400px; }} .signal p {{ position:relative; color:var(--muted); margin:0; font-size:.92rem; }} .signal-rule {{ position:relative; display:grid; grid-template-columns:1fr auto 1fr; gap:12px; align-items:center; margin-top:48px; }} .signal-rule .line {{ height:1px; background:linear-gradient(90deg,var(--mint),#46564d); }} .signal-rule .line:last-child {{ background:linear-gradient(90deg,#46564d,var(--rose)); }} .signal-rule .point {{ width:10px; height:10px; border-radius:50%; background:var(--mint); box-shadow:0 0 0 5px rgba(142,231,189,.12); }} .signal-rule .point.bad {{ background:var(--rose); box-shadow:0 0 0 5px rgba(239,120,144,.12); }} .signal-labels {{ display:flex; justify-content:space-between; margin-top:12px; color:var(--muted); font: .7rem ui-monospace,monospace; }}
+    .proof-strip {{ border-top:1px solid var(--line); border-bottom:1px solid var(--line); padding:21px 0; }} .proof-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }} .proof-item {{ color:var(--muted); font-size:.78rem; }} .proof-item strong {{ display:block; color:var(--paper); font:500 1.45rem Georgia,serif; margin-bottom:4px; }}
+    section {{ position:relative; padding:88px 0; border-bottom:1px solid var(--line); }} .section-grid {{ display:grid; grid-template-columns:.8fr 1.2fr; gap:80px; }} h3 {{ margin:16px 0; font:500 clamp(2rem,4vw,3.5rem)/1 Georgia,serif; letter-spacing:-.035em; }} .copy {{ color:var(--muted); font-size:1.02rem; line-height:1.75; max-width:620px; }} .steps {{ display:grid; gap:0; border-top:1px solid var(--line); }} .step {{ display:grid; grid-template-columns:54px 1fr; gap:20px; padding:21px 0; border-bottom:1px solid var(--line); }} .step-no {{ color:var(--copper); font: .75rem ui-monospace,monospace; }} .step strong {{ display:block; font-size:1rem; margin-bottom:5px; }} .step span {{ color:var(--muted); font-size:.88rem; }}
+    footer {{ padding:30px 0 52px; color:var(--muted); font-size:.78rem; }} footer a {{ color:var(--mint); text-decoration:none; }}
+    @media(max-width:820px) {{ .hero {{ padding:62px 0 70px; }} .hero-grid,.section-grid {{ grid-template-columns:1fr; gap:46px; }} h1 {{ font-size:clamp(3rem,15vw,5rem); }} .proof-grid {{ grid-template-columns:repeat(2,1fr); }} .nav-links a:not(.nav-cta) {{ display:none; }} }} @media(max-width:480px) {{ .wrap {{ padding:0 19px; }} .signal {{ min-height:350px; }} .proof-grid {{ gap:16px; }} }}
+  </style>
+</head>
+<body>
+  <nav><div class="wrap nav-in"><a class="brand" href="/">stand<span>ing</span></a><div class="nav-links"><a href="#how">How it works</a><a href="#proof">Evidence</a><a href="/console" class="nav-cta">Open console ↗</a></div></div></nav>
+  <main>
+    <section class="hero"><div class="wrap hero-grid"><div><div class="eyebrow">Temporal engineering control</div><h1>Code remembers.<br><em>Reasoning should too.</em></h1><p class="lede">Standing keeps the assumptions behind technical decisions alive. When the world changes, it finds the code still depending on yesterday’s certainty.</p><div class="hero-actions"><a class="cta" href="/console">Enter the console ↗</a><a class="cta ghost" href="#how">See the mechanism ↓</a></div></div><div class="signal"><div class="signal-top"><span>Standing / live monitor</span><span class="live">memory online</span></div><h2>{escape(title_text)}</h2><p>{escape(decision_id)} · current decision state: {escape(state)}</p><div class="signal-rule"><span class="line"></span><span class="point"></span><span class="line"></span><span class="point bad"></span></div><div class="signal-labels"><span>THEN · {escape(required)}</span><span>NOW · {escape(current)} days</span></div></div></div></section>
+    <div class="proof-strip"><div class="wrap proof-grid"><div class="proof-item"><strong>bitemporal</strong>valid time + knowledge time</div><div class="proof-item"><strong>exact paths</strong>intent connected to code</div><div class="proof-item"><strong>fail closed</strong>unknown never passes</div><div class="proof-item"><strong>onchain proof</strong>ACP · EAS · Sibyl</div></div></div>
+    <section id="how"><div class="wrap section-grid"><div><div class="eyebrow">The idea</div><h3>A decision has standing only while its reasons remain true.</h3></div><div><p class="copy">Most systems can tell you what changed. Standing tells you what that change means for the decisions your team already made—and whether a new code change is still safe to merge.</p><div class="steps"><div class="step"><div class="step-no">01</div><div><strong>Remember the why</strong><span>Human-confirmed decisions, assumptions, and governed paths live in Sibyl Memory.</span></div></div><div class="step"><div class="step-no">02</div><div><strong>Verify the world</strong><span>Stale evidence triggers a verifier; typed observations are recorded through Base EAS.</span></div></div><div class="step"><div class="step-no">03</div><div><strong>Re-evaluate the code</strong><span>Standing resolves change versus conflict, then returns STANDS, EXPIRED, UNKNOWN, or CONTESTED.</span></div></div></div></div></div></section>
+    <section id="proof"><div class="wrap section-grid"><div><div class="eyebrow">See it happen</div><h3>From drift to a safe replacement.</h3><p class="copy">Open the console to move through the complete lifecycle: inspect the original decision, travel through its evidence, break the assumption, see the exact path block, then record what replaced it.</p><a class="cta" href="/console">Open Standing console ↗</a></div><div class="signal" style="min-height:280px"><div class="signal-top"><span>Evidence chain</span><span class="live">verified path</span></div><div class="steps" style="margin-top:34px;border-top:0"><div class="step"><div class="step-no">A</div><div><strong>Decision → assumption</strong><span>{escape(decision_id)} · {escape(required)}</span></div></div><div class="step"><div class="step-no">B</div><div><strong>Observation → standing</strong><span>365 days → 90 days · evidence remains historical</span></div></div><div class="step"><div class="step-no">C</div><div><strong>Block → replacement</strong><span>Exact governed path · supersession · ALLOW</span></div></div></div></div></div></section>
+  </main>
+  <footer><div class="wrap">Standing · temporal system of record for engineering intent · <a href="https://github.com/Jennycruzy/standing" target="_blank" rel="noreferrer">source ↗</a> · <a href="/console">console ↗</a></div></footer>
+</body></html>'''
+
+
 def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Standing — engineering intent") -> str:
     """Render an interactive self-contained dashboard shell."""
 
@@ -677,6 +738,8 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
             try:
                 parsed = urlparse(self.path)
                 if parsed.path == "/":
+                    _respond_html(self, render_landing_html(app.state()))
+                elif parsed.path == "/console":
                     _respond_html(self, render_dashboard_html(app.state()))
                 elif parsed.path == "/api/state":
                     _respond_json(self, app.state())

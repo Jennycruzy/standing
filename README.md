@@ -97,7 +97,9 @@ Start the isolated interactive demonstration:
 .venv/bin/standing dashboard --demo
 ```
 
-Open `http://127.0.0.1:8787/`.
+Open `http://127.0.0.1:8787/` for the product landing page, then select
+**Open console** or visit `http://127.0.0.1:8787/console` for the interactive
+review surface.
 
 Prove recall across separate processes with one persistent proof database:
 
