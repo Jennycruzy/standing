@@ -3,7 +3,7 @@ services:
     name: standing
     runtime: python
     plan: free
-    buildCommand: python -m pip install '.[dev]' && make verify
+    buildCommand: python -m pip install '.[dev]' && make verify-deploy
     startCommand: standing dashboard --sandbox --host 0.0.0.0 --port $PORT
     healthCheckPath: /api/state
     autoDeployTrigger: commit
