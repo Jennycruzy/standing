@@ -13,7 +13,7 @@
     "observer_provenance": {
       "operator_id": "standing-owner",
       "source_id": "github.com/Jennycruzy/standing",
-      "extractor_id": "standing.verifier.sandbox_fixed.v1"
+      "extractor_id": "standing.verifier.source_extract.v1"
     }
   }
 }

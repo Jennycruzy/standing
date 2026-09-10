@@ -1,4 +1,6 @@
 .env
+.preflight-memory.db
+.preflight-venv/
 .standing-memory.db
 .standing-memory.db-*
 .standing-eas-cache.json

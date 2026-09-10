@@ -1,0 +1,16 @@
+Standing evaluation source excerpt
+
+Source URL: https://github.com/actions/upload-artifact
+Source owner: GitHub Actions
+Reviewed on: 2026-09-10
+Capture type: human-authored, source-linked excerpt
+
+Verified fact:
+The official action repository warns that upload-artifact v3 is deprecated
+and directs GitHub.com users to update to v4. It separately documents the
+GitHub Enterprise Server compatibility boundary for v4+ and the supported
+Enterprise Server fallback.
+
+Hash scope:
+The SHA-256 recorded in cases.json is the digest of this checked-in excerpt,
+not a claim that it is a byte-for-byte archive of the remote response.

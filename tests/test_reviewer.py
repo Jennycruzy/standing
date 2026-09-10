@@ -1,10 +1,19 @@
 import tempfile
+import hashlib
 import unittest
 from pathlib import Path
 
+from sibyl_memory_client.exceptions import NotFoundError
+
 from standing.approval import evidence_fingerprint, issue_manual_approval
+from standing.artifacts import ArtifactSnapshot
 from standing.lifecycle import RemediationStatus
 from standing.memory import create_memory_store
+from standing.model_review import (
+    DecisionProposal,
+    ExtractionProposal,
+    confirm_extraction,
+)
 from standing.reviewer import ReviewerToolError, ReviewerTools
 
 
@@ -45,6 +54,131 @@ class ReviewerToolsTests(unittest.TestCase):
         self.assertTrue(reviews[0].blocks)
         condition = self.tools.read_condition("vendor.acme.retention_days")
         self.assertEqual(condition.body["accepted_value"], 90)
+
+    def test_artifact_proposal_is_persisted_and_only_human_confirmation_creates_decision(self) -> None:
+        artifact_path = Path(self.directory.name) / "ADR-0042.md"
+        artifact_text = "Use Acme for archive persistence because retention is at least 365 days."
+        artifact_path.write_text(artifact_text, encoding="utf-8")
+        snapshot = ArtifactSnapshot.read(artifact_path, root=self.directory.name, captured_at=100)
+        self.tools.ingest_artifact(snapshot)
+
+        proposal = DecisionProposal(
+            decision_id="ACME-001",
+            title="Use Acme for archive persistence",
+            description="Keep archive persistence on Acme.",
+            governed_paths=("src/archive.py",),
+            conditions=(
+                {
+                    "condition_key": "vendor.acme.retention_days",
+                    "predicate": "retention_days >= 365",
+                    "required": True,
+                    "provenance": "INFERRED",
+                    "unit": "days",
+                },
+            ),
+            artifact_path=snapshot.path,
+            artifact_type=snapshot.artifact_type,
+            artifact_sha256=hashlib.sha256(artifact_text.encode("utf-8")).hexdigest(),
+            source_sentence=artifact_text,
+            rationale="The ADR states the choice and requirement.",
+            model_id="gpt-5.4-mini",
+        )
+        stored = self.tools.record_decision_proposal(proposal)
+
+        self.assertEqual(self.store.list_decision_proposals()[0]["name"], proposal.proposal_id)
+        self.assertEqual(self.store.list_decision_proposals()[0]["body"]["status"], "PENDING")
+        with self.assertRaises(ReviewerToolError):
+            self.tools.confirm_decision_proposal(
+                proposal.proposal_id,
+                confirmed_by="model",
+                confirmation_note="not allowed",
+                confirmed_at=200,
+            )
+        confirmed = self.tools.confirm_decision_proposal(
+            proposal.proposal_id,
+            confirmed_by="alice",
+            confirmation_note="I reviewed the ADR and confirm this blocking assumption.",
+            confirmed_at=200,
+        )
+
+        self.assertEqual(confirmed.decision_id, "ACME-001")
+        self.assertEqual(confirmed.body["approver"], "alice")
+        self.assertEqual(confirmed.body["conditions"][0]["provenance"], "CONFIRMED")
+        self.assertEqual(self.store.read_decision_proposal(proposal.proposal_id)["body"]["status"], "CONFIRMED")
+        self.assertEqual(self.tools.current_decision("src/archive.py").decision_id, "ACME-001")
+        events = self.store.read_standing_changes()
+        self.assertTrue(any(event["extra"]["event_type"] == "decision_proposal_confirmed" for event in events))
+
+    def test_confirmed_extraction_is_persisted_without_bypassing_acceptance(self) -> None:
+        proposal = ExtractionProposal(
+            condition_key="vendor.acme.retention_days",
+            value=365,
+            source_url="https://vendor.example/retention",
+            effective_from=100,
+            rationale="The source states the retention value.",
+            model_id="gpt-5.4-mini",
+        )
+        confirmed = confirm_extraction(
+            proposal,
+            source_snapshot=b"Retention: 365 days.",
+            confirmed_by="alice",
+            confirmed_at=200,
+            review_note="I checked the exact source snapshot.",
+        )
+
+        stored = self.tools.record_confirmed_extraction(
+            confirmed,
+            value_type="number",
+            unit="days",
+            recorded_at=300,
+        )
+
+        body = stored["body"]
+        self.assertEqual(body["value"], 365)
+        self.assertEqual(body["observed_at"], 200)
+        self.assertEqual(body["recorded_at"], 300)
+        self.assertEqual(body["extraction_method"], "MANUAL_VERIFIED")
+        self.assertEqual(body["evidence_hash"], confirmed.source_sha256)
+        self.assertIsNone(body.get("accepted"))
+        events = self.store.read_standing_changes()
+        self.assertTrue(
+            any(event["extra"]["event_type"] == "extraction_confirmation_recorded" for event in events)
+        )
+
+    def test_proposal_rejection_is_human_only_and_does_not_create_decision(self) -> None:
+        proposal = DecisionProposal(
+            decision_id="REJECTED-001",
+            title="Unadopted choice",
+            description="This proposal is not ready.",
+            governed_paths=("src/unadopted.py",),
+            conditions=(
+                {
+                    "condition_key": "vendor.retention_days",
+                    "predicate": "retention_days >= 365",
+                    "required": True,
+                    "provenance": "INFERRED",
+                    "unit": "days",
+                },
+            ),
+            artifact_path="docs/ADR-unadopted.md",
+            artifact_type="ADR",
+            artifact_sha256="b" * 64,
+            source_sentence="This proposal is not ready.",
+            rationale="Needs review.",
+            model_id="gpt-5.4-mini",
+        )
+        self.tools.record_decision_proposal(proposal)
+
+        rejected = self.tools.reject_decision_proposal(
+            proposal.proposal_id,
+            rejected_by="alice",
+            reason="The source does not establish the assumption.",
+            rejected_at=300,
+        )
+
+        self.assertEqual(rejected["body"]["status"], "REJECTED")
+        with self.assertRaises(NotFoundError):
+            self.store.read_decision("REJECTED-001")
 
     def test_standing_result_is_written_to_state_and_journal(self) -> None:
         self._save_decision_and_value(365)
@@ -94,6 +228,28 @@ class ReviewerToolsTests(unittest.TestCase):
         self.assertEqual(review.evaluation.state.value, "UNKNOWN")
         self.assertTrue(review.blocks)
 
+    def test_due_scheduled_recheck_makes_condition_unknown_until_revalidated(self) -> None:
+        self._save_decision_and_value(365)
+        self.store.save_condition_reference(
+            "vendor.acme.retention_days",
+            {
+                "accepted_value": 365,
+                "last_verified_at": 1,
+                "recheck_interval_seconds": 1,
+                "next_check_at": 1,
+            },
+            metadata={"observation_uid": "0x365"},
+        )
+
+        evaluation = self.tools.evaluate_standing("acme-events")
+
+        self.assertEqual(evaluation.state.value, "UNKNOWN")
+        self.assertTrue(evaluation.conditions[0].blocks)
+        self.assertEqual(
+            self.tools.current_condition_reference("vendor.acme.retention_days")["freshness_reason"],
+            "scheduled recheck is due",
+        )
+
     def test_revision_history_and_time_travel_are_persisted(self) -> None:
         first = {
             "decision_id": "versioned",
@@ -141,6 +297,136 @@ class ReviewerToolsTests(unittest.TestCase):
         self.assertEqual(historic.standing.state if historic.standing else None, "EXPIRED")
         self.assertEqual(current.revision.revision_id if current.revision else None, "r2")
         self.assertEqual(current.standing.action if current.standing else None, "allow")
+
+    def test_decision_path_queries_distinguish_valid_and_known_time(self) -> None:
+        self.store.save_decision(
+            "ACME-001",
+            {
+                "title": "Use Acme archive storage",
+                "recorded_at": "2026-01-02",
+                "effective_from": "2026-01-01",
+                "superseded_at": "2026-09-07",
+                "status": "SUPERSEDED",
+                "governed_paths": ["src/archive.py"],
+                "conditions": [self._spec("vendor.acme.retention_days")],
+            },
+        )
+        self.store.save_decision(
+            "STORAGE-002",
+            {
+                "title": "Use Contoso archive storage",
+                "recorded_at": "2026-09-09",
+                "effective_from": "2026-09-07",
+                "status": "CURRENT",
+                "governed_paths": ["src/archive.py"],
+                "conditions": [self._spec("vendor.contoso.retention_days")],
+            },
+        )
+
+        current = self.tools.current_decision("src/archive.py")
+        historic = self.tools.decision_as_of("src/archive.py", "2026-03-03")
+        known = self.tools.decision_known_as_of("src/archive.py", "2026-03-03")
+
+        self.assertEqual(current.decision_id if current else None, "STORAGE-002")
+        self.assertEqual(historic.decision_id if historic else None, "ACME-001")
+        self.assertEqual(known.decision_id if known else None, "ACME-001")
+
+    def test_decision_known_as_of_does_not_apply_late_supersession_early(self) -> None:
+        self.store.save_decision(
+            "ACME-001",
+            {
+                "title": "Use Acme archive storage",
+                "recorded_at": "2026-01-02",
+                "effective_from": "2026-01-01",
+                "status": "CURRENT",
+                "governed_paths": ["src/archive.py"],
+                "conditions": [self._spec("vendor.acme.retention_days")],
+            },
+        )
+
+        self.tools.record_replacement_decision(
+            "ACME-001",
+            "STORAGE-002",
+            {
+                "title": "Use Contoso archive storage",
+                "governed_paths": ["src/archive.py"],
+                "conditions": [self._spec("vendor.contoso.retention_days")],
+            },
+            actor_id="alice",
+            reason="The Acme assumption expired.",
+            effective_from="2026-09-07",
+            recorded_at="2026-09-09",
+        )
+
+        before_discovery = self.tools.decision_known_as_of("src/archive.py", "2026-09-08")
+        after_discovery = self.tools.decision_known_as_of("src/archive.py", "2026-09-10")
+
+        self.assertEqual(before_discovery.decision_id if before_discovery else None, "ACME-001")
+        self.assertEqual(after_discovery.decision_id if after_discovery else None, "STORAGE-002")
+
+    def test_current_decision_ignores_future_effective_or_recorded_decisions(self) -> None:
+        self.store.save_decision(
+            "FUTURE-001",
+            {
+                "title": "Future archive choice",
+                "recorded_at": "2099-01-01",
+                "effective_from": "2099-01-02",
+                "status": "CURRENT",
+                "governed_paths": ["src/archive.py"],
+                "conditions": [self._spec("vendor.future.archive")],
+            },
+        )
+
+        self.assertIsNone(self.tools.current_decision("src/archive.py"))
+
+    def test_replacement_decision_supersedes_old_record_without_deleting_it(self) -> None:
+        self.store.save_decision(
+            "ACME-001",
+            {
+                "title": "Use Acme archive storage",
+                "recorded_at": "2026-01-02",
+                "effective_from": "2026-01-01",
+                "status": "CURRENT",
+                "governed_paths": ["src/archive.py"],
+                "conditions": [self._spec("vendor.acme.retention_days")],
+            },
+        )
+
+        replacement = self.tools.record_replacement_decision(
+            "ACME-001",
+            "STORAGE-002",
+            {
+                "title": "Use Contoso archive storage",
+                "governed_paths": ["src/archive.py"],
+                "conditions": [self._spec("vendor.contoso.retention_days")],
+            },
+            actor_id="alice",
+            reason="Acme retention no longer meets the approved requirement.",
+            effective_from="2026-09-07",
+            recorded_at="2026-09-09",
+        )
+
+        old = self.store.read_decision("ACME-001")["body"]
+        current = self.tools.current_decision("src/archive.py")
+        historic = self.tools.decision_as_of("src/archive.py", "2026-03-03")
+
+        self.assertEqual(replacement.decision_id, "STORAGE-002")
+        self.assertEqual(old["status"], "SUPERSEDED")
+        self.assertEqual(old["superseded_by"], "STORAGE-002")
+        self.assertEqual(current.decision_id if current else None, "STORAGE-002")
+        self.assertEqual(historic.decision_id if historic else None, "ACME-001")
+
+    def test_full_text_false_match_does_not_become_a_governed_path_match(self) -> None:
+        self.store.save_decision(
+            "unrelated",
+            {
+                "title": "Mentions src/archive.py in discussion only",
+                "governed_paths": ["docs/architecture.md"],
+                "conditions": [self._spec("vendor.retention")],
+            },
+        )
+
+        self.assertEqual(self.tools.search_decisions(["src/archive.py"]), ())
 
     def test_remediation_and_waiver_are_durable_and_waiver_does_not_change_state(self) -> None:
         self.store.save_decision(

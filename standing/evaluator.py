@@ -153,11 +153,18 @@ def _condition_spec(spec: Mapping[str, Any]) -> dict[str, Any]:
         raise ValueError(f"provenance for {key} must be one of {sorted(SUPPORTED_PROVENANCE)}")
     if not isinstance(required, bool):
         raise ValueError(f"required for {key} must be true or false")
+    raw_unit = spec.get("unit")
+    unit = None
+    if raw_unit is not None:
+        if not isinstance(raw_unit, str) or not raw_unit.strip():
+            raise ValueError(f"unit for {key} must be a non-empty string when supplied")
+        unit = raw_unit.strip().lower()
     return {
         "condition_key": key.strip(),
         "predicate": predicate.strip(),
         "provenance": provenance,
         "required": required,
+        "unit": unit,
     }
 
 
@@ -184,17 +191,34 @@ def _evaluate_condition(
     if parsed is None:
         message = (
             f'The condition "{key}" uses a rule outside Standing\'s four supported checks; '
-            "it is recorded as a note and cannot block."
+            + (
+                "the required condition is UNKNOWN and must block until it can be evaluated."
+                if required
+                else "it is recorded as an informational note."
+            )
         )
         return _result(
             spec,
-            StandingState.STANDS,
-            False,
+            StandingState.UNKNOWN if required else StandingState.STANDS,
+            blocking_allowed,
             False,
             accepted_value,
             source_url,
             observation_uids,
             message,
+        )
+
+    if current.get("evidence_fresh") is False or current.get("freshness_status") == "STALE":
+        message = f'The evidence for "{key}" is stale and must be revalidated before it can stand.'
+        return _result(
+            spec,
+            StandingState.UNKNOWN,
+            blocking_allowed,
+            True,
+            accepted_value,
+            source_url,
+            observation_uids,
+            _with_limit(message, blocking_allowed),
         )
 
     if _is_contested(current):
@@ -209,6 +233,19 @@ def _evaluate_condition(
             source_url,
             observation_uids,
             _with_limit(message, blocking_allowed),
+        )
+
+    unit_error = _unit_error(spec, parsed, current)
+    if unit_error is not None:
+        return _result(
+            spec,
+            StandingState.UNKNOWN,
+            blocking_allowed,
+            True,
+            accepted_value,
+            source_url,
+            observation_uids,
+            _with_limit(unit_error, blocking_allowed),
         )
 
     if "accepted_value" not in current or accepted_value is None:
@@ -302,6 +339,35 @@ def _parse_predicate(predicate: str) -> _ParsedPredicate | None:
     if eol is not None:
         return _ParsedPredicate("eol_date", date.fromisoformat(eol.group(1)))
 
+    return None
+
+
+def _unit_error(
+    spec: Mapping[str, Any],
+    predicate: _ParsedPredicate,
+    current: Mapping[str, Any],
+) -> str | None:
+    """Reject a present incompatible unit instead of treating it as proof."""
+
+    actual_raw = current.get("unit")
+    expected_raw = spec.get("unit")
+    if expected_raw is not None:
+        expected = expected_raw if isinstance(expected_raw, str) else str(expected_raw)
+        expected = expected.strip().lower()
+        if not isinstance(actual_raw, str) or not actual_raw.strip():
+            return f'No unit is recorded for required condition "{spec["condition_key"]}".'
+        if actual_raw.strip().lower() != expected:
+            return (
+                f'Observation unit "{actual_raw}" does not match required unit "{expected}" '
+                f'for "{spec["condition_key"]}".'
+            )
+        return None
+    if predicate.kind != "retention_days" or actual_raw is None:
+        return None
+    if not isinstance(actual_raw, str) or actual_raw.strip().lower() != "days":
+        return (
+            f'Observation unit "{actual_raw}" is invalid for retention_days; expected "days".'
+        )
     return None
 
 

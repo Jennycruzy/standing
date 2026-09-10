@@ -1,8 +1,13 @@
 # Source-linked evaluation corpus
 
-`cases.json` is the release corpus manifest. It is intentionally empty until
-each case has been hand-verified against the public sources; an empty manifest
-keeps the release gate honest.
+`cases.json` is the real-world release corpus manifest. It currently contains
+one source-linked candidate, marked `human_reviewed: false`, for a public
+GitHub Actions retirement finding. It is not counted toward release metrics
+until a human independently verifies and promotes it; a pending candidate is
+not a published score.
+
+`adversarial.json` is a separate synthetic corpus of 17 deterministic failure
+scenarios. Its score must never be combined with the real-world corpus.
 
 Each real case must include:
 
@@ -12,6 +17,12 @@ Each real case must include:
 - a SHA-256 digest of the captured source snapshot;
 - the expected Standing state; and
 - `synthetic: false` explicitly.
+
+For a release-eligible case, the manifest also records the historical and
+current claims, condition key, predicate, governed paths, decision snapshot
+hash, and an explicit human reviewer/timestamp. The checked-in source files
+under `snapshots/` are transparent excerpts whose hashes are pinned; they are
+not represented as byte-for-byte remote archives.
 
 Synthetic fixtures are allowed in unit tests and may be placed in a separate
 working manifest, but `EvaluationDataset.release_case_count()` excludes them.
@@ -27,3 +38,22 @@ prediction IDs that are absent from the corpus:
 
 The expected state must be derived from the vendor's published history at the
 recorded effective time. A repository decision URL alone is not ground truth.
+
+See [`../EVALUATION.md`](../EVALUATION.md) for the baseline arms, metrics, and
+miss-publication policy.
+
+The five-arm JSON shape is:
+
+```json
+{
+  "standing": {"case-id": "EXPIRED"},
+  "no-memory": {"case-id": "UNKNOWN"},
+  "grep": {"case-id": {"state": "STANDS", "why": "...", "fixed": false}},
+  "stateless-model": {"case-id": "UNKNOWN"},
+  "current-docs-only": {"case-id": "EXPIRED"}
+}
+```
+
+Run [`scripts/evaluate_arms.py`](../../scripts/evaluate_arms.py) only after
+each arm has produced a complete prediction file. The command emits one
+metric object per arm; it never combines controlled and real-world scores.

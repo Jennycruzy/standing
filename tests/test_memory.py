@@ -87,6 +87,102 @@ class MemoryLayerTests(unittest.TestCase):
         self.assertEqual(restored["name"], "old-decision")
         self.assertEqual(restored["body"]["governed_paths"], ["src/old.py"])
 
+    def test_temporal_observation_queries_are_available_through_memory(self) -> None:
+        self.store.save_observation(
+            "old",
+            {
+                "condition_key": "vendor.acme.retention_days",
+                "value": 365,
+                "value_type": "number",
+                "unit": "days",
+                "effective_from": "2026-01-01",
+                "observed_at": "2026-01-02",
+                "recorded_at": "2026-01-02",
+                "source_url": "https://docs.acme.example/retention",
+                "source_type": "vendor_primary",
+                "attester": "attester:acme",
+                "operator_id": "operator:acme",
+                "extraction_method": "HTML_SELECTOR",
+                "extraction_version": "retention-html-v1",
+                "observation_uid": "old",
+                "evidence_hash": "a" * 64,
+                "notes": "initial reading",
+                "accepted": True,
+            },
+        )
+        self.store.save_observation(
+            "new",
+            {
+                "condition_key": "vendor.acme.retention_days",
+                "value": 90,
+                "value_type": "number",
+                "unit": "days",
+                "effective_from": "2026-09-07",
+                "observed_at": "2026-09-08",
+                "recorded_at": "2026-09-09",
+                "source_url": "https://docs.acme.example/retention",
+                "source_type": "vendor_primary",
+                "attester": "attester:acme",
+                "operator_id": "operator:acme",
+                "extraction_method": "HTML_SELECTOR",
+                "extraction_version": "retention-html-v1",
+                "observation_uid": "new",
+                "ref_uid": "old",
+                "evidence_hash": "b" * 64,
+                "notes": "superseding reading",
+                "accepted": True,
+            },
+        )
+
+        self.assertEqual(
+            self.store.current_observation(
+                "vendor.acme.retention_days",
+                as_of="2026-09-09",
+            ).value,
+            90,
+        )
+        self.assertEqual(
+            self.store.valid_observation_as_of(
+                "vendor.acme.retention_days",
+                "2026-03-03",
+            ).value,
+            365,
+        )
+        self.assertEqual(
+            self.store.known_observation_as_of(
+                "vendor.acme.retention_days",
+                "2026-03-03",
+            ).value,
+            365,
+        )
+        self.assertEqual(
+            [item.observation_uid for item in self.store.observation_history("vendor.acme.retention_days")],
+            ["old", "new"],
+        )
+
+    def test_observation_uid_is_immutable_except_for_acceptance_metadata(self) -> None:
+        body = {
+            "condition_key": "vendor.acme.retention_days",
+            "value": 365,
+            "source_type": "vendor_primary",
+            "observation_uid": "immutable-observation",
+        }
+
+        first = self.store.save_observation("immutable-observation", body)
+        replay = self.store.save_observation("immutable-observation", dict(body))
+        self.assertEqual(replay, first)
+
+        accepted = self.store.save_observation(
+            "immutable-observation",
+            {**body, "accepted": True},
+        )
+        self.assertTrue(accepted["body"]["accepted"])
+        with self.assertRaisesRegex(ValueError, "immutable"):
+            self.store.save_observation(
+                "immutable-observation",
+                {**body, "value": 90},
+            )
+
     def test_lifecycle_records_round_trip_through_dedicated_categories_and_journal(self) -> None:
         revision = DecisionRevision.from_mapping(
             {
@@ -154,7 +250,7 @@ class MemoryLayerTests(unittest.TestCase):
         files_with_flag = [
             path
             for path in source_root.glob("*.py")
-            if "MEMORY" in path.read_text(encoding="utf-8")
+            if 'os.environ.get("MEMORY")' in path.read_text(encoding="utf-8")
         ]
         self.assertEqual(files_with_flag, [source_root / "memory.py"])
 

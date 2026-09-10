@@ -14,7 +14,7 @@ Verifier deliveries now also carry a controlled-demo disclosure and structured o
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 84 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 92 tests passed.
 - `npm test` in `acp-adapter/` — 4 tests passed in the last recorded run.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/chain.json`, `config/acp.json`, `config/reputation.json`, and `config/verifier.json` — valid JSON.
@@ -34,3 +34,15 @@ Verifier deliveries now also carry a controlled-demo disclosure and structured o
 ## Exit statement
 
 The real EAS read path, registered product schemas, ACP boundary, seller worker, and reputation writer have passed four fresh live verifier deliveries. The remaining gap is the intentionally stricter acceptance policy, not the adapter or chain path.
+
+## Current validation addendum (10 September 2026)
+
+This 9 September section preserves the live transport snapshot. The current
+adapter is additionally covered by the fetched-content extraction tests: the
+seller derives typed values, units, effective/publication dates, source
+snapshots, and extraction metadata from retrieved bytes rather than a supplied
+configuration value. ACP deliveries carry the observation lineage (`refUid`)
+and the Python reviewer records the local knowledge receipt separately. The
+current adapter suite has 8 passing tests and TypeScript typecheck is clean;
+the controlled live records remain transport evidence, not independent
+factual proof.

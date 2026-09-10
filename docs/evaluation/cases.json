@@ -1,4 +1,34 @@
 {
   "dataset_id": "standing-real-decisions-v1",
-  "cases": []
+  "cases": [
+    {
+      "case_id": "github-upload-artifact-v3-retirement",
+      "repository": "datenoio/iterabledata",
+      "decision_url": "https://github.com/datenoio/iterabledata/blob/main/REPOSITORY_REVIEW_REPORT.md",
+      "decision_ref": "main:REPOSITORY_REVIEW_REPORT.md#33-repair-obsolete-ci-runtimeaction-references",
+      "ground_truth_url": "https://github.com/actions/upload-artifact",
+      "ground_truth_source_type": "vendor_history",
+      "ground_truth_effective_at": 1738281095,
+      "captured_at": 1788997895,
+      "source_sha256": "3c8873632b08b9b52711618046ea000b217af23026111aadb7ae397a3bc9cee4",
+      "expected_state": "EXPIRED",
+      "synthetic": false,
+      "notes": "Source-linked public case: the repository review identifies actions/upload-artifact@v3 in .github/workflows/security.yml, and GitHub's published retirement makes the v3-dependent decision expired for GitHub.com. This is not maintainer confirmation or PMF evidence. human_reviewed remains false until an engineer independently reviews and promotes the case.",
+      "historical_ground_truth_url": "https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/",
+      "historical_ground_truth_effective_at": 1713311709,
+      "historical_source_sha256": "e6aa542274211ec6b22d40fd47e5dc7a40e05cbfcf03e565dca6f13139709873",
+      "current_ground_truth_url": "https://github.com/actions/upload-artifact",
+      "current_ground_truth_effective_at": 1738281095,
+      "current_source_sha256": "3c8873632b08b9b52711618046ea000b217af23026111aadb7ae397a3bc9cee4",
+      "decision_snapshot_sha256": "7aca4f25a756994a34988f41855d5a646fe0e74651ecbaec05894809617bbd4b",
+      "condition_key": "github.actions.upload_artifact.major_version",
+      "predicate": "upload_artifact_major_version >= 4",
+      "governed_paths": [
+        ".github/workflows/security.yml"
+      ],
+      "historical_claim": "actions/upload-artifact@v3 was configured; GitHub announced that v3 would stop working for GitHub.com customers on 2025-01-30.",
+      "current_claim": "GitHub.com workflows must use actions/upload-artifact@v4 or later; v3 is retired.",
+      "human_reviewed": false
+    }
+  ]
 }

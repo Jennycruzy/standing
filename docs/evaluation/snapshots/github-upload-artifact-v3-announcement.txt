@@ -1,0 +1,17 @@
+Standing evaluation source excerpt
+
+Source URL: https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/
+Source owner: GitHub
+Published by source: 2024-04-16
+Reviewed on: 2026-09-10
+Capture type: human-authored, source-linked excerpt
+
+Verified fact:
+GitHub announced that v3 of actions/upload-artifact and
+actions/download-artifact would no longer be usable by GitHub.com customers
+starting 2025-01-30, and directed users to upgrade to v4. The announcement
+also distinguishes GitHub Enterprise Server support.
+
+Hash scope:
+The SHA-256 recorded in cases.json is the digest of this checked-in excerpt,
+not a claim that it is a byte-for-byte archive of the remote response.

@@ -73,6 +73,9 @@ class AcpVerifierTests(unittest.TestCase):
         self.assertEqual(observation.value, 90)
         self.assertEqual(observation.disclosure, "CONTROLLED DEMO DATA")
         self.assertEqual(observation.provenance.operator_id, "operator:standing")
+        self.assertEqual(observation.unit, "days")
+        self.assertEqual(observation.extraction_method, "JSON_PATH")
+        self.assertEqual(observation.observed_at, 1_000)
         self.assertEqual(calls[0]["providerAddress"], self.observer)
         self.assertEqual(calls[0]["requirement"], {"conditionKey": self.condition_key})
         self.assertNotIn("privateKey", json.dumps(calls[0]))
@@ -201,6 +204,15 @@ class AcpVerifierTests(unittest.TestCase):
             "observation_uid": "0x" + "ab" * 32,
             "observer_address": self.observer,
             "effective_from": 1_000,
+            "observed_at": 1_000,
+            "recorded_at": 1_000,
+            "value_type": "number",
+            "unit": "days",
+            "extraction_method": "JSON_PATH",
+            "extraction_version": "retention-json-v1",
+            "evidence_hash": "a" * 64,
+            "source_snapshot_hash": "a" * 64,
+            "demo_controlled": True,
             "note": "CONTROLLED DEMO DATA — The published page reports 90 days.",
             "disclosure": "CONTROLLED DEMO DATA",
             "provenance": {

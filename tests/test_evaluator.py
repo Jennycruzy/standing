@@ -39,6 +39,19 @@ class EvaluatorTests(unittest.TestCase):
         self.assertEqual(result.state, StandingState.EXPIRED)
         self.assertTrue(result.conditions[0].blocks)
 
+    def test_wrong_unit_is_unknown_and_blocks_required_condition(self) -> None:
+        result = evaluate_standing(
+            {
+                "decision_id": "unit-check",
+                "conditions": [self._spec("vendor.acme.retention_days", "retention_days >= 365")],
+            },
+            {"vendor.acme.retention_days": {"accepted_value": 365, "unit": "hours"}},
+        )
+
+        self.assertEqual(result.state, StandingState.UNKNOWN)
+        self.assertTrue(result.conditions[0].blocks)
+        self.assertIn('expected "days"', result.conditions[0].message)
+
     def test_missing_value_is_unknown(self) -> None:
         result = evaluate_standing(
             {
@@ -92,7 +105,7 @@ class EvaluatorTests(unittest.TestCase):
         self.assertFalse(result.conditions[0].blocks)
         self.assertIn("cannot block", result.conditions[0].message)
 
-    def test_unsupported_rule_is_a_note(self) -> None:
+    def test_unsupported_required_rule_is_unknown(self) -> None:
         result = evaluate_standing(
             {
                 "decision_id": "event-persistence",
@@ -101,10 +114,10 @@ class EvaluatorTests(unittest.TestCase):
             {"vendor.acme.price": {"accepted_value": 5000}},
         )
 
-        self.assertEqual(result.state, StandingState.STANDS)
+        self.assertEqual(result.state, StandingState.UNKNOWN)
         self.assertFalse(result.conditions[0].evaluated)
-        self.assertFalse(result.conditions[0].blocks)
-        self.assertIn("cannot block", result.conditions[0].message)
+        self.assertTrue(result.conditions[0].blocks)
+        self.assertIn("UNKNOWN", result.conditions[0].message)
 
     def test_fingerprint_is_stable_when_mapping_order_changes(self) -> None:
         decision = {

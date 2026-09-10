@@ -1,16 +1,27 @@
 {
   "conditions": {
     "sandbox.demo.retention_days": {
-      "mode": "sandbox_fixed",
-      "value": "90",
-      "source_url": "https://github.com/Jennycruzy/standing",
-      "note": "CONTROLLED DEMO DATA — owner-controlled GitHub source; fictional value; not vendor evidence.",
+      "mode": "source_extract",
+      "source_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/demo/acme-retention.json",
+      "note": "CONTROLLED DEMO DATA — Fictional Acme Corporation; source operated by Standing; not vendor evidence.",
       "value_type": "number",
       "disclosure": "CONTROLLED DEMO DATA",
+      "demo_controlled": true,
+      "extraction": {
+        "method": "JSON_PATH",
+        "value_path": "retention_days",
+        "effective_from_path": "effective_from",
+        "source_publication_date_path": "published_at",
+        "unit": "days",
+        "version": "retention-json-v1"
+      },
       "source_binding": {
-        "allowed_hosts": ["github.com"],
-        "canonical_url": "https://github.com/Jennycruzy/standing",
-        "publisher_id": "standing-owner"
+        "allowed_hosts": ["raw.githubusercontent.com"],
+        "canonical_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/demo/acme-retention.json",
+        "publisher_id": "standing-owner",
+        "source_type": "vendor_primary",
+        "value_type": "number",
+        "unit": "days"
       }
     }
   }

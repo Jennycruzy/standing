@@ -15,6 +15,31 @@ from standing.evaluator import StandingState
 
 
 class EvaluationDatasetTests(unittest.TestCase):
+    def test_checked_adversarial_manifest_covers_the_required_failure_matrix(self) -> None:
+        dataset = EvaluationDataset.load(Path(__file__).parents[1] / "docs" / "evaluation" / "adversarial.json")
+        expected = {
+            "temporal-supersession",
+            "same-period-conflict",
+            "late-arriving-observation",
+            "historical-correction",
+            "wrong-unit-is-unknown",
+            "stale-evidence",
+            "revoked-eas-record",
+            "wrong-source-domain",
+            "source-spoofing",
+            "unsupported-required-predicate",
+            "missing-evidence",
+            "observation-branch",
+            "expired-waiver",
+            "decision-supersession",
+            "fts-false-match",
+            "archived-decision",
+            "memory-deletion",
+        }
+
+        self.assertEqual({case.case_id for case in dataset.synthetic_cases}, expected)
+        self.assertEqual(dataset.release_case_count(), 0)
+
     def test_source_linked_cases_separate_real_and_synthetic_counts(self) -> None:
         dataset = EvaluationDataset.from_mapping(
             {
@@ -58,6 +83,24 @@ class EvaluationDatasetTests(unittest.TestCase):
         with self.assertRaises(EvaluationDatasetError):
             EvaluationCase.from_mapping(raw)
 
+    def test_non_synthetic_cases_require_historical_and_current_chain(self) -> None:
+        raw = self._case("case", synthetic=False)
+        raw.pop("historical_ground_truth_url")
+        with self.assertRaises(EvaluationDatasetError):
+            EvaluationCase.from_mapping(raw)
+
+    def test_pending_real_case_is_not_release_eligible(self) -> None:
+        raw = self._case("pending", synthetic=False)
+        raw["human_reviewed"] = False
+        raw.pop("reviewed_at")
+        raw.pop("reviewed_by")
+        dataset = EvaluationDataset.from_mapping({"dataset_id": "dataset-v1", "cases": [raw]})
+
+        self.assertEqual(len(dataset.real_cases), 1)
+        self.assertEqual(len(dataset.pending_real_cases), 1)
+        self.assertEqual(dataset.release_case_count(), 0)
+        self.assertFalse(dataset.has_real_vendor_expiry)
+
     def test_measurement_reports_missing_cases_and_mismatches(self) -> None:
         dataset = EvaluationDataset.from_mapping(
             {
@@ -81,6 +124,12 @@ class EvaluationDatasetTests(unittest.TestCase):
         self.assertEqual(metrics.missing_case_ids, ("unknown",))
         self.assertEqual(metrics.mismatches[0].case_id, "expired")
         self.assertEqual(metrics.accuracy, 0.5)
+        self.assertEqual(metrics.expired_decision_precision, 0.0)
+        self.assertEqual(metrics.expired_decision_recall, 0.0)
+        self.assertEqual(metrics.false_block_rate, 0.0)
+        self.assertEqual(metrics.missed_expiry_rate, 1.0)
+        self.assertEqual(metrics.unknown_rate, 0.0)
+        self.assertEqual(metrics.contested_rate, 0.0)
 
     def test_measurement_rejects_predictions_for_unknown_cases(self) -> None:
         dataset = EvaluationDataset.from_mapping(
@@ -88,6 +137,54 @@ class EvaluationDatasetTests(unittest.TestCase):
         )
         with self.assertRaises(EvaluationDatasetError):
             measure_predictions(dataset, {"unknown": "STANDS"})
+
+    def test_mismatch_can_publish_reason_and_fix_status(self) -> None:
+        dataset = EvaluationDataset.from_mapping(
+            {"dataset_id": "dataset-v1", "cases": [self._case("expired", expected="EXPIRED")]}
+        )
+
+        metrics = measure_predictions(
+            dataset,
+            {
+                "expired": {
+                    "state": "STANDS",
+                    "why": "baseline missed the stale assumption",
+                    "fixed": False,
+                }
+            },
+        )
+
+        self.assertEqual(
+            metrics.mismatches[0].as_dict(),
+            {
+                "case_id": "expired",
+                "expected_state": "EXPIRED",
+                "predicted_state": "STANDS",
+                "why": "baseline missed the stale assumption",
+                "fixed": False,
+            },
+        )
+
+    def test_multi_arm_measurement_keeps_arms_separate(self) -> None:
+        from standing.baselines import measure_arms, parse_arm_predictions
+
+        dataset = EvaluationDataset.from_mapping(
+            {"dataset_id": "dataset-v1", "cases": [self._case("one", expected="EXPIRED")]}
+        )
+        predictions = parse_arm_predictions(
+            {
+                "standing": {"one": "EXPIRED"},
+                "no-memory": {"one": "UNKNOWN"},
+            }
+        )
+
+        metrics = measure_arms(dataset, predictions, required_arms=("standing", "no-memory"))
+
+        self.assertEqual(metrics["standing"].correct_cases, 1)
+        self.assertEqual(metrics["no-memory"].correct_cases, 0)
+
+        with self.assertRaises(EvaluationDatasetError):
+            measure_arms(dataset, predictions, required_arms=("standing", "grep"))
 
     def test_dataset_load_and_digest_helper_are_deterministic(self) -> None:
         payload = b"captured source"
@@ -109,7 +206,7 @@ class EvaluationDatasetTests(unittest.TestCase):
         expected: str = "STANDS",
         synthetic: bool = False,
     ) -> dict[str, object]:
-        return {
+        result: dict[str, object] = {
             "case_id": case_id,
             "repository": "owner/repository",
             "decision_url": "https://github.com/owner/repository/blob/main/decision.md",
@@ -123,6 +220,27 @@ class EvaluationDatasetTests(unittest.TestCase):
             "synthetic": synthetic,
             "notes": "Hand-checked source snapshot.",
         }
+        if not synthetic:
+            result.update(
+                {
+                    "historical_ground_truth_url": "https://vendor.example.com/history-2024",
+                    "historical_ground_truth_effective_at": 1_600_000_000,
+                    "historical_source_sha256": "b" * 64,
+                    "current_ground_truth_url": "https://vendor.example.com/history-2025",
+                    "current_ground_truth_effective_at": 1_700_000_000,
+                    "current_source_sha256": "c" * 64,
+                    "decision_snapshot_sha256": "d" * 64,
+                    "condition_key": "vendor.example.retention_days",
+                    "predicate": "retention_days >= 365",
+                    "governed_paths": ["src/archive.py"],
+                    "historical_claim": "365 days",
+                    "current_claim": "90 days",
+                    "human_reviewed": True,
+                    "reviewed_at": 1_700_000_100,
+                    "reviewed_by": "human-reviewer",
+                }
+            )
+        return result
 
 
 if __name__ == "__main__":

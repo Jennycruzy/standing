@@ -61,6 +61,10 @@ def main() -> None:
         action="store_true",
         help="assert explicit human approval after reviewing the accumulated evidence",
     )
+    parser.add_argument(
+        "--approval-id",
+        help="use a persisted human approval record when promoting accepted evidence",
+    )
     args = parser.parse_args()
 
     env = load_environment_file(ENV_PATH)
@@ -80,10 +84,12 @@ def main() -> None:
         tools = ReviewerTools(store)
         _ensure_observer_entity(store, seller_address)
         prior_observations = tools.read_observations(args.condition)
+        approval_record = _read_approval(store, args.approval_id)
         initial_acceptance = tools.check_acceptance(
             args.condition,
             prior_observations,
             manual_approval=args.manual_approval,
+            manual_approval_record=approval_record,
             policy=policy,
             source_binding=source_binding,
             now_unix=now_unix,
@@ -106,23 +112,39 @@ def main() -> None:
             spent_today_usdc=args.spent_today_usdc,
             source_url=_required_string(verifier_condition.get("source_url"), "verifier source_url"),
             value_type=_required_string(verifier_condition.get("value_type"), "verifier value_type"),
+            unit=_required_string(
+                _object(verifier_condition.get("extraction"), "verifier extraction").get("unit"),
+                "verifier extraction unit",
+            ),
             job_id=args.job_id,
             start_verifier=not external_provider,
             offering_name=args.offering_name,
         )
         chain_observation = _verify_eas_observation(observation, args.condition)
-        tools.record_observation(observation.as_acceptance_record())
+        stored_observation = tools.record_verifier_observation(observation, recorded_at=int(time.time()))
+        stored_body = stored_observation.get("body")
+        if not isinstance(stored_body, dict):
+            raise ReviewerToolError("stored verifier observation has no mapping body")
         accumulated_observations = tools.read_observations(args.condition)
         final_acceptance = tools.check_acceptance(
             args.condition,
             accumulated_observations,
             manual_approval=args.manual_approval,
+            manual_approval_record=approval_record,
             policy=policy,
             source_binding=source_binding,
             now_unix=now_unix,
         )
+        promotion = None
+        if final_acceptance.accepted:
+            promotion = tools.promote_acceptance(
+                args.condition,
+                final_acceptance,
+                accumulated_observations,
+                accepted_at=now_unix,
+            )
         reputation = _write_reputation_signal(
-            observation=observation.as_acceptance_record(),
+            observation=stored_body,
             confirmed=True,
         )
         history = tools.record_observer_outcome(selected_address, confirmed=True)
@@ -134,6 +156,7 @@ def main() -> None:
                     "jobId": observation.job_id,
                     "observation": chain_observation,
                     "acceptance": final_acceptance.as_dict(),
+                    "promotion": None if promotion is None else promotion.as_dict(),
                     "observerHistory": history.as_counts(),
                     "reputation": reputation,
                 },
@@ -153,6 +176,19 @@ def _ensure_observer_entity(store: Any, address: str) -> None:
             address,
             {"readings_given": 0, "readings_confirmed": 0, "readings_contradicted": 0},
         )
+
+
+def _read_approval(store: Any, approval_id: str | None) -> dict[str, Any] | None:
+    if approval_id is None:
+        return None
+    try:
+        stored = store.read_manual_approval(approval_id)
+    except NotFoundError as error:
+        raise ReviewerToolError(f"manual approval {approval_id} was not found") from error
+    body = stored.get("body")
+    if not isinstance(body, dict):
+        raise ReviewerToolError("stored manual approval has no mapping body")
+    return body
 
 
 def _select_or_bootstrap(
@@ -182,7 +218,11 @@ def _verify_eas_observation(observation: Any, condition_key: str) -> dict[str, A
     record = reader.read_attestation(observation.observation_uid)
     decoded = record.decode_observation(
         expected_schema_uid=_required_string(observation_schema.get("uid"), "observation schema UID"),
-        condition_definition={"condition_key": condition_key, "value_type": "number"},
+        condition_definition={
+            "condition_key": condition_key,
+            "value_type": observation.value_type,
+            "unit": observation.unit,
+        },
         source_type_labels=source_types,
     )
     expected = observation.as_acceptance_record()
@@ -209,8 +249,11 @@ def _verifier_condition(condition_key: str) -> dict[str, Any]:
     raw = _read_json(VERIFIER_CONFIG_PATH)
     conditions = _object(raw.get("conditions"), "verifier.conditions")
     condition = _object(conditions.get(condition_key), f"verifier condition {condition_key}")
-    if condition.get("mode") != "sandbox_fixed":
-        raise RuntimeError("only the configured sandbox verifier condition is runnable")
+    if condition.get("mode") != "source_extract":
+        raise RuntimeError("only configured source-extract verifier conditions are runnable")
+    extraction = _object(condition.get("extraction"), "verifier extraction")
+    if not _required_string(extraction.get("version"), "verifier extraction version"):
+        raise RuntimeError("verifier extraction version is required")
     return condition
 
 

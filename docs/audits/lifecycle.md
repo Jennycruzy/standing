@@ -28,10 +28,18 @@ action-gate signal, not an `ACCEPTED` standing result.
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 84 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 92 tests passed.
 - `.preflight-venv/bin/python -m mypy --strict standing` — no issues found.
 - [`tests/test_lifecycle.py`](../../tests/test_lifecycle.py) covers revision
   time travel, invalid chains, remediation transitions, human-only waivers,
   expiry restoration, and deterministic journal projection.
 - [`standing/lifecycle.py`](../../standing/lifecycle.py) has no memory,
   network, or model calls.
+
+## Current validation addendum (10 September 2026)
+
+This is a 9 September lifecycle snapshot. The current reviewer/dashboard
+integration records replacement decisions, exact-path review outcomes,
+human-confirmation proposals, and waiver visibility while preserving the
+immutable prior records. Current suite totals and the remaining external
+release blockers are in [`temporal-product.md`](temporal-product.md).

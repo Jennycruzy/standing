@@ -16,7 +16,7 @@ The write operation stores the evaluator result and journal record, but it refus
 - [`standing/reviewer.py`](../../standing/reviewer.py) contains the typed memory-backed tools.
 - [`tests/test_reviewer.py`](../../tests/test_reviewer.py) runs against temporary real Sibyl SQLite stores and covers path search, condition references, standing writes, journal reads, unknown values, and the no-invented-block rule.
 
-## Gaps recorded
+## Historical gaps recorded (8 September snapshot)
 
 - The reviewer currently receives an already selected set of changed paths; pull-request extraction is not connected yet.
 - The live verifier path now feeds checked observations into the acceptance rule; the configured policy still needs independent observer and vendor inputs before it can return `ACCEPTED`.
@@ -25,3 +25,14 @@ The write operation stores the evaluator result and journal record, but it refus
 ## Exit statement
 
 The reviewer performs the memory read → evidence accumulation → acceptance evaluation → checked write loop against real local storage. The remaining integration is the model-driven review and extraction confirmation.
+
+## Current continuation addendum (10 September 2026)
+
+The changed-path and acceptance integrations described as remaining above are
+implemented now. `standing review` accepts working-tree, base, commit, and
+fixed demo PR inputs; exact governed-path validation happens before a block;
+stale dependencies can explicitly trigger ACP revalidation; and the model
+boundary persists advisory artifact proposals until a human confirms or
+rejects them. The dashboard exposes the same confirmation and remediation
+workflow. The current remaining work is external release evidence, not an
+unwired reviewer path.

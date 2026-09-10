@@ -8,18 +8,18 @@ The acceptance policy is a pure function. It reads observation records and obser
 
 The policy values are loaded at runtime from [`config/policy.json`](../../config/policy.json). Observer selection is deterministic: fewer contradictions first, then more confirmed readings, then more total readings, then address order. The reviewer reads and updates those records through the real Sibyl client.
 
-Strict acceptance now requires each observer reading to carry operator, source, and extractor provenance. The condition source binding also constrains observation URLs and, for vendor-primary evidence, the canonical URL and publisher identity. Evidence older than the configured freshness window cannot be reused.
+Strict acceptance now requires each observer reading to carry operator, source, and extractor provenance. The condition source binding also constrains observation URLs and, for vendor-primary evidence, the canonical URL and publisher identity. Evidence older than the configured freshness window or due for its configured recheck interval cannot be reused.
 
 ## Evidence
 
-- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 84 tests passed.
+- `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` — 92 tests passed.
 - `.preflight-venv/bin/mypy --strict standing` — no issues found.
 - `python3 -m json.tool config/policy.json` — valid JSON.
 - `git diff --check` — no whitespace errors.
 - [`tests/test_acceptance.py`](../../tests/test_acceptance.py) covers policy loading, acceptance, disagreement, missing history, selection, and outcome counting.
 - [`tests/test_reviewer_acceptance.py`](../../tests/test_reviewer_acceptance.py) proves that observer records are read and updated through real local Sibyl storage.
 - [`tests/test_provenance.py`](../../tests/test_provenance.py) covers structured provenance and lookalike-domain rejection.
-- [`tests/test_freshness.py`](../../tests/test_freshness.py) covers stale, missing, and future-dated evidence.
+- [`tests/test_freshness.py`](../../tests/test_freshness.py) covers stale, missing, future-dated, and scheduled-recheck evidence.
 
 ## Gaps recorded
 
@@ -32,3 +32,15 @@ Strict acceptance now requires each observer reading to carry operator, source, 
 ## Exit statement
 
 The acceptance decision, memory-backed evidence ledger, and observer choice are ready for the second independent observer and the hand-verified vendor evidence required by the configured policy.
+
+## Current validation addendum (10 September 2026)
+
+This 9 September section is a historical audit snapshot. The current temporal
+implementation and validation are recorded in
+[`temporal-product.md`](temporal-product.md). The latest offline run is 151
+Python tests, strict mypy, and the acceptance/reviewer paths include explicit
+accepted-only product queries, supersession-aware promotion, dependent
+re-evaluation, bitemporal timestamps, and persisted observer identity
+metadata. The configured policy remains conservative and the controlled demo
+remains `CONTESTED` until external vendor evidence, independent operators, and
+human approval exist.

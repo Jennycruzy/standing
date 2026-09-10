@@ -1,5 +1,6 @@
 import json
 import unittest
+from datetime import datetime, timezone
 from pathlib import Path
 
 from standing.approval import evidence_fingerprint, issue_manual_approval
@@ -27,6 +28,7 @@ class AcceptanceTests(unittest.TestCase):
         self.assertTrue(self.policy.manual_approval_required)
         self.assertTrue(self.policy.require_independence_provenance)
         self.assertEqual(self.policy.max_observation_age_seconds, 86400)
+        self.assertEqual(self.policy.recheck_interval_seconds, 86400)
 
     def test_two_clean_observers_and_vendor_source_are_accepted(self) -> None:
         observations = self._observations(365)
@@ -192,6 +194,52 @@ class AcceptanceTests(unittest.TestCase):
         self.assertFalse(result.accepted)
         self.assertIn("disagree", " ".join(result.reasons))
 
+    def test_temporal_change_is_accepted_as_current_without_being_contested(self) -> None:
+        observations = [
+            self._temporal_observation("vendor-old", 365, "2026-01-01"),
+            self._temporal_observation("observer-one", 365, "2026-01-01", observer="0x111"),
+            self._temporal_observation("observer-two", 365, "2026-01-01", observer="0x222"),
+            self._temporal_observation(
+                "vendor-current",
+                90,
+                "2026-09-07",
+                ref_uid="vendor-old",
+            ),
+        ]
+        policy = AcceptancePolicy(
+            vendor_primary_source_type="vendor_primary",
+            independent_observers=2,
+            min_observer_history=3,
+            max_observer_contradictions=0,
+            manual_approval_required=True,
+            require_independence_provenance=True,
+        )
+        approval = issue_manual_approval(
+            "approval-temporal",
+            "vendor.acme.retention_days",
+            approved_by="alice",
+            approver_role="human",
+            approved_at=1_700_000_200,
+            evidence_digest=evidence_fingerprint("vendor.acme.retention_days", observations),
+            reason="Reviewed the superseding vendor reading.",
+        )
+
+        result = check_acceptance(
+            "vendor.acme.retention_days",
+            observations,
+            self._records(),
+            manual_approval=True,
+            manual_approval_record=approval.as_dict(),
+            policy=policy,
+            now_unix=int(datetime(2026, 9, 9, tzinfo=timezone.utc).timestamp()),
+        )
+
+        self.assertTrue(result.accepted)
+        self.assertEqual(result.accepted_value, 90)
+        self.assertEqual(result.canonical_observation_uids, ("vendor-current",))
+        self.assertFalse(result.temporal_conflict)
+        self.assertNotIn("disagree", " ".join(result.reasons))
+
     def test_missing_history_and_manual_approval_contest_the_value(self) -> None:
         result = check_acceptance(
             "vendor.acme.retention_days",
@@ -243,6 +291,41 @@ class AcceptanceTests(unittest.TestCase):
             "readings_confirmed": 4,
             "readings_contradicted": 0,
         })
+
+    def test_observer_identity_metadata_round_trips_and_survives_outcomes(self) -> None:
+        history = ObserverHistory.from_mapping(
+            "0x111",
+            {
+                "readings_given": 3,
+                "readings_confirmed": 3,
+                "readings_contradicted": 0,
+                "wallet_address": "0x111",
+                "operator_id": "operator:one",
+                "operator_type": "individual",
+                "source_domains": ["docs.example", "status.example", "docs.example"],
+                "extraction_methods": ["HTML_SELECTOR"],
+                "extraction_versions": ["retention-html-v1"],
+            },
+        )
+
+        self.assertEqual(history.as_dict(), {
+            "readings_given": 3,
+            "readings_confirmed": 3,
+            "readings_contradicted": 0,
+            "wallet_address": "0x111",
+            "operator_id": "operator:one",
+            "operator_type": "individual",
+            "source_domains": ["docs.example", "status.example"],
+            "extraction_methods": ["HTML_SELECTOR"],
+            "extraction_versions": ["retention-html-v1"],
+        })
+        updated = apply_observer_outcome(history, confirmed=True)
+        self.assertEqual(updated.operator_id, "operator:one")
+        self.assertEqual(updated.source_domains, ("docs.example", "status.example"))
+
+    def test_observer_wallet_identity_cannot_disagree_with_entity_key(self) -> None:
+        with self.assertRaises(ValueError):
+            ObserverHistory.from_mapping("0x111", {"wallet_address": "0x222"})
 
     def test_result_is_json_serializable(self) -> None:
         result = check_acceptance(
@@ -300,6 +383,45 @@ class AcceptanceTests(unittest.TestCase):
                 },
             },
         ]
+
+    @staticmethod
+    def _temporal_observation(
+        uid: str,
+        value: int,
+        effective_from: str,
+        *,
+        observer: str | None = None,
+        ref_uid: str | None = None,
+    ) -> dict[str, object]:
+        source_type = "verifier" if observer is not None else "vendor_primary"
+        observation: dict[str, object] = {
+            "condition_key": "vendor.acme.retention_days",
+            "value": value,
+            "value_type": "number",
+            "unit": "days",
+            "effective_from": effective_from,
+            "observed_at": "2026-09-08",
+            "recorded_at": "2026-09-09",
+            "source_url": "https://vendor.example/retention",
+            "source_type": source_type,
+            "attester": observer or "attester:acme",
+            "operator_id": f"operator:{observer or 'acme'}",
+            "extraction_method": "HTML_SELECTOR",
+            "extraction_version": "retention-html-v1",
+            "observation_uid": uid,
+            "ref_uid": ref_uid,
+            "evidence_hash": "a" * 64,
+            "notes": "hand verified",
+            "publisher_id": "publisher:acme",
+        }
+        if observer is not None:
+            observation["observer_address"] = observer
+            observation["provenance"] = {
+                "operator_id": f"operator:{observer}",
+                "source_id": f"source:{observer}",
+                "extractor_id": f"extractor:{observer}",
+            }
+        return observation
 
 
 if __name__ == "__main__":

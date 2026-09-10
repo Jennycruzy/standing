@@ -39,6 +39,34 @@ class FreshnessTests(unittest.TestCase):
         self.assertFalse(result.fresh)
         self.assertEqual(result.future_timestamp_uids, ("0xfuture",))
 
+    def test_knowledge_time_controls_freshness_not_effective_time(self) -> None:
+        result = check_freshness(
+            [
+                {
+                    "observation_uid": "0xhistorical",
+                    "effective_from": 1,
+                    "observed_at": 995,
+                    "recorded_at": 1_000,
+                }
+            ],
+            now_unix=1_000,
+            max_age_seconds=100,
+        )
+
+        self.assertTrue(result.fresh)
+
+    def test_scheduled_recheck_is_due_at_the_configured_interval(self) -> None:
+        result = check_freshness(
+            [{"observation_uid": "0xdue", "recorded_at": 900}],
+            now_unix=1_000,
+            max_age_seconds=500,
+            recheck_interval_seconds=100,
+        )
+
+        self.assertFalse(result.fresh)
+        self.assertEqual(result.scheduled_recheck_uids, ("0xdue",))
+        self.assertIn("scheduled revalidation", result.reasons[0])
+
 
 if __name__ == "__main__":
     unittest.main()

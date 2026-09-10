@@ -1,0 +1,9 @@
+{
+  "models": {
+    "reviewer": "gpt-5.4",
+    "extraction": "gpt-5.4-mini"
+  },
+  "api_key_env": "OPENAI_API_KEY",
+  "responses_endpoint": "https://api.openai.com/v1/responses",
+  "timeout_seconds": 60
+}

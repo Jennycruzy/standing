@@ -1,0 +1,101 @@
+# Standing evaluation
+
+Standing uses two separate evaluation sets. They must never be merged into a
+single accuracy number.
+
+## Real-world corpus
+
+[`docs/evaluation/cases.json`](evaluation/cases.json) is the release manifest.
+Each future case must contain a genuine engineering decision artifact, a
+public source for the justification, a hand-verified historical/current
+ground-truth chain, effective and capture times, and a SHA-256 hash of the
+captured source snapshot. `synthetic: false` is mandatory.
+
+The manifest currently contains one source-linked real candidate for GitHub's
+retirement of `actions/upload-artifact@v3` in a public repository review. It is
+marked `human_reviewed: false`, so it is not counted in release metrics until a
+human independently verifies the decision, path, historical/current chain,
+and expected state. Therefore this workspace still reports no real-world
+precision, recall, false-block rate, or missed-expiry rate. The release
+checker remains blocked until reviewed cases and independent operator evidence
+exist.
+
+## Controlled adversarial corpus
+
+[`docs/evaluation/adversarial.json`](evaluation/adversarial.json) contains
+17 synthetic, controlled scenarios for implementation correctness. It covers
+temporal supersession, same-period conflict, late evidence, historical
+correction, wrong units, unsupported required predicates, revoked evidence,
+stale evidence, wrong source domains, source spoofing, missing evidence,
+observation branches, exact-path false matches, expired waivers, decision
+supersession, archived decisions, and memory deletion.
+Its source links and hashes are fixture metadata, not real-world evidence.
+
+The corpus is intentionally separate from `cases.json`. It may be measured by
+the deterministic harness, but its score must be labelled controlled and
+synthetic.
+
+## Baselines
+
+The planned arms are:
+
+1. **Standing:** confirmed decision memory, temporal evidence, acceptance, and
+   exact-path review.
+2. **No Memory:** the same review interface with history removed.
+3. **Grep:** repository/vendor-name search without decision semantics.
+4. **Stateless model:** current code change without historical decision memory.
+5. **Current-docs-only:** current external documentation without the original
+   justification.
+
+The multi-arm measurement harness is implemented in
+[`standing/baselines.py`](../standing/baselines.py) and
+[`scripts/evaluate_arms.py`](../scripts/evaluate_arms.py). It requires every
+named arm, rejects extra case IDs, keeps the five result sets separate, and
+preserves per-miss `why` and `fixed` fields. The harness does not generate
+predictions: the grep and model runners still need to be run against a
+hand-verified corpus. No baseline score is claimed until that happens.
+
+## Metrics and misses
+
+For real cases, publish expired-decision precision/recall, false-block rate,
+missed-expiry rate, `UNKNOWN` and `CONTESTED` rates, and decision/path matching
+precision. For the temporal layer, publish `valid_as_of`, `known_as_of`,
+supersession, and conflict accuracy. For extraction, publish value/unit
+accuracy and source-validation failures.
+
+Every miss must include:
+
+```text
+case
+expected
+actual
+why Standing failed
+whether fixed
+```
+
+No real-case misses or scores are being hidden: the manifest contains one
+source-linked candidate, but there are currently no human-reviewed real cases
+and therefore no real score. The unit and adapter suites provide
+implementation regressions, not a substitute for external evaluation.
+
+## Commands
+
+```sh
+.preflight-venv/bin/python scripts/evaluate_dataset.py \
+  --dataset docs/evaluation/adversarial.json \
+  --predictions /path/to/adversarial-predictions.json
+
+.preflight-venv/bin/python scripts/evaluate_dataset.py \
+  --dataset docs/evaluation/cases.json \
+  --predictions /path/to/real-predictions.json \
+  --require-real
+
+.preflight-venv/bin/python scripts/evaluate_arms.py \
+  --dataset docs/evaluation/cases.json \
+  --predictions /path/to/five-arm-predictions.json \
+  --require-real
+```
+
+The second command should fail until the pending candidate is human-reviewed
+and the corpus reaches the configured minimum. That failure is a release
+safeguard, not an evaluation result.

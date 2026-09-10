@@ -11,6 +11,7 @@ from time import time
 from typing import Any, Mapping, Protocol, Sequence
 from urllib.error import URLError
 from urllib.request import Request, urlopen
+from urllib.parse import urlparse
 
 import certifi
 from eth_abi import decode  # type: ignore[attr-defined]
@@ -169,6 +170,11 @@ class EasAttestation:
         source_url = _required_string(decoded[3], "observation source URL")
         if not source_url.startswith(("https://", "http://")):
             raise EasReadError("observation source URL must be HTTP or HTTPS")
+        unit = _required_string(condition_definition.get("unit"), "condition unit")
+        extracted_at = int(time()) if as_of_timestamp is None else as_of_timestamp
+        source_domain = urlparse(source_url).hostname
+        if source_domain is None:
+            raise EasReadError("observation source URL has no domain")
         return {
             "condition_key": condition_key,
             "value": _parse_value(raw_value, value_type),
@@ -176,7 +182,13 @@ class EasAttestation:
             "observer_address": self.attester,
             "observation_uid": self.uid,
             "source_url": source_url,
+            "source_domain": source_domain.lower().rstrip("."),
+            "value_type": value_type,
+            "unit": unit,
+            "attester": self.attester,
             "effective_from": int(decoded[2]),
+            "observed_at": self.time,
+            "recorded_at": extracted_at,
             "note": _required_string(decoded[5], "observation note"),
             "ref_uid": self.ref_uid,
             "block_number": self.block_number,

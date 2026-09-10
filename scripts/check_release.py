@@ -60,6 +60,8 @@ def main() -> int:
             "dataset_id": dataset.dataset_id,
             "total_case_count": len(dataset.cases),
             "real_case_count": len(dataset.real_cases),
+            "reviewed_real_case_count": len(dataset.reviewed_real_cases),
+            "pending_real_case_count": len(dataset.pending_real_cases),
             "synthetic_case_count": len(dataset.synthetic_cases),
             "real_vendor_expiry_case_ids": [
                 case.case_id for case in dataset.real_vendor_expiry_cases

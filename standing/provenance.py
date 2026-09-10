@@ -18,6 +18,7 @@ class ObservationProvenance:
     operator_id: str
     source_id: str
     extractor_id: str
+    operator_type: str | None = None
 
     @classmethod
     def from_mapping(
@@ -28,20 +29,27 @@ class ObservationProvenance:
     ) -> ObservationProvenance:
         if not isinstance(raw, Mapping):
             raise ProvenanceError(f"{label} must be an object")
+        operator_type = raw.get("operator_type")
+        if operator_type is not None:
+            operator_type = _required_string(operator_type, f"{label}.operator_type")
         return cls(
             operator_id=_required_string(raw.get("operator_id"), f"{label}.operator_id"),
             source_id=_required_string(raw.get("source_id"), f"{label}.source_id"),
             extractor_id=_required_string(raw.get("extractor_id"), f"{label}.extractor_id"),
+            operator_type=operator_type,
         )
 
     def as_dict(self) -> dict[str, str]:
         """Return a stable JSON-compatible representation."""
 
-        return {
+        result = {
             "operator_id": self.operator_id,
             "source_id": self.source_id,
             "extractor_id": self.extractor_id,
         }
+        if self.operator_type is not None:
+            result["operator_type"] = self.operator_type
+        return result
 
 
 @dataclass(frozen=True)
@@ -51,6 +59,9 @@ class SourceBinding:
     allowed_hosts: tuple[str, ...]
     canonical_url: str | None = None
     publisher_id: str | None = None
+    source_type: str | None = None
+    value_type: str | None = None
+    unit: str | None = None
 
     @classmethod
     def from_mapping(cls, raw: Any) -> SourceBinding:
@@ -70,7 +81,19 @@ class SourceBinding:
         publisher_id = None
         if publisher_raw is not None:
             publisher_id = _required_string(publisher_raw, "source_binding.publisher_id")
-        return cls(hosts, canonical_url, publisher_id)
+        source_type_raw = raw.get("source_type")
+        source_type = None
+        if source_type_raw is not None:
+            source_type = _required_string(source_type_raw, "source_binding.source_type")
+        value_type_raw = raw.get("value_type")
+        value_type = None
+        if value_type_raw is not None:
+            value_type = _required_string(value_type_raw, "source_binding.value_type")
+        unit_raw = raw.get("unit")
+        unit = None
+        if unit_raw is not None:
+            unit = _required_string(unit_raw, "source_binding.unit").lower()
+        return cls(hosts, canonical_url, publisher_id, source_type, value_type, unit)
 
     def allows(self, url: str, *, require_canonical: bool = False) -> bool:
         """Return whether a URL is within the configured source boundary."""

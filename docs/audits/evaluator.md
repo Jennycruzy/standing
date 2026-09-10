@@ -23,7 +23,7 @@ Only conditions marked `EXPLICIT` or `CONFIRMED` can block. A failed `INFERRED` 
 - [`standing/evaluator.py`](../../standing/evaluator.py) contains no memory, network, file, or model calls.
 - [`tests/test_evaluator.py`](../../tests/test_evaluator.py) covers the four checks, four states, provenance limits, unsupported rules, and stable fingerprints.
 
-## Gaps recorded
+## Historical gaps recorded (8 September snapshot)
 
 - The evaluator currently receives condition records directly; the reviewer agent has not yet been wired to choose which decisions to review.
 - Acceptance of observations and the external verifier still need to be connected to the evaluator's condition records.
@@ -32,3 +32,15 @@ Only conditions marked `EXPLICIT` or `CONFIRMED` can block. A failed `INFERRED` 
 ## Exit statement
 
 The deterministic decision check is ready for reviewer-agent tools and acceptance-policy wiring.
+
+## Current continuation addendum (10 September 2026)
+
+The historical gaps above have since been closed in the workspace. The
+reviewer now selects decisions from changed paths, validates exact stored
+governed paths, reads the accepted condition reference, and records standing
+changes. Acceptance promotion updates that reference and automatically
+re-evaluates every dependent decision. Unsupported required predicates,
+stale evidence, wrong units, and contested temporal heads remain conservative
+`UNKNOWN`/`CONTESTED` outcomes rather than implicit standing. See
+[`docs/audits/temporal-product.md`](temporal-product.md) for the current
+validation record.

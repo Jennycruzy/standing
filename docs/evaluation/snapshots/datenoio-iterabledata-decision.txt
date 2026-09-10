@@ -1,0 +1,18 @@
+Standing evaluation decision excerpt
+
+Source URL: https://github.com/datenoio/iterabledata/blob/main/REPOSITORY_REVIEW_REPORT.md
+Repository: datenoio/iterabledata
+Reviewed on: 2026-09-10
+Capture type: human-authored, source-linked excerpt
+
+Verified decision record:
+The repository review report identifies .github/workflows/security.yml as
+using actions/upload-artifact@v3 and recommends repairing the obsolete CI
+action reference by moving to v4.
+
+Decision reference:
+main:REPOSITORY_REVIEW_REPORT.md#33-repair-obsolete-ci-runtimeaction-references
+
+Hash scope:
+The SHA-256 recorded in cases.json is the digest of this checked-in excerpt,
+not a claim that it is a byte-for-byte archive of the remote response.

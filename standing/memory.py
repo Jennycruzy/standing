@@ -9,15 +9,18 @@ from __future__ import annotations
 import json
 import os
 from dataclasses import dataclass
+from datetime import date, datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Mapping, Sequence, cast
 
 from sibyl_memory_client import MemoryClient  # type: ignore[import-untyped]
+from sibyl_memory_client.exceptions import NotFoundError  # type: ignore[import-untyped]
 
 from .approval import ManualApproval
 from .lifecycle import DecisionRevision, Remediation, Waiver
 from scripts.sibyl_archive import connect_database, restore_archived
+from .temporal import TemporalEvidence, TemporalObservation, TemporalObservationError
 
 
 DEFAULT_TENANT_ID = "00000000-0000-0000-0000-000000000001"
@@ -90,6 +93,62 @@ class MemoryStore:
         name = _required_name(decision_id, "decision_id")
         return cast(dict[str, Any], self.client.get_entity("decision", name))
 
+    def list_decisions(self) -> list[dict[str, Any]]:
+        """Read all active decisions for deterministic dependency scans."""
+
+        rows: list[dict[str, Any]] = []
+        for entity in self.client.list_entities(category="decision", limit=10_000):
+            body = entity.get("body")
+            if not isinstance(body, Mapping):
+                raise TypeError("Sibyl returned a decision without a mapping body")
+            rows.append(dict(entity))
+        return sorted(rows, key=lambda row: str(row.get("key", row.get("name", ""))))
+
+    def save_artifact(self, artifact_id: str, body: Mapping[str, Any]) -> dict[str, Any]:
+        """Persist one bounded engineering-artifact snapshot."""
+
+        key = _required_name(artifact_id, "artifact_id")
+        return cast(dict[str, Any], self.client.set_entity("artifact", key, dict(body)))
+
+    def read_artifact(self, artifact_id: str) -> dict[str, Any]:
+        """Read one captured engineering artifact."""
+
+        key = _required_name(artifact_id, "artifact_id")
+        return cast(dict[str, Any], self.client.get_entity("artifact", key))
+
+    def list_artifacts(self) -> list[dict[str, Any]]:
+        """Read captured artifacts in stable key order."""
+
+        rows = [
+            dict(entity)
+            for entity in self.client.list_entities(category="artifact", limit=10_000)
+        ]
+        return sorted(rows, key=lambda row: str(row.get("key", row.get("name", ""))))
+
+    def save_decision_proposal(self, proposal_id: str, body: Mapping[str, Any]) -> dict[str, Any]:
+        """Persist one model-proposed decision pending human confirmation."""
+
+        key = _required_name(proposal_id, "proposal_id")
+        return cast(
+            dict[str, Any],
+            self.client.set_entity("decision_proposal", key, dict(body)),
+        )
+
+    def read_decision_proposal(self, proposal_id: str) -> dict[str, Any]:
+        """Read one pending or resolved decision proposal."""
+
+        key = _required_name(proposal_id, "proposal_id")
+        return cast(dict[str, Any], self.client.get_entity("decision_proposal", key))
+
+    def list_decision_proposals(self) -> list[dict[str, Any]]:
+        """Read all decision proposals in stable key order."""
+
+        rows = [
+            dict(entity)
+            for entity in self.client.list_entities(category="decision_proposal", limit=10_000)
+        ]
+        return sorted(rows, key=lambda row: str(row.get("key", row.get("name", ""))))
+
     def save_condition(self, condition_key: str, body: Mapping[str, Any]) -> dict[str, Any]:
         """Write one condition record."""
 
@@ -118,13 +177,45 @@ class MemoryStore:
         return cast(dict[str, Any], self.client.get_entity("observer", observer_address))
 
     def save_observation(self, observation_uid: str, body: Mapping[str, Any]) -> dict[str, Any]:
-        """Persist one checked observation keyed by its immutable EAS UID."""
+        """Persist one checked observation without rewriting its factual body.
+
+        Observation UIDs are immutable evidence identities. Replaying the
+        same payload is idempotent; changing any factual field under an
+        existing UID is rejected. Acceptance promotion may add or update only
+        the derived ``accepted`` marker.
+        """
 
         uid = _required_name(observation_uid, "observation UID")
+        candidate = dict(body)
+        try:
+            existing = cast(dict[str, Any], self.client.get_entity("observation", uid))
+        except NotFoundError:
+            existing = None
+        if existing is not None:
+            existing_body = existing.get("body")
+            if not isinstance(existing_body, dict):
+                raise TypeError("Sibyl returned an observation without a mapping body")
+            if existing_body != candidate and not _same_observation_except_acceptance(existing_body, candidate):
+                raise ValueError(f"observation UID {uid} is immutable and already has a different body")
+            if existing_body == candidate:
+                return existing
         return cast(
             dict[str, Any],
-            self.client.set_entity("observation", uid, dict(body)),
+            self.client.set_entity("observation", uid, candidate),
         )
+
+    def save_temporal_observation(
+        self,
+        observation: TemporalObservation | Mapping[str, Any],
+    ) -> dict[str, Any]:
+        """Validate and persist a new complete bitemporal observation."""
+
+        parsed = (
+            observation
+            if isinstance(observation, TemporalObservation)
+            else TemporalObservation.from_mapping(observation, strict=True)
+        )
+        return self.save_observation(parsed.observation_uid, parsed.as_dict())
 
     def save_remediation(self, remediation: Remediation | Mapping[str, Any]) -> dict[str, Any]:
         """Persist one remediation record by its stable ID."""
@@ -231,6 +322,18 @@ class MemoryStore:
             ),
         )
 
+    def list_all_waivers(self) -> list[dict[str, Any]]:
+        """Read every active waiver for dashboard and CLI inspection."""
+
+        rows: list[dict[str, Any]] = []
+        for entity in self.client.list_entities(category="waiver", limit=10_000):
+            body = entity.get("body")
+            if not isinstance(body, Mapping):
+                raise TypeError("Sibyl returned a waiver without a mapping body")
+            Waiver.from_mapping(body)
+            rows.append(dict(entity))
+        return sorted(rows, key=lambda row: str(row.get("key", row.get("name", ""))))
+
     def list_observations(self, condition_key: str) -> list[dict[str, Any]]:
         """Read all persisted observations for one condition deterministically."""
 
@@ -245,6 +348,82 @@ class MemoryStore:
         return sorted(
             observations,
             key=lambda observation: str(observation.get("observation_uid", "")),
+        )
+
+    def temporal_evidence(self, condition_key: str) -> TemporalEvidence:
+        """Parse stored observations for temporal queries.
+
+        The compatibility parser deliberately permits old rows to be read so
+        callers receive a precise ``TemporalObservationError`` explaining why
+        a historical query cannot yet be answered.
+        """
+
+        key = _required_name(condition_key, "condition key")
+        try:
+            return TemporalEvidence.from_mappings(
+                self.list_observations(key),
+                strict=False,
+                condition_key=key,
+            )
+        except TemporalObservationError:
+            raise
+
+    def current_observation(
+        self,
+        condition_key: str,
+        *,
+        as_of: int | date | datetime | str | None = None,
+        accepted_only: bool = True,
+    ) -> TemporalObservation | None:
+        """Return the canonical bitemporal observation at the current point."""
+
+        return self.temporal_evidence(condition_key).current(
+            as_of=as_of,
+            accepted_only=accepted_only,
+        )
+
+    def valid_observation_as_of(
+        self,
+        condition_key: str,
+        valid_at: int | date | datetime | str,
+        *,
+        accepted_only: bool = True,
+    ) -> TemporalObservation | None:
+        """Return the fact now reconstructed for a valid-time instant."""
+
+        return self.temporal_evidence(condition_key).valid_as_of(
+            valid_at,
+            accepted_only=accepted_only,
+        )
+
+    def known_observation_as_of(
+        self,
+        condition_key: str,
+        knowledge_at: int | date | datetime | str,
+        *,
+        valid_at: int | date | datetime | str | None = None,
+        accepted_only: bool = True,
+    ) -> TemporalObservation | None:
+        """Return the fact Standing could have selected using then-known rows."""
+
+        return self.temporal_evidence(condition_key).known_as_of(
+            knowledge_at,
+            valid_at=valid_at,
+            accepted_only=accepted_only,
+        )
+
+    def observation_history(
+        self,
+        condition_key: str,
+        *,
+        knowledge_at: int | date | datetime | str | None = None,
+        accepted_only: bool = False,
+    ) -> tuple[TemporalObservation, ...]:
+        """Return the complete temporal evidence chain for one condition."""
+
+        return self.temporal_evidence(condition_key).history(
+            knowledge_at=knowledge_at,
+            accepted_only=accepted_only,
         )
 
     def save_standing(self, decision_id: str, body: Mapping[str, Any]) -> None:
@@ -407,6 +586,19 @@ def _entity_body(entity: Mapping[str, Any]) -> Mapping[str, Any]:
     if not isinstance(body, Mapping):
         raise TypeError("Sibyl returned an entity without a mapping body")
     return body
+
+
+def _same_observation_except_acceptance(
+    existing: Mapping[str, Any],
+    candidate: Mapping[str, Any],
+) -> bool:
+    """Allow only the derived acceptance marker to change on a replay."""
+
+    existing_factual = dict(existing)
+    candidate_factual = dict(candidate)
+    existing_factual.pop("accepted", None)
+    candidate_factual.pop("accepted", None)
+    return existing_factual == candidate_factual
 
 
 def create_memory_store(
