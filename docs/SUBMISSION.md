@@ -4,7 +4,7 @@ This file is the final-day control sheet. Replace the four placeholders before
 submitting:
 
 ```text
-LIVE_URL=https://standing.onrender.com
+LIVE_URL=https://standing-o1sj.onrender.com
 WALKTHROUGH_URL=<2–5 minute public product walkthrough URL>
 POST_1_URL=<public launch post URL>
 POST_2_URL=<second public post URL>

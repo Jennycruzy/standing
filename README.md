@@ -36,8 +36,8 @@ Standing     EXPIRED — BLOCK
 
 ## Start here
 
-[Open Standing](https://standing.onrender.com/) ·
-[Open Console](https://standing.onrender.com/console) ·
+[Open Standing](https://standing-o1sj.onrender.com/) ·
+[Open Console](https://standing-o1sj.onrender.com/console) ·
 [Product walkthrough](docs/WALKTHROUGH.md) ·
 [Public evaluation](docs/EVALUATION.md) ·
 [Source](https://github.com/Jennycruzy/standing) ·
