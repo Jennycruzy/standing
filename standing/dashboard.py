@@ -584,33 +584,39 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     * {{ box-sizing: border-box; }}
     body {{ margin: 0; background-color: #070b0d; background-image: linear-gradient(rgba(101,230,173,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(101,230,173,.025) 1px, transparent 1px); background-size: 32px 32px; min-height: 100vh; }}
     body::before {{ content:''; position:fixed; inset:0; pointer-events:none; background:radial-gradient(circle at 80% 0, rgba(32,104,76,.16), transparent 34%); }}
-    main {{ position:relative; max-width: 1220px; margin: 0 auto; padding: 30px 28px 64px; }}
-    .topbar {{ position:sticky; top:0; z-index:10; display:flex; flex-wrap:wrap; align-items:center; gap:14px; padding:12px 20px; border-bottom:1px solid var(--line); background:rgba(7,11,13,.92); backdrop-filter:blur(14px); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }}
-    .brand {{ color:var(--green); font-weight:900; letter-spacing:.12em; }}
-    .system {{ display:flex; align-items:center; gap:7px; color:#9cafaa; font-size:.76rem; }}
+    main {{ position:relative; max-width: 1440px; margin: 0 auto; padding: 28px 34px 72px; display:grid; grid-template-columns:190px minmax(0,1fr); gap:42px; }}
+    .topbar {{ position:sticky; top:0; z-index:10; display:flex; flex-wrap:wrap; align-items:center; gap:18px; padding:14px max(24px, calc((100vw - 1372px) / 2)); border-bottom:1px solid var(--line); background:rgba(7,11,13,.94); backdrop-filter:blur(14px); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }}
+    .brand {{ color:var(--green); font-weight:900; letter-spacing:.12em; font-size:.9rem; }}
+    .system {{ display:flex; align-items:center; gap:7px; color:#9cafaa; font-size:.69rem; letter-spacing:.04em; }}
     .pulse {{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); }}
-    nav {{ margin-left:auto; display:flex; flex-wrap:wrap; gap:12px; }}
-    nav a {{ color:#9cafaa; text-decoration:none; font-size:.72rem; }} nav a:hover {{ color:var(--green); }}
-    .hero {{ padding:44px 0 14px; }}
-    .thesis {{ max-width:760px; color:#9cafaa; font-size:1.05rem; line-height:1.65; }}
+    nav {{ margin-left:auto; display:flex; flex-wrap:wrap; gap:17px; }}
+    nav a {{ color:#9cafaa; text-decoration:none; font-size:.68rem; letter-spacing:.08em; }} nav a:hover {{ color:var(--green); }}
+    .rail {{ position:sticky; top:82px; align-self:start; padding-top:22px; color:#73837b; font: .67rem/1.5 ui-monospace,monospace; text-transform:uppercase; letter-spacing:.11em; }}
+    .rail-title {{ color:#e7eee9; font-size:.78rem; letter-spacing:.16em; margin-bottom:28px; }} .rail-title span {{ color:var(--green); }}
+    .rail-group {{ margin:0 0 28px; }} .rail-group strong {{ display:block; color:#5e7068; font-size:.59rem; margin-bottom:10px; }} .rail a {{ display:block; color:#9cafaa; text-decoration:none; padding:7px 0 7px 12px; border-left:1px solid transparent; }} .rail a:hover,.rail a.active {{ color:var(--green); border-left-color:var(--green); background:linear-gradient(90deg,rgba(101,230,173,.08),transparent); }} .rail-note {{ border-top:1px solid var(--line); padding-top:14px; text-transform:none; letter-spacing:0; color:#718078; }}
+    .console-content {{ min-width:0; }}
+    .hero {{ padding:22px 0 20px; border-bottom:1px solid var(--line); }}
+    .hero-row {{ display:flex; align-items:end; justify-content:space-between; gap:30px; }} .hero-status {{ display:flex; gap:8px; align-items:center; color:#7e9288; font: .66rem ui-monospace,monospace; text-transform:uppercase; letter-spacing:.1em; white-space:nowrap; }} .hero-status::before {{ content:""; width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); }}
+    .thesis {{ max-width:760px; color:#9cafaa; font-size:.96rem; line-height:1.6; margin-bottom:0; }}
     .eyebrow {{ color: var(--green); text-transform: uppercase; letter-spacing: .16em; font: 800 .7rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
     h1, h2, h3 {{ margin: .35rem 0 .8rem; }}
-    h1 {{ font-size: clamp(2rem, 5vw, 4.5rem); max-width: 850px; line-height: .98; }}
-    h2 {{ font-size: 1.25rem; }}
+    h1 {{ font:500 clamp(2.25rem, 5vw, 4.4rem)/.95 Georgia,serif; letter-spacing:-.04em; max-width:850px; }}
+    h2 {{ font-size: 1.1rem; }}
     .muted {{ color: #8fa19a; }}
     .disclosure {{ border: 1px solid #735b2c; border-left:3px solid var(--amber); background: #1b160c; color: #eacb8d; padding: 12px 15px; border-radius: 5px; margin: 14px 0; }}
-    .card {{ background: rgba(13,20,18,.94); border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin-top: 16px; box-shadow: 0 18px 60px rgba(0,0,0,.22); }}
+    .card {{ background: rgba(13,20,18,.78); border: 1px solid var(--line); border-radius: 3px; padding: 22px; margin-top: 14px; box-shadow: 0 18px 60px rgba(0,0,0,.18); }}
     .card > h2, .toolbar > h2 {{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-.02em; }}
-    .finding {{ border-color: #7d2f40; background: linear-gradient(135deg, rgba(66,19,30,.86), rgba(13,20,18,.97)); }}
-    .finding.stands {{ border-color: #256a50; background: linear-gradient(135deg, rgba(14,55,40,.88), rgba(13,20,18,.97)); }}
+    .finding {{ position:relative; border-color:#7d2f40; background:linear-gradient(120deg,rgba(55,20,29,.82),rgba(13,20,18,.97) 65%); padding:30px; overflow:hidden; }}
+    .finding::after {{ content:""; position:absolute; right:-90px; top:-100px; width:270px; height:270px; border:1px solid rgba(239,120,144,.18); border-radius:50%; box-shadow:0 0 0 20px rgba(239,120,144,.025),0 0 0 43px rgba(239,120,144,.02); pointer-events:none; }}
+    .finding.stands {{ border-color:#256a50; background:linear-gradient(120deg,rgba(14,55,40,.88),rgba(13,20,18,.97) 65%); }} .finding.stands::after {{ border-color:rgba(101,230,173,.16); box-shadow:0 0 0 20px rgba(101,230,173,.025),0 0 0 43px rgba(101,230,173,.02); }}
     .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }}
-    .metric {{ background: #09100e; border: 1px solid #202d28; border-radius: 5px; padding: 13px; }}
+    .metric {{ background: #09100e; border: 1px solid #202d28; border-radius: 3px; padding: 13px; }}
     .label {{ color: #81948c; text-transform: uppercase; letter-spacing: .1em; font: 800 .65rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
     .value {{ margin-top: 5px; font-size: 1.15rem; font-weight: 800; overflow-wrap: anywhere; }}
     .expired, .blocked {{ color: var(--red); }} .stands, .allow {{ color: var(--green); }} .unknown, .contested {{ color: var(--amber); }}
     button {{ border: 1px solid #365248; border-radius: 4px; background: #13241e; color: #e8f5ee; padding: 9px 12px; cursor: pointer; font: 750 .78rem ui-monospace, SFMono-Regular, Menlo, monospace; margin: 4px 4px 0 0; }}
     button:hover {{ border-color:var(--green); background:#19352b; }} button.danger {{ border-color:#8b3447; background:#431b25; }} button.safe {{ border-color:#277255; background:#123c2e; }}
-    .toolbar {{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }}
+    .toolbar {{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }} .toolbar h2::before {{ content:"/ "; color:#53665d; }}
     .graph {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }}
     .node {{ padding: 12px; background: #0b1713; border: 1px solid #2d493f; border-radius: 5px; min-width: 120px; }}
     button.node {{ text-align: left; color: #e5edf8; font: inherit; }}
@@ -624,14 +630,17 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     table {{ width: 100%; border-collapse: collapse; }} th, td {{ text-align: left; padding: 9px; border-bottom: 1px solid var(--line); vertical-align: top; }} th {{ color: #8fa19a; font-size: .7rem; text-transform: uppercase; }}
     a {{ color:var(--green); }}
     blockquote {{ margin-left:0; border-left:2px solid #365248; padding-left:14px; color:#b7c8c0; }}
-    @media (max-width:680px) {{ main {{ padding:18px 14px 44px; }} .topbar {{ padding:10px 14px; }} nav {{ width:100%; margin-left:0; }} h1 {{ font-size:2.45rem; }} }}
+    @media (max-width:900px) {{ main {{ grid-template-columns:1fr; gap:0; }} .rail {{ position:static; display:flex; gap:18px; padding:8px 0 16px; border-bottom:1px solid var(--line); }} .rail-group,.rail-note {{ display:none; }} .rail-title {{ margin:0; }} }}
+    @media (max-width:680px) {{ main {{ padding:18px 14px 44px; }} .topbar {{ padding:10px 14px; }} nav {{ width:100%; margin-left:0; }} h1 {{ font-size:2.45rem; }} .hero-row {{ display:block; }} .hero-status {{ margin-top:18px; }} }}
     .off {{ opacity: .58; }}
   </style>
 </head>
 <body>
 <header class="topbar"><div class="brand">STANDING</div><div class="system"><span class="pulse"></span>SYSTEM ONLINE · TEMPORAL DECISION CONTROL</div><nav><a href="#finding">FINDING</a><a href="#timeline">TIME TRAVEL</a><a href="#review">REVIEW</a><a href="#memory">MEMORY</a><a href="#proof">PROOF</a></nav></header>
 <main>
-  <div class="hero"><div class="eyebrow">Temporal system of record / engineering intent</div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div>
+  <aside class="rail"><div class="rail-title">stand<span>ing</span></div><div class="rail-group"><strong>Workspace</strong><a class="active" href="#finding">Current finding</a><a href="#review">Review queue</a><a href="#timeline">Time travel</a></div><div class="rail-group"><strong>System record</strong><a href="#memory">Memory</a><a href="#proof">Evidence</a><a href="#provenance">Provenance</a></div><div class="rail-note">A temporal control plane for engineering intent.<br><br>Every decision has a reason. Every reason has a lifespan.</div></aside>
+  <div class="console-content">
+  <div class="hero"><div class="hero-row"><div><div class="eyebrow">Workspace / standing control</div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div><div class="hero-status">Live review surface</div></div></div>
   <div id="disclosure"></div>
   <section id="finding" class="card finding"></section>
   <section class="card">
@@ -675,7 +684,8 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
   </section>
   <section class="card"><h2>Real-world proof</h2><div id="realWorld"></div></section>
   <section id="proof" class="card"><h2>Live partner proof</h2><div id="partnerProof"></div></section>
-  <section class="card"><h2>Evidence provenance</h2><div id="provenance"></div></section>
+  <section id="provenance" class="card"><h2>Evidence provenance</h2><div id="provenance"></div></section>
+  </div>
 </main>
 <script>
 const initial = {encoded};

@@ -88,6 +88,8 @@ class DashboardTests(unittest.TestCase):
         ):
             self.assertIn(label, html)
         self.assertIn("data-graph-target", html)
+        self.assertIn("Workspace / standing control", html)
+        self.assertIn("Review queue", html)
         self.assertIn(CONTROLLED_DISCLOSURE, html)
         self.assertEqual(self.app.state()["partner_proof"]["acp_job_id"], "77748")
         self.assertIn("basescan.org/tx/", html)
