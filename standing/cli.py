@@ -549,7 +549,7 @@ def _seed_deletion_scenario(store: Any, fact: int) -> None:
             "condition_key": "sandbox.demo.retention_days",
             "accepted_value": fact,
             "unit": "days",
-            "accepted_source_url": "https://controlled-demo.invalid/acme-retention",
+            "accepted_source_url": "https://raw.githubusercontent.com/Jennycruzy/standing/main/docs/demo/acme-retention.json",
             "observation_uids": ["controlled-demo-current"],
             "basis": "controlled demo source",
         },

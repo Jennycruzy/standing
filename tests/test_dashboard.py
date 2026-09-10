@@ -92,6 +92,8 @@ class DashboardTests(unittest.TestCase):
         self.assertIn("Review queue", html)
         self.assertIn(CONTROLLED_DISCLOSURE, html)
         self.assertEqual(self.app.state()["partner_proof"]["acp_job_id"], "77748")
+        self.assertIn("app.virtuals.io", html)
+        self.assertIn("API access may require credentials", html)
         self.assertIn("basescan.org/tx/", html)
         self.assertNotIn("destination address", html.lower())
         self.assertNotIn("private key", html.lower())

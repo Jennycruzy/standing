@@ -31,7 +31,7 @@ Standing     EXPIRED — BLOCK
 
 Live integration evidence:
 
-- [Completed Virtuals ACP verifier job 77748](https://api.acp.virtuals.io/jobs/8453/77748)
+- [Virtuals ACP platform](https://app.virtuals.io/) — completed verifier job `77748` (the technical API record is credential-gated)
 - [Base EAS observation transaction](https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff)
 - [ERC-8004 verifier feedback transaction](https://basescan.org/tx/0xb12f670d1c643556b7bb6c45cec12462f9c7f7e41775681b4c1f9b0278146954)
 - [Registered Base EAS schemas](docs/audits/schema-registration.md)
@@ -214,7 +214,7 @@ and [`acp-adapter/src/extraction.ts`](acp-adapter/src/extraction.ts).
 | Stack | Product responsibility | Verifiable implementation |
 | --- | --- | --- |
 | Sibyl Memory | Persists intent across fresh processes and makes historical review possible | [`standing/memory.py`](standing/memory.py) |
-| Virtuals ACP | Acquires fresh verification when evidence is stale or insufficient | [`standing/acp.py`](standing/acp.py), [completed job](https://api.acp.virtuals.io/jobs/8453/77748) |
+| Virtuals ACP | Acquires fresh verification when evidence is stale or insufficient | [`standing/acp.py`](standing/acp.py), [ACP platform](https://app.virtuals.io/), job `77748` |
 | Base EAS | Provides public observation identity, timestamps, references, and revocation state | [`standing/eas.py`](standing/eas.py), [observation transaction](https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff) |
 | ERC-8004 | Records verifier outcomes for reputation history | [`standing/reputation.py`](standing/reputation.py), [feedback transaction](https://basescan.org/tx/0xb12f670d1c643556b7bb6c45cec12462f9c7f7e41775681b4c1f9b0278146954) |
 
