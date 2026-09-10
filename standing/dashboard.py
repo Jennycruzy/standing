@@ -848,7 +848,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
   <style>
     :root {{
       color-scheme: light;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Avenir Next", Avenir, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #eeece5;
       color: #252a26;
       --bg: #eeece5;
@@ -874,7 +874,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     body::after {{ display:none; }}
     a {{ color:var(--sage); text-decoration:none; }}
     a:hover {{ color:#1e4931; }}
-    code, pre, .label, .eyebrow, .system, .topbar-context, .release-mark, .activity-time, .activity-event {{ font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }}
+    code, pre, .activity-time {{ font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }}
     .topbar {{ position:sticky; top:0; z-index:10; min-height:66px; display:flex; align-items:center; gap:18px; padding:0 max(28px, calc((100vw - 1480px) / 2)); border-bottom:1px solid #343b36; background:rgba(32,38,34,.97); color:#eef0ec; backdrop-filter:blur(14px); }}
     .brand {{ display:inline-flex; align-items:center; gap:10px; color:#f3f4f1; font-size:.78rem; font-weight:800; letter-spacing:.13em; }}
     .brand-mark {{ position:relative; width:22px; height:22px; display:grid; place-items:center; border:1px solid var(--sage-strong); border-radius:50%; }}
@@ -889,23 +889,23 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     nav a {{ color:#b9c0ba; padding:8px 10px; border:1px solid transparent; border-radius:4px; font-size:.67rem; letter-spacing:.03em; }}
     nav a:hover, nav a.active {{ color:#fff; border-color:#59635b; background:#303934; }}
     main {{ position:relative; max-width:1540px; margin:0 auto; padding:36px 42px 96px; display:grid; grid-template-columns:226px minmax(0,1fr); gap:48px; }}
-    .rail {{ position:sticky; top:94px; align-self:start; min-height:calc(100vh - 130px); padding:24px 18px; border:1px solid #343b36; border-radius:6px; background:#242a26; color:#aeb6af; font-size:.75rem; box-shadow:0 18px 46px rgba(41,45,41,.10); }}
-    .rail-context {{ padding:2px 12px 24px; border-bottom:1px solid var(--line); margin-bottom:24px; }}
-    .rail-kicker {{ color:var(--copper); font:700 .59rem ui-monospace,monospace; letter-spacing:.14em; text-transform:uppercase; }}
-    .rail-name {{ margin-top:12px; color:#f0f2ef; font:500 1.42rem/1.05 Georgia,serif; letter-spacing:-.03em; }}
-    .rail-state {{ display:flex; align-items:center; gap:8px; margin-top:16px; color:var(--faint); font: .62rem ui-monospace,monospace; letter-spacing:.06em; text-transform:uppercase; }}
+    .rail {{ position:sticky; top:94px; align-self:start; min-height:calc(100vh - 130px); padding:24px 18px 20px; border:1px solid #343b36; border-radius:6px; background:#242a26; color:#aeb6af; font-size:.78rem; box-shadow:0 18px 46px rgba(41,45,41,.10); display:flex; flex-direction:column; }}
+    .rail-context {{ padding:2px 12px 20px; border-bottom:1px solid #414943; margin-bottom:20px; }}
+    .rail-kicker {{ color:#ce9369; font-size:.64rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; }}
+    .rail-name {{ margin-top:10px; color:#f0f2ef; font-size:1.25rem; font-weight:650; line-height:1.08; letter-spacing:-.02em; }}
+    .rail-state {{ display:flex; align-items:center; gap:8px; margin-top:13px; color:#99a39b; font-size:.63rem; font-weight:650; letter-spacing:.06em; text-transform:uppercase; }}
     .rail-state::before {{ content:""; width:6px; height:6px; background:var(--sage-strong); border-radius:50%; }}
-    .rail-group {{ margin:0 0 28px; }}
-    .rail-group strong {{ display:block; margin:0 0 9px 12px; color:var(--faint); font-size:.59rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; }}
+    .rail-group {{ margin:0 0 20px; }}
+    .rail-group strong {{ display:block; margin:0 0 8px 12px; color:#858f87; font-size:.62rem; font-weight:700; letter-spacing:.11em; text-transform:uppercase; }}
     .rail a {{ display:flex; align-items:center; gap:11px; color:#adb6ae; padding:9px 12px; border-left:2px solid transparent; border-radius:0 4px 4px 0; }}
     .rail a::before {{ content:attr(data-icon); width:17px; color:#667268; font: .58rem ui-monospace,monospace; letter-spacing:0; }}
     .rail a:hover, .rail a.active {{ color:#fff; border-left-color:#81ad8d; background:#303934; }}
     .rail a.active::before {{ color:var(--sage-strong); }}
-    .rail-footer {{ position:absolute; left:18px; right:18px; bottom:20px; padding-top:16px; border-top:1px solid #404841; color:#929b94; font-size:.68rem; line-height:1.55; }}
-    .rail-footer-label {{ display:block; margin-bottom:6px; color:var(--muted); font:700 .59rem ui-monospace,monospace; letter-spacing:.12em; text-transform:uppercase; }}
+    .rail-footer {{ position:static; margin-top:auto; padding:16px 12px 0; border-top:1px solid #404841; color:#929b94; font-size:.68rem; line-height:1.55; }}
+    .rail-footer-label {{ display:block; margin-bottom:6px; color:#a5aea7; font-size:.61rem; font-weight:700; letter-spacing:.10em; text-transform:uppercase; }}
     .console-content {{ min-width:0; }}
     .hero {{ padding:4px 0 30px; border-bottom:1px solid var(--line); }}
-    .breadcrumb {{ display:flex; align-items:center; gap:9px; color:var(--faint); font: .61rem ui-monospace,monospace; letter-spacing:.11em; text-transform:uppercase; }}
+    .breadcrumb {{ display:flex; align-items:center; gap:9px; color:var(--faint); font-size:.67rem; font-weight:700; letter-spacing:.09em; text-transform:uppercase; }}
     .breadcrumb .eyebrow {{ color:var(--sage-strong); }}
     .breadcrumb .slash {{ color:var(--line-strong); }}
     .hero-row {{ display:flex; align-items:end; justify-content:space-between; gap:36px; margin-top:24px; }}
@@ -916,9 +916,9 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     .hero-aside strong {{ display:block; margin-top:9px; color:var(--sage); font-size:.86rem; letter-spacing:.05em; }}
     .hero-aside span:last-child {{ display:block; margin-top:6px; color:var(--faint); font-size:.68rem; }}
     .thesis {{ max-width:720px; margin:14px 0 0; color:#687069; font-size:.91rem; line-height:1.65; }}
-    .eyebrow {{ color:var(--sage-strong); text-transform:uppercase; letter-spacing:.13em; font:750 .62rem ui-monospace,monospace; }}
+    .eyebrow {{ color:var(--sage-strong); text-transform:uppercase; letter-spacing:.09em; font-size:.67rem; font-weight:750; }}
     h1, h2, h3 {{ margin:.35rem 0 .8rem; }}
-    h1 {{ max-width:850px; color:var(--ink); font:500 clamp(2.4rem,4.6vw,4.15rem)/.98 Georgia,serif; letter-spacing:-.045em; }}
+    h1 {{ max-width:850px; color:var(--ink); font-size:clamp(2.25rem,4vw,3.75rem); font-weight:650; line-height:1; letter-spacing:-.045em; }}
     h2 {{ color:#2b302c; font-size:1.05rem; letter-spacing:-.015em; }}
     .muted {{ color:var(--muted); }}
     .disclosure {{ margin:15px 0 0; padding:13px 16px; border:1px solid #d7c59c; border-left:3px solid var(--amber); border-radius:4px; background:#fbf4e3; color:#765d2b; font-size:.77rem; line-height:1.55; }}
@@ -956,7 +956,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     .finding.stands .finding-footer .footer-state {{ color:var(--sage); }}
     .grid {{ display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; }}
     .metric {{ min-width:0; padding:15px; border:1px solid #d9d7cf; border-radius:4px; background:var(--surface-soft); }}
-    .label {{ color:#7f8b82; text-transform:uppercase; letter-spacing:.10em; font:750 .59rem ui-monospace,monospace; }}
+    .label {{ color:#737d75; text-transform:uppercase; letter-spacing:.07em; font-size:.64rem; font-weight:750; }}
     .value {{ margin-top:7px; color:#2f3530; font-size:1.03rem; font-weight:700; overflow-wrap:anywhere; }}
     .expired, .blocked {{ color:var(--red); }} .stands, .allow {{ color:var(--sage); }} .unknown {{ color:var(--amber); }} .contested {{ color:var(--purple); }}
     button {{ margin:4px 7px 0 0; padding:10px 13px; border:1px solid #9ba49c; border-radius:4px; background:#f8f8f5; color:#303630; cursor:pointer; font:700 .68rem Inter,ui-sans-serif,system-ui,sans-serif; letter-spacing:.05em; text-transform:uppercase; }}
@@ -972,26 +972,26 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     button.node.expired::after, button.node.blocked::after {{ background:var(--red); }}
     .arrow {{ display:grid; place-items:center; min-width:32px; color:#718476; font-size:.82rem; }}
     .timeline {{ width:100%; margin:20px 0 8px; accent-color:var(--sage-strong); }}
-    .timeline-row {{ display:flex; justify-content:space-between; color:#818d84; font: .62rem ui-monospace,monospace; letter-spacing:.04em; text-transform:uppercase; }}
+    .timeline-row {{ display:flex; justify-content:space-between; color:#747d76; font-size:.63rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase; }}
     .time-travel-grid {{ margin-top:18px; }}
-    .time-travel-card {{ min-height:132px; padding:18px; border:1px solid var(--line); background:var(--surface-soft); }}
+    .time-travel-card {{ min-height:170px; padding:20px; border:1px solid var(--line); border-radius:3px; background:#faf9f5; }}
     .time-travel-card .value {{ font-size:1.38rem; }}
     .time-travel-card.world {{ border-top:2px solid var(--copper); }} .time-travel-card.known {{ border-top:2px solid var(--sage-strong); }} .time-travel-card.assessment {{ border-top:2px solid #788678; }}
     details {{ padding:14px 0; border-top:1px solid var(--line); }} details:last-child {{ border-bottom:1px solid var(--line); }} summary {{ color:#303630; cursor:pointer; font-size:.82rem; font-weight:650; }}
     pre {{ margin:12px 0 0; padding:14px; border-radius:4px; background:#252b27; white-space:pre-wrap; overflow-wrap:anywhere; color:#cbd5cd; font: .72rem/1.6 ui-monospace,monospace; }}
-    table {{ width:100%; border-collapse:collapse; }} th, td {{ padding:11px 9px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }} th {{ color:#829087; font:700 .59rem ui-monospace,monospace; letter-spacing:.10em; text-transform:uppercase; }}
-    blockquote {{ margin:13px 0; padding-left:14px; border-left:2px solid #496053; color:#bdc9c0; line-height:1.55; }}
+    table {{ width:100%; border-collapse:collapse; }} th, td {{ padding:12px 10px; border-bottom:1px solid var(--line); text-align:left; vertical-align:top; }} th {{ color:#737d75; font-size:.64rem; font-weight:750; letter-spacing:.07em; text-transform:uppercase; }}
+    blockquote {{ margin:13px 0; padding-left:14px; border-left:2px solid #73917b; color:#555e57; line-height:1.55; }}
     .console-section {{ display:none; }} .console-section.active {{ display:block; animation:reveal .18s ease-out; }} @keyframes reveal {{ from {{ opacity:0; transform:translateY(3px); }} to {{ opacity:1; transform:none; }} }}
     .section-intro {{ display:flex; align-items:end; justify-content:space-between; gap:20px; margin-bottom:18px; }} .section-intro p {{ max-width:620px; margin:0; line-height:1.55; }}
     .overview-grid {{ display:grid; grid-template-columns:repeat(4,1fr); gap:0; margin-top:15px; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }}
     .overview-grid .metric {{ min-height:92px; padding:16px 18px 14px 0; border:0; border-radius:0; background:transparent; }} .overview-grid .metric + .metric {{ padding-left:18px; border-left:1px solid var(--line); }}
-    .activity-row {{ display:grid; grid-template-columns:132px 190px 1fr; gap:15px; padding:13px 0; border-bottom:1px solid var(--line); align-items:start; }} .activity-row:last-child {{ border-bottom:0; }} .activity-time {{ color:#7e8a81; font-size:.63rem; }} .activity-event {{ color:var(--sage); font-size:.61rem; font-weight:700; letter-spacing:.07em; text-transform:uppercase; }}
-    .chain {{ display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin-top:20px; }} .chain-step {{ position:relative; min-height:134px; padding:15px 19px 12px 0; border-top:1px solid #405247; }} .chain-step + .chain-step {{ padding-left:19px; border-left:1px solid var(--line); }} .chain-step:not(:last-child)::after {{ content:'→'; position:absolute; right:-7px; top:10px; z-index:1; color:var(--sage-strong); background:var(--surface); padding:0 3px; }} .chain-step strong {{ display:block; margin-top:8px; color:#e3ebe4; font-size:.78rem; line-height:1.35; }} .chain-step span {{ display:block; margin-top:8px; color:var(--muted); font-size:.69rem; line-height:1.5; }}
+    .activity-row {{ display:grid; grid-template-columns:132px 190px 1fr; gap:15px; padding:13px 0; border-bottom:1px solid var(--line); align-items:start; }} .activity-row:last-child {{ border-bottom:0; }} .activity-time {{ color:#7e8a81; font-size:.63rem; }} .activity-event {{ color:var(--sage); font-size:.64rem; font-weight:750; letter-spacing:.06em; text-transform:uppercase; }}
+    .chain {{ display:grid; grid-template-columns:repeat(5,1fr); gap:0; margin-top:20px; }} .chain-step {{ position:relative; min-height:134px; padding:15px 19px 12px 0; border-top:1px solid #9aafa0; }} .chain-step + .chain-step {{ padding-left:19px; border-left:1px solid var(--line); }} .chain-step:not(:last-child)::after {{ content:'→'; position:absolute; right:-7px; top:10px; z-index:1; color:var(--sage-strong); background:var(--surface); padding:0 3px; }} .chain-step strong {{ display:block; margin-top:8px; color:#303630; font-size:.78rem; line-height:1.35; }} .chain-step span {{ display:block; margin-top:8px; color:var(--muted); font-size:.69rem; line-height:1.5; }}
     .provenance-row {{ display:grid; grid-template-columns:145px 1fr; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); }} .provenance-row .label {{ padding-top:3px; }}
     .comparison-grid {{ display:grid; grid-template-columns:170px repeat(2,minmax(0,1fr)); gap:1px; background:var(--line); border:1px solid var(--line); border-radius:4px; overflow:hidden; }} .comparison-grid > * {{ margin:0; border:0; border-radius:0; }} .comparison-head {{ background:#29312c; color:#dce5de; padding:12px 14px; font:700 .61rem ui-monospace,monospace; letter-spacing:.09em; }} .comparison-label {{ background:#eceae3; color:#69716a; padding:15px 14px; font-size:.74rem; }} .comparison-grid .metric {{ min-height:0; padding:15px 14px; }}
     .off {{ opacity:.58; }}
     @media (max-width:1120px) {{ main {{ grid-template-columns:200px minmax(0,1fr); gap:30px; padding-left:28px; padding-right:28px; }} .chain {{ grid-template-columns:repeat(3,1fr); }} .finding-ledger {{ grid-template-columns:repeat(2,1fr); }} .ledger-cell + .ledger-cell {{ padding-left:0; border-left:0; }} .ledger-cell:nth-child(even) {{ padding-left:18px; border-left:1px solid rgba(255,255,255,.09); }} }}
-    @media (max-width:900px) {{ main {{ grid-template-columns:1fr; gap:0; }} .rail {{ position:static; min-height:0; display:flex; align-items:center; gap:18px; padding:0 0 15px; border-right:0; border-bottom:1px solid var(--line); }} .rail-context {{ min-width:175px; margin:0; padding:0 18px 0 0; border:0; }} .rail-name {{ margin-top:7px; font-size:1.18rem; }} .rail-state {{ margin-top:9px; }} .rail-group,.rail-footer {{ display:none; }} .rail::after {{ content:'Use the navigation above to move through the workspace'; margin-left:auto; color:var(--faint); font-size:.68rem; }} .finding-head {{ display:block; }} .finding-posture {{ margin-top:20px; padding:14px 0 0; border-left:0; border-top:1px solid rgba(236,149,139,.25); text-align:left; }} .finding.stands .finding-posture {{ border-top-color:rgba(143,199,154,.25); }} }}
+    @media (max-width:900px) {{ main {{ grid-template-columns:1fr; gap:20px; }} .rail {{ position:static; min-height:0; display:flex; align-items:center; gap:18px; padding:16px 18px; }} .rail-context {{ min-width:175px; margin:0; padding:0 18px 0 0; border:0; }} .rail-name {{ margin-top:7px; font-size:1.18rem; }} .rail-state {{ margin-top:9px; }} .rail-group,.rail-footer {{ display:none; }} .rail::after {{ content:'Use the navigation above to move through the workspace'; margin-left:auto; color:#9ba49d; font-size:.68rem; }} .finding-head {{ display:block; }} .finding-posture {{ margin-top:20px; padding:14px 0 0; border-left:0; border-top:1px solid rgba(169,72,66,.22); text-align:left; }} .finding.stands .finding-posture {{ border-top-color:rgba(71,123,89,.24); }} }}
     @media (max-width:680px) {{ main {{ padding:22px 14px 55px; }} .topbar {{ flex-wrap:wrap; gap:10px; padding:12px 14px; }} .workspace-name,.release-mark {{ display:none; }} .topbar-right {{ width:100%; margin-left:0; justify-content:space-between; }} nav {{ margin-left:auto; }} nav a {{ padding:7px 8px; }} .hero {{ padding-top:5px; }} .hero-row {{ display:block; }} .hero-aside {{ margin-top:22px; padding:14px 0 0; border-left:0; border-top:1px solid var(--line); }} h1 {{ font-size:2.7rem; }} .card {{ padding:20px 17px; }} .finding {{ padding:22px 18px; }} .finding-ledger {{ grid-template-columns:1fr; }} .ledger-cell,.ledger-cell:nth-child(even) {{ padding-left:0; border-left:0; }} .graph {{ display:grid; grid-template-columns:1fr; gap:0; }} .node {{ max-width:none; }} .arrow {{ min-height:26px; transform:rotate(90deg); }} .chain {{ grid-template-columns:1fr; }} .chain-step,.chain-step + .chain-step {{ min-height:0; padding:14px 0; border-left:0; }} .chain-step:not(:last-child)::after {{ content:'↓'; right:auto; left:1px; top:auto; bottom:-8px; }} .activity-row {{ grid-template-columns:1fr; gap:4px; }} .comparison-grid {{ grid-template-columns:1fr; }} .comparison-head:not(:first-child) {{ display:none; }} .comparison-label {{ border-top:1px solid var(--line) !important; }} .comparison-grid .metric {{ border-bottom:1px solid var(--line); }} .overview-grid {{ grid-template-columns:repeat(2,1fr); }} .overview-grid .metric:nth-child(odd) {{ padding-left:0; }} .overview-grid .metric:nth-child(even) {{ padding-left:14px; }} .overview-grid .metric:nth-child(n+3) {{ border-top:1px solid var(--line); }} }}
   </style>
 </head>
@@ -1001,7 +1001,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
   <aside class="rail"><div class="rail-context"><div class="rail-kicker">Workspace</div><div class="rail-name">Engineering<br>intent</div><div class="rail-state">Memory online</div></div><div class="rail-group"><strong>Workspace</strong><a class="active" data-icon="01" href="/console?view=overview" data-view="overview">Overview</a><a data-icon="02" href="/console?view=reviews" data-view="reviews">Reviews</a><a data-icon="03" href="/console?view=decisions" data-view="decisions">Decisions</a></div><div class="rail-group"><strong>System record</strong><a data-icon="04" href="/console?view=evidence" data-view="evidence">Evidence</a><a data-icon="05" href="/console?view=timeline" data-view="timeline">Timeline</a><a data-icon="06" href="/console?view=evaluation" data-view="evaluation">Evaluation</a><a data-icon="07" href="/console?view=activity" data-view="activity">Activity</a></div><div class="rail-group"><strong>Controlled environment</strong><a data-icon="08" href="/console?view=sandbox" data-view="sandbox">Sandbox</a></div><div class="rail-footer"><span class="rail-footer-label">Sibyl journal</span>Decision context, evidence, and review state stay linked.</div></aside>
   <div class="console-content">
   <div class="hero"><div class="breadcrumb"><span class="eyebrow">Standing Console</span><span class="slash">/</span><span>Overview</span></div><div class="hero-row"><div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div><div class="hero-aside"><div class="label">System posture</div><strong id="postureMark">RECONSTRUCTING</strong><span>Decision state from the backend ledger</span></div></div></div>
-  <div id="disclosure"></div>
+  <div id="disclosure" class="console-section" data-view="sandbox"></div>
   <section id="finding" class="card finding console-section" data-view="overview"></section>
   <section id="overviewStats" class="card console-section" data-view="overview"><div class="section-intro"><div><div class="eyebrow">Attention</div><h2>What requires engineering attention</h2></div><p class="muted">Standing keeps current findings, review gates, and evidence freshness in one place.</p></div><div id="overviewStatsGrid" class="overview-grid"></div></section>
   <section id="graphSection" class="card console-section" data-view="decisions">
@@ -1035,7 +1035,6 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
   <section id="activity" class="card console-section" data-view="activity"><div class="section-intro"><div><div class="eyebrow">Journal</div><h2>Activity</h2></div><span class="muted">Recorded in Sibyl Memory</span></div><div id="activityLog"></div></section>
   <section id="sandbox" class="card console-section" data-view="sandbox">
     <div class="section-intro"><div><div class="eyebrow">Sandbox controls</div><h2>Controlled scenario</h2></div><span class="muted">Fixed workflow · no arbitrary signing</span></div>
-    <div class="disclosure">{escape(CONTROLLED_DISCLOSURE)}</div>
     <div class="toolbar">
       <button id="break" class="danger">BREAK ASSUMPTION</button>
       <button id="restore" class="safe">RESET SANDBOX</button>
