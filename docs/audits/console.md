@@ -2,6 +2,11 @@
 
 Date: 2026-09-09
 
+This is a dated audit snapshot. At the time it was written, the evaluation
+manifest had no release-eligible cases. The current manifest has since been
+expanded to eight human-reviewed public cases; see
+[`docs/evaluation/cases.json`](../evaluation/cases.json).
+
 The console is a static, read-only projection of the persisted revision and
 standing journal. It supports a historical `--as-of` timestamp and visibly
 labels the owner-controlled sandbox whenever sandbox evidence is rendered. It

@@ -10,4 +10,7 @@ verify:
 verify-deploy:
 	$(PYTHON) -m pytest -q
 	$(PYTHON) -m mypy --strict standing
+	npm ci --prefix acp-adapter
+	npm --prefix acp-adapter test
+	npm --prefix acp-adapter run typecheck
 	$(PYTHON) -m standing memory-proof

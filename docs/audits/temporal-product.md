@@ -89,20 +89,20 @@ are proven separately by the linked completed records.
 
 [`docs/evaluation/cases.json`](../evaluation/cases.json) and
 [`docs/evaluation/adversarial.json`](../evaluation/adversarial.json) are
-separate. The former contains three source-linked, human-reviewed public cases;
-the latter contains 17 controlled adversarial fixtures. The first real case is
-classified as a stale dependency finding rather than an original historical
-decision rationale. The
-multi-arm harness has Standing, no-memory, grep, stateless-model, and
-current-docs-only arms, with per-case miss explanations. No aggregate real-world
-accuracy is published from only three cases.
+separate. The former now contains eight source-linked, human-reviewed public
+cases; the latter contains 17 controlled adversarial fixtures. The first real
+case is classified as a stale dependency finding rather than an original
+historical decision rationale. The multi-arm harness has Standing, no-memory,
+grep, stateless-model, and current-docs-only arms, with per-case miss
+explanations. No aggregate real-world accuracy is published until complete
+prediction artifacts are genuinely recorded.
 
 The current release check reports:
 
 ```text
 0 pending public cases
-3 reviewed public cases
-3 source-linked expiry findings
+8 reviewed public cases
+5 source-linked expiry findings
 0 independent operator identities supplied to the strict release check
 release ready: false
 ```

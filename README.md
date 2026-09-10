@@ -12,6 +12,10 @@ decisions to their assumptions, external evidence, and governed code paths. It
 revalidates stale facts and deterministically returns `STANDS`, `EXPIRED`,
 `UNKNOWN`, or `CONTESTED` before a change is allowed.
 
+Standing is for engineering teams whose architectural decisions depend on facts
+outside the repository: vendor guarantees, runtimes, API behaviour, service
+limits, policies, and deprecation timelines.
+
 ```text
 Decision     Use Acme for archives because retention >= 365 days
 Then         365 days ✓
