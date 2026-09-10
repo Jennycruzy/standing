@@ -40,11 +40,21 @@ SANDBOX_PROPOSAL_ARTIFACT = "docs/decisions/0001-acp-adapter.md"
 SANDBOX_DECISION_DATE = parse_timestamp("2026-02-11", label="sandbox decision date")
 SANDBOX_EFFECTIVE_INITIAL = 1767225600  # 2026-01-01T00:00:00Z
 SANDBOX_EFFECTIVE_CHANGED = 1788739200  # 2026-09-07T00:00:00Z
-_SOURCE_CASES_PATH = Path(__file__).resolve().parents[1] / "docs" / "evaluation" / "cases.json"
-_WORKTREE_CASES_PATH = Path.cwd() / "docs" / "evaluation" / "cases.json"
-EVALUATION_CASES_PATH = (
-    _SOURCE_CASES_PATH if _SOURCE_CASES_PATH.exists() else _WORKTREE_CASES_PATH
-)
+
+def _evaluation_manifest_path(filename: str) -> Path:
+    """Resolve checked-in evaluation data from source or an installed app."""
+
+    candidates = (
+        Path(__file__).resolve().parents[1] / "docs" / "evaluation" / filename,
+        Path.cwd() / "docs" / "evaluation" / filename,
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[-1]
+
+
+EVALUATION_CASES_PATH = _evaluation_manifest_path("cases.json")
 PARTNER_PROOF = {
     "acp_job_id": "77748",
     "acp_job_url": "https://app.virtuals.io/acp/scan",
@@ -720,7 +730,7 @@ def _real_world_payload() -> dict[str, Any]:
 def _evaluation_payload(real_world: Mapping[str, Any]) -> dict[str, Any]:
     """Expose the evaluation split without inventing unrun benchmark scores."""
 
-    controlled_path = Path(__file__).resolve().parents[1] / "docs" / "evaluation" / "adversarial.json"
+    controlled_path = _evaluation_manifest_path("adversarial.json")
     controlled_count = 0
     try:
         raw = json.loads(controlled_path.read_text(encoding="utf-8"))
