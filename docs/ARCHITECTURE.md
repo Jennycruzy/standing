@@ -130,5 +130,5 @@ Sibyl preserves engineering intent and its journal. Virtuals ACP acquires
 fresh verification when evidence is stale or insufficient. Base EAS gives
 observations a public chain record. ERC-8004 records observer outcomes and
 reputation signals. The repository includes three human-reviewed public cases,
-including vendor expiries. Deployment, a public sandbox video, and third-party PMF
+including vendor expiries. A public product walkthrough and third-party PMF
 confirmation remain external publication tasks.

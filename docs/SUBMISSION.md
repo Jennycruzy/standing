@@ -1,6 +1,6 @@
 # Standing submission kit
 
-This file is the final-day control sheet. Replace the four placeholders before
+This file is the final-day control sheet. Replace the three remaining placeholders before
 submitting:
 
 ```text
@@ -50,13 +50,13 @@ second and third processes recall ACME-001 and its governed code from the same
 Sibyl-backed store. Keep the UTC timestamp or commit hash visible in the same
 continuous, unedited recording.
 
-### 0:20–0:50 — Original decision and time travel
+### 0:20–0:45 — Original decision and time travel
 
 Open the dashboard. Show ACME-001: use fictional Acme because retention is at
 least 365 days. Move the time control to the decision date. Point out the two
 answers: what Standing now believes was true, and what Standing knew then.
 
-### 0:50–1:30 — Break, observe, and block
+### 0:45–1:20 — Break, observe, and block
 
 Point to the **CONTROLLED SCENARIO — FICTIONAL ACME** disclosure, then click
 **BREAK ASSUMPTION**. Explain exactly what is happening: this safe control
@@ -74,28 +74,33 @@ live proof: ACP job → verifier source extraction → Base EAS observation
 Open evidence provenance and show the source, extraction method, effective
 time, recorded time, and supersession link.
 
-### 1:30–2:05 — Prove memory is load-bearing
+### 1:20–1:45 — Prove memory is load-bearing
 
 Press **RUN MEMORY PROOF** and show the backend's identical review with a fresh
 empty store. The external fact still exists, but the decision, original
 assumption, governed path, and historical protection disappear in the memory-
 removed arm.
 
-### 2:05–2:35 — Finish the lifecycle
+### 1:45–2:15 — Finish the lifecycle
 
 Click **RECORD REPLACEMENT DECISION**, then rerun review. Show ACME-001 as
 SUPERSEDED, STORAGE-002 as current, and the result as ALLOW. Emphasize that
 Standing does not end at detection and never erases the old reasoning.
 
-### 2:35–3:15 — Partner and real-world proof
+### 2:15–2:50 — Partner and real-world proof
 
-Open **Live partner proof** in the dashboard. Click the completed Virtuals ACP
-job and the Base EAS transaction to show the integrations doing the product's
-verification work. Then show the real-world evaluation packet and
+Open **Live historical proof** in the dashboard. Open the public Virtuals ACP
+scan, point to completed job `77748`, and open the Base EAS transaction to show
+the integrations doing the product's verification work. Then show the real-world evaluation packet and
 one official vendor source. Say:
 “The controlled flow is deterministic, and these three human-reviewed public
 cases test the same temporal model against public repository evidence, stale
 dependencies, and vendor changes.” Close with the thesis.
+
+### 2:50–3:00 — Close
+
+Say: “Standing remembers why software exists, knows when that reason stops
+being true, and stops teams from unknowingly building on expired assumptions.”
 
 ## Public post 1 — product launch
 
@@ -155,13 +160,9 @@ Code: https://github.com/Jennycruzy/standing
 ## Final validation
 
 ```sh
-.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
-npm --prefix acp-adapter test
-npm --prefix acp-adapter run typecheck
-.venv/bin/standing memory-proof
-.venv/bin/python scripts/check_release.py --controlled-scenario-disclosed
+make verify
 ```
 
-The real-world corpus gates now pass. The stricter production release check may
-remain non-zero for requirements documented in the trust model; this does not
-prevent presenting the complete hackathon product workflow.
+The real-world corpus gates now pass. The separate strict trust gate remains
+non-zero until external operator independence is recorded; that is a disclosed
+evidence limitation rather than a failed product verification command.

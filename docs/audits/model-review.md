@@ -40,4 +40,4 @@ The model boundary remains advisory, but the persistence handoff is now wired:
 the human-confirmed, source-hashed bitemporal observation and journals the
 confirmation. It does not bypass acceptance or promote a condition. The
 remaining live-model, external-review, and release claims still require the
-inputs described in [`docs/LIMITATIONS.md`](../LIMITATIONS.md).
+inputs described in the README's [trust boundaries](../../README.md#trust-boundaries).

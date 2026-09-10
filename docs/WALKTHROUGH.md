@@ -98,4 +98,4 @@ Temporal evidence can be inspected directly:
 This is a deterministic controlled scenario, not the real-world proof
 case. The repository contains three human-reviewed, source-linked real-world
 cases. Production trust requirements are documented separately in the trust
-model and limitations; they should not interrupt the product walkthrough.
+model and trust boundaries; they should not interrupt the product walkthrough.

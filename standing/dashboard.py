@@ -42,7 +42,8 @@ EVALUATION_CASES_PATH = (
 )
 PARTNER_PROOF = {
     "acp_job_id": "77748",
-    "acp_job_url": "https://api.acp.virtuals.io/jobs/8453/77748",
+    "acp_job_url": "https://app.virtuals.io/acp/scan",
+    "acp_api_url": "https://api.acp.virtuals.io/jobs/8453/77748",
     "acp_public_url": "https://app.virtuals.io/",
     "eas_uid": "0x70675af1277c400c155de2e32684cfb264be8061578fb9afa17c6fcdd001bf5e",
     "eas_transaction_url": "https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff",
@@ -121,7 +122,7 @@ class SandboxController:
             DecisionProposal(
                 decision_id="AUDIT-003",
                 title="Keep an audit trail for archive changes",
-                description="A non-blocking proposal retained to shows confirmation workflow.",
+                description="A non-blocking proposal retained to showcase the confirmation workflow.",
                 governed_paths=("docs/audits/",),
                 conditions=(
                     {
@@ -1054,7 +1055,8 @@ const initial = {encoded};
 let model = initial;
 let selectedTime = null;
 const pathViews = {{'/console/reviews':'reviews','/console/decisions':'decisions','/console/evidence':'evidence','/console/timeline':'timeline','/console/evaluation':'evaluation','/console/activity':'activity','/console/sandbox':'sandbox'}};
-let activeView = new URLSearchParams(window.location.search).get('view') || pathViews[window.location.pathname] || 'overview';
+const pathView = window.location.pathname.startsWith('/console/decisions/') ? 'decisions' : window.location.pathname.startsWith('/console/evidence/') ? 'evidence' : pathViews[window.location.pathname];
+let activeView = new URLSearchParams(window.location.search).get('view') || pathView || 'overview';
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}}[c]));
 const formatDate = (seconds) => seconds ? new Date(Number(seconds) * 1000).toISOString().slice(0,10) : '—';
@@ -1109,7 +1111,7 @@ function renderProposals() {{ const proposals = model.proposals || []; if (!prop
 function renderMemory() {{ const comparison = model.memory_comparison; if (!comparison) {{ $('memoryComparison').innerHTML = '<div class="metric"><div class="label">Ready to run</div><div class="value">Backend ablation pending</div><p class="muted">Run the memory proof to compare the same review with and without remembered intent.</p></div>'; return; }} const on = comparison.memory_on || {{}}; const off = comparison.memory_removed || {{}}; $('memoryComparison').innerHTML = `<div class="comparison-grid"><div class="comparison-head"></div><div class="comparison-head">MEMORY PRESENT</div><div class="comparison-head">MEMORY REMOVED</div><div class="comparison-label">External fact</div><div class="metric">${{esc(on.current_fact)}} days</div><div class="metric">${{esc(off.current_fact)}} days</div><div class="comparison-label">Decision found</div><div class="metric">${{esc(on.decision_found || 'None')}}</div><div class="metric">${{esc(off.decision_found || 'None')}}</div><div class="comparison-label">Original assumption</div><div class="metric">${{esc(on.assumption || 'Missing')}}</div><div class="metric">${{esc(off.assumption || 'Missing')}}</div><div class="comparison-label">Expiry identified</div><div class="metric ${{on.expiry_detected ? 'blocked' : 'stands'}}">${{on.expiry_detected ? 'Yes' : 'No'}}</div><div class="metric">No</div><div class="comparison-label">Protection</div><div class="metric ${{on.protection === 'BLOCK' ? 'blocked' : 'allow'}}">${{esc(on.protection)}}</div><div class="metric unknown">${{esc(off.protection)}}</div></div><p class="muted" style="margin-top:16px">${{esc(comparison.conclusion || '')}}</p>`; }}
 function renderWaivers() {{ const waivers = model.waivers || []; if (!waivers.length) {{ $('waivers').innerHTML = '<p class="muted">No human waiver is recorded. A non-standing result remains blocked.</p>'; return; }} $('waivers').innerHTML = waivers.map((w) => `<div class="metric"><div class="label">${{esc(w.status || 'WAIVER')}}</div><div class="value">${{esc(w.waiver_id || '—')}} · ${{esc(w.decision_id || '—')}}</div><p class="muted">Approved by ${{esc(w.issued_by || '—')}} · expires ${{esc(formatDate(w.expires_at))}} · ${{esc(w.reason || '')}}</p></div>`).join(''); }}
 function renderRealWorld() {{ const proof = model.real_world || {{}}; const cases = proof.cases || []; const evaluation = model.evaluation || {{}}; const statusClass = proof.status === 'REVIEWED' ? 'stands' : 'unknown'; $('realWorld').innerHTML = `<div class="grid"><div class="metric"><div class="label">Review status</div><div class="value ${{statusClass}}">${{esc(proof.status || 'PENDING')}}</div></div><div class="metric"><div class="label">Public cases</div><div class="value">${{esc(proof.reviewed_case_count ?? 0)}}</div></div><div class="metric"><div class="label">Controlled scenarios</div><div class="value">${{esc(evaluation.controlled_scenarios ?? 0)}}</div></div></div><div class="disclosure">Real-world evidence is reported separately from the controlled scenario. No benchmark score is claimed until all prediction artifacts are recorded.</div>${{cases.length ? cases.map((c) => `<details><summary>${{esc(c.case_id)}} · ${{esc(c.review_status || 'PENDING HUMAN REVIEW')}}</summary><p class="muted">${{esc(c.repository || '')}}</p><p><a href="${{esc(c.decision_url)}}" target="_blank" rel="noreferrer">Decision artifact ↗</a> · <a href="${{esc(c.historical_ground_truth_url)}}" target="_blank" rel="noreferrer">Historical source ↗</a> · <a href="${{esc(c.current_ground_truth_url)}}" target="_blank" rel="noreferrer">Current source ↗</a></p><p class="muted">${{esc(c.disclosure || '')}}</p></details>`).join('') : '<p class="muted">No source-linked public case is recorded.</p>'}}`; }}
-function renderPartnerProof() {{ const proof = model.partner_proof || {{}}; const agents = proof.agents || []; $('partnerProof').innerHTML = `<p>${{esc(proof.summary || 'No completed verification record is available.')}}</p><div class="chain"><div class="chain-step"><div class="label">01 · Virtuals ACP</div><strong>Job ${{esc(proof.acp_job_id || '—')}} · completed</strong><span><a href="${{esc(proof.acp_public_url || '#')}}" target="_blank" rel="noreferrer">Open platform ↗</a><br><a href="${{esc(proof.acp_job_url || '#')}}" target="_blank" rel="noreferrer">Technical record ↗</a><br>API access may require credentials.</span></div><div class="chain-step"><div class="label">02 · Verifier</div><strong>Source extracted</strong><span>Typed value returned with extraction provenance.</span></div><div class="chain-step"><div class="label">03 · Base EAS</div><strong>Observation recorded</strong><span><a href="${{esc(proof.eas_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open Base transaction ↗</a></span></div><div class="chain-step"><div class="label">04 · Sibyl</div><strong>Read back and stored</strong><span>Condition reference and standing journal updated.</span></div><div class="chain-step"><div class="label">05 · ERC-8004</div><strong>Outcome recorded</strong><span><a href="${{esc(proof.erc8004_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open feedback ↗</a></span></div></div><div class="metric" style="margin-top:18px"><div class="label">Registered agent identities</div><div class="value">${{agents.length}} Virtuals profiles</div><p>${{agents.map((agent) => `<span style="display:block;margin-top:8px"><b>${{esc(agent.name)}}</b> · ${{esc(agent.role)}} · profile <code>${{esc(agent.virtual_agent_id)}}</code></span>`).join('')}}</p><p><a href="${{esc(proof.acp_directory_url || '#')}}" target="_blank" rel="noreferrer">Open agent directory ↗</a> · <a href="${{esc(proof.acp_scan_url || '#')}}" target="_blank" rel="noreferrer">Open ACP scan ↗</a></p><p class="muted">Registry profile IDs are displayed as identities; no ACP Entity ID is inferred from them.</p></div><details><summary>Evidence identity</summary><pre>${{esc(JSON.stringify({{eas_uid: proof.eas_uid, acp_job_id: proof.acp_job_id, erc8004_agent_id: proof.erc8004_agent_id}}, null, 2))}}</pre></details>`; }}
+function renderPartnerProof() {{ const proof = model.partner_proof || {{}}; const agents = proof.agents || []; $('partnerProof').innerHTML = `<p>${{esc(proof.summary || 'No completed verification record is available.')}}</p><div class="chain"><div class="chain-step"><div class="label">01 · Virtuals ACP</div><strong>Job ${{esc(proof.acp_job_id || '—')}} · completed</strong><span><a href="${{esc(proof.acp_job_url || '#')}}" target="_blank" rel="noreferrer">Open public ACP scan ↗</a><br>Authenticated job record retained below.</span></div><div class="chain-step"><div class="label">02 · Verifier</div><strong>Source extracted</strong><span>Typed value returned with extraction provenance.</span></div><div class="chain-step"><div class="label">03 · Base EAS</div><strong>Observation recorded</strong><span><a href="${{esc(proof.eas_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open Base transaction ↗</a></span></div><div class="chain-step"><div class="label">04 · Sibyl</div><strong>Read back and stored</strong><span>Condition reference and standing journal updated.</span></div><div class="chain-step"><div class="label">05 · ERC-8004</div><strong>Outcome recorded</strong><span><a href="${{esc(proof.erc8004_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open feedback ↗</a></span></div></div><div class="metric" style="margin-top:18px"><div class="label">Registered agent identities</div><div class="value">${{agents.length}} Virtuals profiles</div><p>${{agents.map((agent) => `<span style="display:block;margin-top:8px"><b>${{esc(agent.name)}}</b> · ${{esc(agent.role)}} · profile <code>${{esc(agent.virtual_agent_id)}}</code></span>`).join('')}}</p><p><a href="${{esc(proof.acp_directory_url || '#')}}" target="_blank" rel="noreferrer">Open agent directory ↗</a> · <a href="${{esc(proof.acp_scan_url || '#')}}" target="_blank" rel="noreferrer">Open ACP scan ↗</a></p><p class="muted">Registry profile IDs are displayed as identities; no ACP Entity ID is inferred from them.</p></div><details><summary>Evidence identity</summary><pre>${{esc(JSON.stringify({{eas_uid: proof.eas_uid, acp_job_id: proof.acp_job_id, acp_api_record: proof.acp_api_url, erc8004_agent_id: proof.erc8004_agent_id}}, null, 2))}}</pre><p class="muted">The ACP API record requires platform credentials and returns HTTP 401 to anonymous visitors.</p></details>`; }}
 function renderProvenance(finding) {{ const rows = allObservations(finding); $('provenance').innerHTML = rows.length ? rows.map((x) => `<details><summary>${{esc(x.observation_uid)}} · ${{esc(x.value)}} ${{esc(x.unit || '')}}</summary><div class="provenance-row"><div class="label">Value</div><div>${{esc(x.value)}} ${{esc(x.unit || '')}}</div></div><div class="provenance-row"><div class="label">Effective</div><div>${{formatDate(x.effective_from)}}</div></div><div class="provenance-row"><div class="label">Observed / recorded</div><div>${{formatDate(x.observed_at)}} / ${{formatDate(x.recorded_at)}}</div></div><div class="provenance-row"><div class="label">Source</div><div><a href="${{esc(x.source_url || '#')}}" target="_blank" rel="noreferrer">${{esc(x.source_url || 'not recorded')}} ↗</a></div></div><div class="provenance-row"><div class="label">Extraction</div><div><code>${{esc(x.extraction_method || '—')}} · ${{esc(x.extraction_version || '—')}}</code></div></div><div class="provenance-row"><div class="label">Evidence hash</div><div><code>${{esc(x.evidence_hash || '—')}}</code></div></div><p class="muted">${{esc(x.notes || '')}}</p><details><summary>View raw record</summary><pre>${{esc(JSON.stringify(x, null, 2))}}</pre></details></details>`).join('') : '<p class="muted">No temporal observations are recorded.</p>'; }}
 function renderActivity() {{ const rows = model.activity || []; $('activityLog').innerHTML = rows.length ? rows.map((row) => `<div class="activity-row"><div class="activity-time">${{esc(row.timestamp || 'journal time')}}</div><div class="activity-event">${{esc(row.event || 'journal event')}}</div><div><b>${{esc(row.decision_id || 'Standing')}}</b><div class="muted">${{esc(row.detail || '')}}</div></div></div>`).join('') : '<p class="muted">No activity has been recorded yet.</p>'; }}
 async function action(name) {{ try {{ const response = await fetch('/api/sandbox/' + name, {{method:'POST'}}); const body = await response.json(); if (!response.ok) throw new Error(body.error || 'action failed'); if (name === 'waiver') {{ $('actionResult').textContent = body.disclosure + ' ' + body.status; setView('sandbox'); return; }} model = body; selectedTime = null; const messages = {{'break':'Controlled source changed: 365 → 90 days; the backend re-evaluated ACME-001.','reset':'Sandbox reset: ACME-001 is standing again.','resolve':'ACME-001 superseded by STORAGE-002.','confirm-proposal':'Human confirmation recorded; the proposal is now a decision.','reject-proposal':'Human rejection recorded; no decision was created.','review':'Backend review completed.','memory-comparison':'Memory proof completed against a fresh store.'}}; $('actionResult').textContent = messages[name] || 'Action completed.'; if (name === 'memory-comparison') setView('evidence'); else if (name === 'review') setView('reviews'); render(); }} catch (error) {{ $('actionResult').textContent = String(error); }} }}
@@ -1123,6 +1125,9 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
     """Serve the Standing product surface and controlled-scenario endpoints."""
 
     class Handler(BaseHTTPRequestHandler):
+        server_version = "Standing"
+        sys_version = ""
+
         def do_GET(self) -> None:  # noqa: N802
             try:
                 parsed = urlparse(self.path)
@@ -1140,6 +1145,30 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
                     "/console/sandbox",
                 }:
                     _respond_html(self, render_dashboard_html(app.state()))
+                elif parsed.path.startswith("/console/decisions/"):
+                    decision_id = unquote(parsed.path[len("/console/decisions/"):]).strip("/")
+                    exists = any(
+                        item.get("decision_id") == decision_id
+                        for item in app.state()["decisions"]
+                    )
+                    if not decision_id or not exists:
+                        _respond_json(self, {"error": "decision not found"}, status=HTTPStatus.NOT_FOUND)
+                    else:
+                        _respond_html(self, render_dashboard_html(app.state()))
+                elif parsed.path.startswith("/console/evidence/"):
+                    evidence_id = unquote(parsed.path[len("/console/evidence/"):]).strip("/")
+                    state = app.state()
+                    condition_exists = bool(evidence_id and app.tools.condition_history(evidence_id))
+                    observation_exists = any(
+                        observation.get("observation_uid") == evidence_id
+                        for decision in state["decisions"]
+                        for condition in decision.get("conditions", [])
+                        for observation in condition.get("observations", [])
+                    )
+                    if not condition_exists and not observation_exists:
+                        _respond_json(self, {"error": "evidence not found"}, status=HTTPStatus.NOT_FOUND)
+                    else:
+                        _respond_html(self, render_dashboard_html(state))
                 elif parsed.path == "/api/state":
                     _respond_json(self, app.state())
                 elif parsed.path == "/api/sandbox-source":
@@ -1254,6 +1283,7 @@ def _respond_json(handler: BaseHTTPRequestHandler, body: Mapping[str, Any], *, s
     handler.send_header("content-type", "application/json; charset=utf-8")
     handler.send_header("content-length", str(len(encoded)))
     handler.send_header("cache-control", "no-store")
+    _send_security_headers(handler)
     handler.end_headers()
     handler.wfile.write(encoded)
 
@@ -1264,5 +1294,21 @@ def _respond_html(handler: BaseHTTPRequestHandler, html: str) -> None:
     handler.send_header("content-type", "text/html; charset=utf-8")
     handler.send_header("content-length", str(len(encoded)))
     handler.send_header("cache-control", "no-store")
+    _send_security_headers(handler)
     handler.end_headers()
     handler.wfile.write(encoded)
+
+
+def _send_security_headers(handler: BaseHTTPRequestHandler) -> None:
+    """Apply a narrow browser policy to every public response."""
+
+    handler.send_header("x-content-type-options", "nosniff")
+    handler.send_header("x-frame-options", "DENY")
+    handler.send_header("referrer-policy", "no-referrer")
+    handler.send_header("permissions-policy", "camera=(), microphone=(), geolocation=()")
+    handler.send_header(
+        "content-security-policy",
+        "default-src 'self'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'; "
+        "img-src 'self' data:; object-src 'none'; script-src 'self' 'unsafe-inline'; "
+        "style-src 'self' 'unsafe-inline'; connect-src 'self'",
+    )

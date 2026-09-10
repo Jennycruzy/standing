@@ -17,7 +17,7 @@ The wrapper persists decisions, conditions, observer records, current standing, 
 - [`standing/memory.py`](../../standing/memory.py) contains the single environment-flag read and all memory operations.
 - [`tests/test_memory.py`](../../tests/test_memory.py) proves persistence, duplicate replacement, path search, archive/restore, empty storage, and the single read site.
 
-## Gaps recorded
+## Historical gaps recorded (8 September snapshot)
 
 - The wrapper does not yet evaluate a decision or publish a condition observation. Those belong to the evaluator and chain work that follows.
 - The archive restore operation uses the narrow SQLite fallback in [`scripts/sibyl_archive.py`](../../scripts/sibyl_archive.py) because the installed client exposes archive but not restore.
@@ -26,3 +26,12 @@ The wrapper persists decisions, conditions, observer records, current standing, 
 ## Exit statement
 
 The memory boundary is ready for the decision evaluator and reviewer wiring. No production vendor record is created by this increment.
+
+## Current continuation addendum (10 September 2026)
+
+The first historical gap above has since been closed. The reviewer now resolves
+changed paths to remembered decisions, reads accepted temporal condition
+references, evaluates standing, and journals the result. Accepted evidence is
+promoted into those references and dependent decisions are re-evaluated. See
+[`docs/audits/temporal-product.md`](temporal-product.md) for the current system
+audit; the archive fallback and fixture boundaries remain accurately disclosed.

@@ -29,7 +29,7 @@ Standing     EXPIRED — BLOCK
 - **Public evidence:** three human-reviewed repository/vendor cases are kept
   separate from the controlled scenarios.
 - **Live historical proof:** completed ACP job `77748`, source extraction, Base
-  EAS observation, Sibyl readback, and ERC-8004 outcome are linked above.
+  EAS observation, Sibyl readback, and ERC-8004 outcome are linked below.
 - **Verification:** the repository carries temporal, reviewer, source-boundary,
   and adapter tests; [`make verify`](evidence/LATEST.md) records an immutable
   run artifact.
@@ -49,7 +49,7 @@ Standing     EXPIRED — BLOCK
 
 Live integration evidence:
 
-- [Virtuals ACP platform](https://app.virtuals.io/) — completed verifier job `77748` (the technical API record is credential-gated)
+- [Virtuals ACP scan](https://app.virtuals.io/acp/scan) — completed verifier job `77748` (search by job ID; the technical API record is credential-gated)
 - [Virtuals ACP agent directory](https://app.virtuals.io/acp/agents) — `Standing Verifier` profile `139452` and `Standing Requestor` profile `139450`
 - [ERC-8004 Standing identity registration](https://basescan.org/tx/0xb1a5586929a8b02fb6a4527551124ce290328eda684aa18a424a78e2de64e733) — agent ID `84973`
 - [Base EAS observation transaction](https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff)
@@ -266,8 +266,23 @@ npm --prefix acp-adapter test
 npm --prefix acp-adapter run typecheck
 ```
 
-Current verified result: **152 Python tests and 9 TypeScript tests pass**, and
+Current verified result: **155 Python tests and 9 TypeScript tests pass**, and
 the TypeScript adapter passes `tsc --noEmit`.
+
+## Trust boundaries
+
+- Fictional Acme is a controlled sandbox scenario; its buttons replay fixed
+  local actions and do not start funded ACP jobs.
+- Completed ACP, Base EAS, Sibyl, and ERC-8004 records are presented separately
+  as live historical proof. Standing keeps same-owner evidence `CONTESTED`
+  rather than treating a successful transaction as truth.
+- The three public cases are human-reviewed source chains, not an aggregate
+  accuracy claim. Real and controlled evaluation remain separate.
+- Unsupported required predicates return `UNKNOWN`. Human confirmation is
+  required for governing decisions, and only a human can issue a waiver.
+- The pinned ACP SDK currently carries transitive npm advisories with no
+  available direct-package fix; the adapter is isolated from the public web
+  service and will move with compatible upstream releases.
 
 ## Documentation
 
@@ -275,7 +290,6 @@ the TypeScript adapter passes `tsc --noEmit`.
 - [Product walkthrough](docs/WALKTHROUGH.md)
 - [Trust model](docs/TRUST-MODEL.md)
 - [Evaluation methodology](docs/EVALUATION.md)
-- [Limitations](docs/LIMITATIONS.md)
 
 ## Team
 
