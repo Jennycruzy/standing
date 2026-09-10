@@ -74,6 +74,19 @@ class DashboardTests(unittest.TestCase):
         self.assertNotIn("STORAGE-002", decisions)
         self.assertEqual(state["sandbox"]["current_value"], 365)
 
+    def test_reset_is_repeatable_after_any_sandbox_sequence(self) -> None:
+        self.app.action("break")
+        self.app.action("reset")
+        self.app.action("break")
+        self.app.action("resolve")
+        state = self.app.action("reset")
+
+        decisions = {item["decision_id"]: item for item in state["decisions"]}
+        self.assertEqual(decisions["ACME-001"]["body"]["status"], "CURRENT")
+        self.assertNotIn("STORAGE-002", decisions)
+        self.assertEqual(state["sandbox"]["current_value"], 365)
+        self.assertEqual(state["primary_finding"]["evaluation"]["state"], "STANDS")
+
     def test_resolve_supersedes_old_decision_and_leaves_replacement_active(self) -> None:
         self.app.action("break")
         state = self.app.action("resolve")

@@ -9,7 +9,7 @@ from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from time import time
+from time import time, time_ns
 from typing import Any, Mapping, Sequence
 from urllib.parse import unquote, urlparse
 
@@ -181,7 +181,7 @@ class SandboxController:
         except (NotFoundError, RuntimeError, ValueError):
             pass
         observation = _sandbox_observation(
-            "sandbox-reset",
+            f"sandbox-reset-{time_ns()}",
             365,
             int(time()),
             "2026-09-10",
