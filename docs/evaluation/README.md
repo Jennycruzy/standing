@@ -1,10 +1,11 @@
 # Source-linked evaluation corpus
 
 `cases.json` is the real-world release corpus manifest. It currently contains
-one source-linked candidate, marked `human_reviewed: false`, for a public
-GitHub Actions retirement finding. It is not counted toward release metrics
-until a human independently verifies and promotes it; a pending candidate is
-not a published score.
+three source-linked candidates, marked `human_reviewed: false`, covering two
+GitHub Actions compatibility/retirement decisions and an AWS Lambda runtime
+deprecation. They are not counted toward release metrics until a human verifies
+and promotes them; pending candidates are not a published score. Use the
+[review packet](REVIEW-PACKET.md) to perform that check consistently.
 
 `adversarial.json` is a separate synthetic corpus of 17 deterministic failure
 scenarios. Its score must never be combined with the real-world corpus.

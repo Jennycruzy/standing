@@ -1,0 +1,7 @@
+Source: https://docs.aws.amazon.com/lambda/latest/dg/lambda-runtimes.html
+Captured: 2026-09-10
+
+AWS lists nodejs16.x among deprecated Lambda runtimes with a deprecation date of
+2024-06-12.
+
+This snapshot is a concise review excerpt, not a mirror of the source.

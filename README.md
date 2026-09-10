@@ -16,6 +16,12 @@ conflict history, and records what eventually replaced an expired decision.
 
 ## Try the product
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jennycruzy/standing)
+
+The Render blueprint launches the isolated controlled demo without credentials
+or arbitrary signing. For the final presentation and public-post copy, use the
+[submission kit](docs/SUBMISSION.md).
+
 Run the isolated, disclosure-first dashboard:
 
 ```sh
@@ -102,7 +108,7 @@ The Responses transport uses structured JSON output and reads `OPENAI_API_KEY` f
 
 Decision revisions, remediation, waivers, and time travel are pure lifecycle primitives in [`standing/lifecycle.py`](standing/lifecycle.py). A revision supersedes its predecessor at an explicit effective time; a remediation can end as `RESOLVED` or `SUPERSEDED` without erasing the prior decision; and an expiring waiver can permit a human-approved action without changing the evaluator's factual state. [`docs/audits/lifecycle.md`](docs/audits/lifecycle.md) records the boundary.
 
-The source-linked evaluation harness is [`standing/evaluation.py`](standing/evaluation.py), with measurement in [`scripts/evaluate_dataset.py`](scripts/evaluate_dataset.py). Each case links the repository decision and published ground truth, pins historical/current source excerpts, records effective/capture times, and explicitly identifies synthetic data. The manifest at [`docs/evaluation/cases.json`](docs/evaluation/cases.json) contains one pending public candidate; it is not release-eligible until a human independently reviews it.
+The source-linked evaluation harness is [`standing/evaluation.py`](standing/evaluation.py), with measurement in [`scripts/evaluate_dataset.py`](scripts/evaluate_dataset.py). Each case links the repository decision and published ground truth, pins historical/current source excerpts, records effective/capture times, and explicitly identifies synthetic data. The manifest at [`docs/evaluation/cases.json`](docs/evaluation/cases.json) contains three pending public candidates; they are not release-eligible until a human reviews them using the [`review packet`](docs/evaluation/REVIEW-PACKET.md).
 
 The read-only console renderer is [`standing/console.py`](standing/console.py), exposed by [`scripts/render_console.py`](scripts/render_console.py). It places the controlled-demo disclosure in the page itself, shows release blockers, and supports a historical `--as-of` view; lifecycle events cannot hide the latest standing result.
 

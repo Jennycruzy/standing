@@ -1,0 +1,9 @@
+Sources:
+- https://github.com/aws-samples/aws-lambda-nextjs/blob/main/README.md
+- https://github.com/aws-samples/aws-lambda-nextjs/blob/main/nextjs-lambda-sam/template.yaml
+Captured: 2026-09-10
+
+The AWS sample identifies Node.js 16.x as a requirement. Its governed SAM
+template configures the Lambda function with Runtime: nodejs16.x.
+
+This snapshot is a concise review excerpt, not a mirror of either source.

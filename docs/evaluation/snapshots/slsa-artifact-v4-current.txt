@@ -1,0 +1,10 @@
+Sources:
+- https://github.com/slsa-framework/slsa-github-generator/blob/main/CHANGELOG.md
+- https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/
+Captured: 2026-09-10
+
+The SLSA generator v2.0.0 changelog records migration of upload-artifact and
+download-artifact to v4. GitHub's vendor notice states that v3 ceased working
+for GitHub.com customers on 2025-01-30.
+
+This snapshot is a concise review excerpt, not a mirror of either source.

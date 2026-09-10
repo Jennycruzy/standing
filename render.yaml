@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: standing-demo
+    runtime: python
+    plan: free
+    buildCommand: python -m pip install .
+    startCommand: standing dashboard --demo --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/state
+    autoDeployTrigger: commit
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.13
+      - key: PYTHONUNBUFFERED
+        value: "1"

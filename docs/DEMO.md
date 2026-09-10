@@ -80,7 +80,7 @@ standing decision current src/archive.py
 ## Disclosure
 
 This is a deterministic controlled demonstration, not the real-world proof
-case. The repository contains one source-linked real-world candidate pending
+case. The repository contains three source-linked real-world candidates pending
 independent human review. A reviewed real corpus, independent second
 operator, deployed URL, and third-party confirmation remain separate release
 tasks.

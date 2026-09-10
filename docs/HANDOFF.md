@@ -21,7 +21,7 @@ model proposals, human-only confirmation/rejection, the separate synthetic
 trust, demo, evaluation, and limitations documents. Observer records now
 preserve explicit wallet/operator/source/extraction identity metadata.
 
-The release gate is intentionally still closed. There is one source-linked
+The release gate is intentionally still closed. There are three source-linked
 real-world candidate, but it is pending independent human review; there are
 zero reviewed real cases, no externally operated second verifier, no
 maintainer PMF confirmation, and no deployed URL/video/public submission
@@ -52,7 +52,7 @@ fabricated in the workspace.
 - The live-loop CLI now accepts `--provider-address` and `--offering-name` for an external marketplace Provider. External mode does not start the local seller worker, so a remote Provider can supply the second observer without exposing or copying its credentials.
 - Decision revision chains, time-travel snapshots, constrained remediation transitions, and human-only expiring waivers are implemented as pure lifecycle primitives in [`standing/lifecycle.py`](../standing/lifecycle.py). They preserve the factual evaluator result while making supersession, remediation, and temporary action authorization explicit.
 - The lifecycle records are now durable through dedicated Sibyl entities and the reviewer boundary. Revision promotion, remediation transitions, waiver issuance, and standing actions are journalled; an `allow` action for a non-standing result requires a stored, active human waiver.
-- The source-linked evaluation corpus contract and measurement scripts are implemented in [`standing/evaluation.py`](../standing/evaluation.py), [`scripts/evaluate_dataset.py`](../scripts/evaluate_dataset.py), and [`scripts/evaluate_arms.py`](../scripts/evaluate_arms.py). The manifest contains one source-linked real candidate, explicitly marked pending human review; it is not counted as a real evaluation result.
+- The source-linked evaluation corpus contract and measurement scripts are implemented in [`standing/evaluation.py`](../standing/evaluation.py), [`scripts/evaluate_dataset.py`](../scripts/evaluate_dataset.py), and [`scripts/evaluate_arms.py`](../scripts/evaluate_arms.py). The manifest contains three source-linked real candidates, explicitly marked pending human review; they are not counted as real evaluation results.
 - The release checker is [`scripts/check_release.py`](../scripts/check_release.py). It derives the vendor-expiry claim from non-synthetic `vendor_history` cases instead of accepting a separate assertion, reports the case IDs and operator identities used, and exits non-zero while the release gates remain unsatisfied.
 - The advisory model boundary is [`standing/model_review.py`](../standing/model_review.py), configured by [`config/model.json`](../config/model.json) and exposed for read-only review by [`scripts/run_model_review.py`](../scripts/run_model_review.py). Structured model output can select only known review targets or propose a source extraction; explicit human confirmation with the captured source bytes is required before a caller can write the resulting evidence.
 - The read-only console renderer is implemented in [`standing/console.py`](../standing/console.py) and [`scripts/render_console.py`](../scripts/render_console.py). It visibly labels controlled demo data, shows release blockers, and supports `--as-of` time travel over the persisted revision/journal view.
@@ -84,7 +84,7 @@ The repository has real commits and origin/main is configured. The latest pushed
 
 Read this file, inspect git status, run the Python and TypeScript offline
 suites, and keep `.env` out of git. Run the release checker to see the
-current blockers; it should report one pending real candidate, zero reviewed
+current blockers; it should report three pending real candidates, zero reviewed
 real cases, and one recorded operator. The next product steps are external:
 human-review the real corpus, obtain the second operator, run independent
 measurements, and collect PMF/deployment evidence. Acceptance should remain

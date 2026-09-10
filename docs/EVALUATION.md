@@ -11,7 +11,7 @@ public source for the justification, a hand-verified historical/current
 ground-truth chain, effective and capture times, and a SHA-256 hash of the
 captured source snapshot. `synthetic: false` is mandatory.
 
-The manifest currently contains one source-linked real candidate for GitHub's
+The manifest currently contains three source-linked real candidates, including GitHub's
 retirement of `actions/upload-artifact@v3` in a public repository review. It is
 marked `human_reviewed: false`, so it is not counted in release metrics until a
 human independently verifies the decision, path, historical/current chain,

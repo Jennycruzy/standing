@@ -87,7 +87,7 @@ evidence and is not counted as independent factual proof.
 
 [`docs/evaluation/cases.json`](../evaluation/cases.json) and
 [`docs/evaluation/adversarial.json`](../evaluation/adversarial.json) are
-separate. The former contains one source-linked public candidate pending
+separate. The former contains three source-linked public candidates pending
 human review; the latter contains 17 controlled adversarial fixtures. The
 multi-arm harness has Standing, no-memory, grep, stateless-model, and
 current-docs-only arms, with per-case miss explanations. No real-world metric
