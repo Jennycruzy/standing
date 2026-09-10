@@ -37,8 +37,8 @@ remain true.” Start a fresh terminal and run:
 ```sh
 date -u
 git rev-parse --short HEAD
-standing boot
-standing dashboard --demo
+.venv/bin/standing boot
+.venv/bin/standing dashboard --demo
 ```
 
 Explain that the fresh process recalls ACME-001 and its governed code through
@@ -79,8 +79,8 @@ Standing does not end at detection and never erases the old reasoning.
 ### 2:35–3:15 — Partner and real-world proof
 
 Open **Live partner proof** in the dashboard. Click the completed Virtuals ACP
-job and the Base EAS transaction so judges can see the integrations doing the
-product's verification work. Then show the real-world evaluation packet and
+job and the Base EAS transaction to show the integrations doing the product's
+verification work. Then show the real-world evaluation packet and
 one official vendor source. Say:
 “The controlled flow is deterministic, and these three human-reviewed public
 cases test the same temporal model against genuine engineering decisions and
@@ -143,10 +143,10 @@ Code: https://github.com/Jennycruzy/standing
 ## Final validation
 
 ```sh
-python -m unittest discover -s tests -p 'test_*.py'
+.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
 npm --prefix acp-adapter test
 npm --prefix acp-adapter run typecheck
-standing deletion-test
+.venv/bin/standing deletion-test
 .preflight-venv/bin/python scripts/check_release.py --controlled-demo-disclosed
 ```
 

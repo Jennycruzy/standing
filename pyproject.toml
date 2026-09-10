@@ -6,6 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "standing"
 version = "0.1.0"
 description = "A memory-backed reviewer for decisions and changing conditions"
+readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "certifi>=2024.8.30",
@@ -17,8 +18,13 @@ dependencies = [
 [project.scripts]
 standing = "standing.cli:main"
 
-[tool.setuptools.packages.find]
-include = ["standing*"]
+[project.urls]
+Homepage = "https://github.com/Jennycruzy/standing"
+Repository = "https://github.com/Jennycruzy/standing"
+Documentation = "https://github.com/Jennycruzy/standing/tree/main/docs"
+
+[tool.setuptools]
+packages = ["standing"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

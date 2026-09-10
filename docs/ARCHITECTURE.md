@@ -129,7 +129,6 @@ evaluator state and expire automatically.
 Sibyl preserves engineering intent and its journal. Virtuals ACP acquires
 fresh verification when evidence is stale or insufficient. Base EAS gives
 observations a public chain record. ERC-8004 records observer outcomes and
-reputation signals. The current repository has implemented these boundaries,
-but a real vendor expiry, independent operator, PMF confirmation, live URL,
-and public demo video remain external proof tasks rather than facts that can
-be synthesized locally.
+reputation signals. The repository includes three human-reviewed public cases,
+including vendor expiries. Deployment, a public demo video, and third-party PMF
+confirmation remain external publication tasks.

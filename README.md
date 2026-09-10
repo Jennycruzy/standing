@@ -1,204 +1,252 @@
 # Standing
 
-> **Standing remembers why code was written and blocks changes when the facts that justified that code are no longer true.**
+> **Standing remembers why code was written and blocks changes when the facts
+> that justified that code are no longer true.**
+
+Software repositories preserve code, but usually lose the assumptions behind
+it. A vendor changes a guarantee, an API is deprecated, or a policy expires—and
+the code that depended on the old fact continues as if nothing happened.
+
+Standing is a temporal system of record for engineering intent. It connects
+decisions to their assumptions, external evidence, and governed code paths. It
+revalidates stale facts and deterministically returns `STANDS`, `EXPIRED`,
+`UNKNOWN`, or `CONTESTED` before a change is allowed.
 
 ```text
-Decision: Use Acme because retention >= 365 days
-Then:     365 days ✓
-Now:      90 days ✕
-PR:       touches dependent code
-Standing: BLOCKED
+Decision     Use Acme for archives because retention >= 365 days
+Then         365 days ✓
+Now          90 days ✕
+Changed code src/archive.py
+Standing     EXPIRED — BLOCK
 ```
 
-Standing is a temporal system of record for engineering intent. It separates
-what was true from what Standing knew at the time, preserves supersession and
-conflict history, and records what eventually replaced an expired decision.
+## Start here
 
-## Judge it in three minutes
+[Run locally](#run-standing) ·
+[Deploy](https://render.com/deploy?repo=https://github.com/Jennycruzy/standing) ·
+[Demo walkthrough](docs/DEMO.md) ·
+[Architecture](docs/ARCHITECTURE.md) ·
+[Trust model](docs/TRUST-MODEL.md) ·
+[Evaluation](docs/EVALUATION.md)
+
+Live integration evidence:
+
+- [Completed Virtuals ACP verifier job 77748](https://api.acp.virtuals.io/jobs/8453/77748)
+- [Base EAS observation transaction](https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff)
+- [ERC-8004 verifier feedback transaction](https://basescan.org/tx/0xb12f670d1c643556b7bb6c45cec12462f9c7f7e41775681b4c1f9b0278146954)
+- [Registered Base EAS schemas](docs/audits/schema-registration.md)
+- [Complete verifier-loop audit](docs/audits/verifier-loop.md)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jennycruzy/standing)
+
+## What makes Standing different
+
+### It remembers engineering intent, not just text
+
+A decision records its human-approved justification, conditions, source
+artifact, and exact governed paths. Search retrieves candidates, but only exact
+path validation can affect a review.
+
+### It separates truth from knowledge
+
+Every observation has two timelines:
+
+- **Valid time:** when the fact was true in the outside world.
+- **Knowledge time:** when Standing observed and recorded it.
+
+That lets Standing answer both:
+
+```text
+What do we now believe was true on March 3?
+What evidence did the team actually have on March 3?
+```
+
+Later evidence can correct reconstructed history without rewriting what the
+team could reasonably have known at the time.
+
+### It distinguishes change from conflict
+
+`365 days → 90 days` across different effective periods is supersession, not a
+dispute. Incompatible values for the same effective period are `CONTESTED`.
+Canonical evidence selection accounts for effective time, supersession,
+acceptance, source trust, revocation, validity, and knowledge time.
+
+### It finishes the engineering lifecycle
+
+```text
+remember → verify → detect drift → block → waive or replace → supersede → allow
+```
+
+Old decisions and evidence remain historically queryable after replacement.
+
+## Run Standing
+
+Requirements: Python 3.12 and [`uv`](https://docs.astral.sh/uv/).
 
 ```sh
 git clone https://github.com/Jennycruzy/standing.git
 cd standing
 uv venv --python 3.12 .venv
 uv pip install --python .venv/bin/python .
-date -u
-git rev-parse --short HEAD
+```
+
+Start the isolated interactive demonstration:
+
+```sh
 .venv/bin/standing boot
 .venv/bin/standing dashboard --demo
 ```
 
-Then open `http://127.0.0.1:8787/` and follow one story:
+Open `http://127.0.0.1:8787/`.
 
-1. A fresh process recalls ACME-001 and the code it governs.
-2. **BREAK DEMO ASSUMPTION** changes the observed retention from 365 to 90.
-3. Standing identifies the exact dependent path and blocks the PR.
-4. **MEMORY OFF** removes the decision and its protection while the external
-   fact remains—proving memory is load-bearing.
-5. **RECORD REPLACEMENT DECISION** supersedes ACME-001 and restores ALLOW.
-6. **Live partner proof** links the completed Virtuals ACP job, Base EAS
-   observation, and ERC-8004 feedback used by the verification path.
+The dashboard provides:
 
-### Why Sibyl Memory makes this possible
+- the highest-priority current engineering finding;
+- a code → decision → assumption → evidence → standing graph;
+- bitemporal time travel for world truth and contemporaneous knowledge;
+- exact-path PR review and explicit human confirmation;
+- a memory-on versus memory-off comparison;
+- evidence provenance and three reviewed real-world cases;
+- fixed break, restore, waiver-inspection, and replacement controls; and
+- direct Virtuals ACP, Base EAS, and ERC-8004 proof links.
 
-Current vendor documentation can reveal a fact, but it cannot explain why a
-particular file depends on that fact or what engineers knew when they approved
-the decision. Sibyl persists that engineering intent, governed-path mapping,
-accepted evidence references, standing changes, waivers, and supersession
-history across fresh processes. Delete it and Standing can no longer connect
-the changed fact to the code, so the expiry protection disappears.
+The Acme interaction is visibly labelled as a controlled fictional scenario.
+Its verifier genuinely extracts the value from the published source. The fixed
+controls make the workflow safe and repeatable; they do not expose keys,
+arbitrary URLs, transaction destinations, calldata, or spend amounts.
 
-### Team and partner stacks
-
-- Builder: **Jennycruzy** / **Jenny builds**.
-- **Sibyl Memory:** critical-path decision, condition, journal, and reference
-  persistence.
-- **Virtuals ACP:** completed verifier jobs that acquire fresh observations.
-- **Base EAS:** immutable observation records and schema registrations.
-- **ERC-8004:** verifier outcome feedback.
-
-## Try the product
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jennycruzy/standing)
-
-The Render blueprint launches the isolated controlled demo without credentials
-or arbitrary signing. For the final presentation and public-post copy, use the
-[submission kit](docs/SUBMISSION.md).
-
-Run the isolated, disclosure-first dashboard:
+## The load-bearing memory proof
 
 ```sh
-standing dashboard --demo
+.venv/bin/standing deletion-test
 ```
 
-Open `http://127.0.0.1:8787/`, then use the fixed **BREAK DEMO ASSUMPTION**,
-time-travel, **MEMORY OFF**, waiver preview, replacement, and restore controls.
-The fictional source is labelled throughout the product; it is a controlled
-demonstration, not vendor evidence.
+```text
+                         MEMORY ON       MEMORY OFF
+Decision found           ACME-001        none
+Assumption recovered     >= 365 days     none
+Current external fact    90 days         90 days
+Expiry identified        yes             no
+Protection               BLOCK           history unavailable
+```
 
-Run the command-line deletion comparison:
+The external fact survives deletion. What disappears is the engineering reason
+that connects the fact to the changed code. Without Sibyl, Standing cannot know
+why that file depended on the vendor guarantee, so its core protection fails.
+
+Critical memory paths:
+
+- Writes: [`standing/memory.py`](standing/memory.py#L41)
+- Fresh-process reads: [`standing/memory.py`](standing/memory.py#L47)
+- Governed-path lookup: [`standing/memory.py`](standing/memory.py#L148)
+- Archive and restore: [`standing/memory.py`](standing/memory.py#L163)
+- Deletion proof: [`tests/test_memory.py`](tests/test_memory.py#L75)
+- Review orchestration: [`standing/reviewer.py`](standing/reviewer.py#L59)
+
+Sibyl stores confirmed decisions, assumptions, accepted condition references,
+observer histories, standing-change journals, waivers, and supersession links.
+A fresh process reconstructs the review from those records instead of relying
+on conversation context.
+
+## Temporal CLI
 
 ```sh
-standing deletion-test
+.venv/bin/standing review
+.venv/bin/standing review --base main
+.venv/bin/standing history vendor.acme.retention_days
+.venv/bin/standing condition vendor.acme.retention_days --valid-as-of 2026-03-03
+.venv/bin/standing condition vendor.acme.retention_days --known-as-of 2026-03-03
+.venv/bin/standing decision current src/archive.py
+.venv/bin/standing waiver list
 ```
 
-The same entry points also expose temporal queries:
+Unsupported required predicates return `UNKNOWN`; wrong units and untrusted
+sources are rejected; expired waivers automatically restore the block.
+
+## How verification works
+
+```text
+Changed code
+    ↓
+Decision recalled from Sibyl Memory
+    ↓
+Condition freshness checked
+    ↓ stale or insufficient
+Virtuals ACP hires verifier
+    ↓
+Verifier fetches the source and extracts the actual value
+    ↓
+Base EAS records the observation
+    ↓
+Temporal acceptance promotes the canonical condition
+    ↓
+Dependent decisions are re-evaluated
+    ↓
+ALLOW / BLOCK / HUMAN WAIVER / REPLACEMENT
+```
+
+The seller cannot publish a separately configured answer: its extraction code
+validates the bound source, fetches it, extracts from JSON or HTML, validates
+type and unit, records extraction metadata, and only then publishes the
+observation. See [`acp-adapter/src/verifier.ts`](acp-adapter/src/verifier.ts)
+and [`acp-adapter/src/extraction.ts`](acp-adapter/src/extraction.ts).
+
+## Partner stack
+
+| Stack | Product responsibility | Verifiable implementation |
+| --- | --- | --- |
+| Sibyl Memory | Persists intent across fresh processes and makes historical review possible | [`standing/memory.py`](standing/memory.py) |
+| Virtuals ACP | Acquires fresh verification when evidence is stale or insufficient | [`standing/acp.py`](standing/acp.py), [completed job](https://api.acp.virtuals.io/jobs/8453/77748) |
+| Base EAS | Provides public observation identity, timestamps, references, and revocation state | [`standing/eas.py`](standing/eas.py), [observation transaction](https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff) |
+| ERC-8004 | Records verifier outcomes for reputation history | [`standing/reputation.py`](standing/reputation.py), [feedback transaction](https://basescan.org/tx/0xb12f670d1c643556b7bb6c45cec12462f9c7f7e41775681b4c1f9b0278146954) |
+
+## Evidence and evaluation
+
+Standing keeps two evaluation sets separate:
+
+- [Three human-reviewed real-world cases](docs/evaluation/cases.json), linking
+  public engineering artifacts to primary vendor history.
+- [Seventeen controlled adversarial cases](docs/evaluation/adversarial.json),
+  covering supersession, same-period conflict, late evidence, wrong units,
+  revocation, spoofed domains, stale evidence, unsupported predicates, exact-path
+  false matches, waiver expiry, decision supersession, and memory deletion.
+
+Real and controlled results are never merged into one score. The
+[methodology](docs/EVALUATION.md), [review packet](docs/evaluation/REVIEW-PACKET.md),
+and [trust model](docs/TRUST-MODEL.md) define the evidence boundaries.
+
+## Verification
 
 ```sh
-standing history vendor.acme.retention_days
-standing condition vendor.acme.retention_days --valid-as-of 2026-03-03
-standing condition vendor.acme.retention_days --known-as-of 2026-03-03
-standing decision current src/archive.py
+.venv/bin/python -m unittest discover -s tests -p 'test_*.py'
+npm --prefix acp-adapter test
+npm --prefix acp-adapter run typecheck
 ```
 
-Product documentation: [architecture](docs/ARCHITECTURE.md),
-[trust model](docs/TRUST-MODEL.md), [demo](docs/DEMO.md),
-[limitations](docs/LIMITATIONS.md), and [evaluation](docs/EVALUATION.md).
+Current verified result: **151 Python tests and 9 TypeScript tests pass**, and
+the TypeScript adapter passes `tsc --noEmit`.
 
-> **CONTROLLED DEMO:** the fictional Acme source makes the complete workflow safe, repeatable, and judge-operated. The verifier genuinely reads the published source; three separate human-reviewed public cases demonstrate the real-world temporal model.
+## Documentation
 
-## Memory
+- [Architecture](docs/ARCHITECTURE.md)
+- [Product demonstration](docs/DEMO.md)
+- [Trust model](docs/TRUST-MODEL.md)
+- [Evaluation methodology](docs/EVALUATION.md)
+- [Limitations](docs/LIMITATIONS.md)
 
-Sibyl Memory is the local store behind Standing. It is a database file on the machine, not a separate service.
+## Team
 
-- Decisions, conditions, and observer histories are written in [`standing/memory.py`](standing/memory.py#L41).
-- A fresh process reads them through the same file at [`standing/memory.py`](standing/memory.py#L47).
-- Decisions governing changed files are found by path at [`standing/memory.py`](standing/memory.py#L148).
-- Archive and restore use the real Sibyl client plus its documented restore fallback at [`standing/memory.py`](standing/memory.py#L163).
-- The memory-off test uses the same interface and starts with a new empty store at [`tests/test_memory.py`](tests/test_memory.py#L75).
+Built by **Jennycruzy** / **Jenny builds** for the Sibyl Labs Hackathon.
 
-The direct Python client is installed with:
+## Prior work
 
-```sh
-uv pip install --python .preflight-venv/bin/python sibyl-memory-client==0.8.0
-```
+Standing is original work created during the hackathon build window. It uses
+the published Sibyl Memory SDK, the official Virtuals ACP v2 client at the
+external adapter boundary, Base EAS, and ERC-8004 registries. Prior public
+scaffolding and preflight records are identified in the repository history and
+[`docs/preflight.json`](docs/preflight.json). No third-party project or source
+is represented as an endorsement.
 
-Run the tests with:
+## License
 
-```sh
-.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'
-```
-
-The local memory database is ignored by Git. Secrets remain in the environment and are never written into memory records.
-
-## Decision evaluation
-
-The pure evaluator is [`standing/evaluator.py`](standing/evaluator.py#L101). It checks only the four supported rules, returns `STANDS`, `EXPIRED`, `UNKNOWN`, or `CONTESTED`, and produces a repeatable fingerprint for the result.
-
-Only `EXPLICIT` and `CONFIRMED` conditions can block. An `INFERRED` or `EXTERNAL` condition remains visible as a note but cannot stop a change. The evaluator never reads files, calls a model, or writes to memory.
-
-Run the complete test suite with:
-
-```sh
-.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'
-```
-
-## Reviewer tools
-
-The memory-backed reviewer tools are in [`standing/reviewer.py`](standing/reviewer.py#L59). They search approved paths, read decisions and current condition values, run the evaluator, read the boot journal, and write a checked standing change.
-
-The write tool rejects a block when the evaluator returned `STANDS`, so the reviewer cannot invent a block. The real-storage tests are in [`tests/test_reviewer.py`](tests/test_reviewer.py#L12).
-
-The complete offline suite is run with the commands above; its current test
-counts are reported by the validation audit rather than hard-coded here. The
-TypeScript adapter suite also covers source extraction and typed metadata.
-
-## Advisory model boundary
-
-The optional model boundary is [`standing/model_review.py`](standing/model_review.py). [`scripts/run_model_review.py`](scripts/run_model_review.py) gives the model only changed paths, remembered candidate decisions, and the boot journal. Structured output may select known review targets and ask questions, but it cannot return a standing state, allow/block action, or approval. The extraction path returns a proposal only; [`confirm_extraction`](standing/model_review.py) requires an explicit human, the exact source snapshot bytes, and its SHA-256. [`ReviewerTools.record_confirmed_extraction`](standing/reviewer.py) can then persist the complete bitemporal observation and confirmation journal, but it deliberately does not accept or promote the condition; a separate acceptance check and explicit promotion are still required.
-
-The Responses transport uses structured JSON output and reads `OPENAI_API_KEY` from the environment. The model IDs and endpoint are in [`config/model.json`](config/model.json); no key or model response is written to the repository.
-
-Decision revisions, remediation, waivers, and time travel are pure lifecycle primitives in [`standing/lifecycle.py`](standing/lifecycle.py). A revision supersedes its predecessor at an explicit effective time; a remediation can end as `RESOLVED` or `SUPERSEDED` without erasing the prior decision; and an expiring waiver can permit a human-approved action without changing the evaluator's factual state. [`docs/audits/lifecycle.md`](docs/audits/lifecycle.md) records the boundary.
-
-The source-linked evaluation harness is [`standing/evaluation.py`](standing/evaluation.py), with measurement in [`scripts/evaluate_dataset.py`](scripts/evaluate_dataset.py). Each case links the repository decision and published ground truth, pins historical/current source excerpts, records effective/capture times, and explicitly identifies synthetic data. The manifest at [`docs/evaluation/cases.json`](docs/evaluation/cases.json) contains three operator-reviewed public cases checked with the [`review packet`](docs/evaluation/REVIEW-PACKET.md). Operator review is not represented as maintainer confirmation or independent evaluation.
-
-The read-only console renderer is [`standing/console.py`](standing/console.py), exposed by [`scripts/render_console.py`](scripts/render_console.py). It places the controlled-demo disclosure in the page itself, shows release blockers, and supports a historical `--as-of` view; lifecycle events cannot hide the latest standing result.
-
-## Acceptance and observer history
-
-The pure acceptance policy is [`standing/acceptance.py`](standing/acceptance.py#L176). Its thresholds live in [`config/policy.json`](config/policy.json), not in source. The configured policy requires a vendor-published observation, two independent observers with at least three confirmed readings and no contradictions, and an evidence-bound human approval record; otherwise the result is `CONTESTED`.
-
-Observer independence is provenance-aware: strict mode requires distinct operator, source, and extractor identities for the observer addresses. Observation freshness is also policy-controlled; stale, missing, future-dated, or scheduled-recheck-due evidence forces revalidation. Release gates in [`standing/release.py`](standing/release.py) keep real vendor cases and real evaluation ground truth separate from the controlled demo.
-
-Observer selection reads the reliability records from memory and favors fewer contradictions, then more confirmed readings. A checked outcome updates the local record through [standing/reviewer.py](standing/reviewer.py#L137). The ERC-8004 feedback writer is implemented in [standing/reputation.py](standing/reputation.py) and is called by the live-loop command below; its live transaction and readback are recorded in [the verifier-loop audit](docs/audits/verifier-loop.md).
-
-## Base product schemas
-
-Standing's condition-definition and observation schemas are registered in the configured Base SchemaRegistry. Their UIDs, registration transaction hashes, and definitions are recorded in [`config/eas.json`](config/eas.json); the live registration and readback evidence is [`docs/audits/schema-registration.md`](docs/audits/schema-registration.md).
-
-The idempotent command is:
-
-```sh
-.preflight-venv/bin/python scripts/register_product_schemas.py --write
-```
-
-It reads the registry first and writes only missing schemas. With both schemas present, it performs no transaction.
-
-## Base and Virtuals adapters
-
-The Base reader is [`standing/eas.py`](standing/eas.py#L177). It reads the direct EAS record, decodes the six-field observation payload, rejects revoked or mismatched records, and caches each chain response with its block number. The replay test uses a recorded Base mainnet response at [`tests/fixtures/eas_reference_read.json`](tests/fixtures/eas_reference_read.json).
-
-The ACP verifier client is [standing/acp.py](standing/acp.py#L105). It hires only when the acceptance result is not accepted, uses the configured job and spend caps in [config/acp.json](config/acp.json), and requires one typed verifier delivery signed by the selected observer address. Checked observations are persisted in the memory-backed evidence ledger so later runs evaluate accumulated evidence. The approval workflow is separate from hiring: review the ledger, record an approval with [`scripts/approve_evidence.py`](scripts/approve_evidence.py), then run [`scripts/check_acceptance.py`](scripts/check_acceptance.py). The verifier job cannot manufacture its own approval, and changing any observation invalidates the approval fingerprint. ACP job mechanics remain in the official adapter under acp-adapter/.
-
-## ACP verifier loop
-
-The buyer is Standing and the seller is a separately keyed ACP agent using the existing published_condition_check offering. The seller reads the configured sandbox page, publishes its own EAS observation on Base, and returns that observation through ACP. The end-to-end command is [scripts/run_verifier_loop.py](scripts/run_verifier_loop.py); the seller worker is [acp-adapter/src/verifier.ts](acp-adapter/src/verifier.ts).
-
-Each verifier delivery includes a visible disclosure plus operator, source, and extractor provenance. The source binding for the controlled demo is configured beside the condition in [config/verifier.json](config/verifier.json); a real release must replace it with a hand-verified vendor source.
-
-An external marketplace Provider can be targeted without local seller credentials by supplying its public address and offering name. The adapter then sends the same structured requirement and waits for the remote Provider's typed EAS delivery:
-
-```sh
-.preflight-venv/bin/python scripts/run_verifier_loop.py \\
-  --provider-address 0xProviderAddress \\
-  --offering-name published_condition_check \\
-  --spent-today-usdc 0.03
-```
-
-The remote Provider must already support the required condition, Base EAS schema, disclosure, and provenance fields; hiring cannot add those capabilities after the fact.
-
-The paused live attempt created ACP job 77515, reached FUNDED, and expired before delivery; it remains an unsuccessful diagnostic, not product evidence. Fresh capped jobs 77736, 77742, 77743, and 77748 completed through the live Python↔TypeScript bridge. The seller published and returned its own Base EAS observations, the Python loop read them back, accumulated the evidence, updated the Sibyl observer record to 4 confirmed readings with no contradictions, and wrote/read ERC-8004 feedback. The full evidence is in [the verifier-loop audit](docs/audits/verifier-loop.md). Acceptance remains intentionally `CONTESTED` because the configured policy still requires vendor evidence, two independent observers, and human approval. No vendor.* observation has been published.
-
-## Prior Work
-
-Standing is original work for the Sibyl Labs Hackathon by Jennycruzy. It uses the published Sibyl Memory SDK, the official Virtuals ACP v2 client at the external adapter boundary, Base EAS, and ERC-8004 registries. Prior public scaffolding and preflight records are identified in the repository history and [docs/preflight.json](docs/preflight.json); no third-party project is represented as an endorsement.
+[MIT](LICENSE)

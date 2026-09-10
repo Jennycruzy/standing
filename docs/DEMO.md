@@ -9,13 +9,10 @@ expired decision.
 From the repository root:
 
 ```sh
-standing dashboard --demo
-```
-
-If the package is not installed as a console command:
-
-```sh
-.preflight-venv/bin/python -m standing.cli dashboard --demo
+date -u
+git rev-parse --short HEAD
+.venv/bin/standing boot
+.venv/bin/standing dashboard --demo
 ```
 
 Open `http://127.0.0.1:8787/`. The demo database is temporary and isolated; it
@@ -52,8 +49,11 @@ Source operated by Standing for deterministic demonstration; not vendor evidence
    STORAGE-002 becomes the active replacement. The old decision remains in
    history.
 7. Press **RUN REVIEW AGAIN** and inspect the replacement's `STANDS` result.
-8. Press **RESTORE DEMO** to append a fixed restoration observation and return
-   the controlled condition to 365 days.
+8. Open **Live partner proof** and follow the completed Virtuals ACP job, Base
+   EAS observation, and ERC-8004 feedback links.
+
+**RESTORE DEMO** is a reset control for another run. It is not needed after the
+replacement decision completes the story.
 
 The public buttons are pre-authored local workflow actions. They do not accept
 a destination address, calldata, value, schema, source URL, amount, or private
@@ -65,16 +65,16 @@ The deletion comparison runs the same changed-path scenario against a seeded
 store and an empty store:
 
 ```sh
-standing deletion-test
+.venv/bin/standing deletion-test
 ```
 
 Temporal evidence can be inspected directly:
 
 ```sh
-standing history vendor.acme.retention_days
-standing condition vendor.acme.retention_days --valid-as-of 2026-03-03
-standing condition vendor.acme.retention_days --known-as-of 2026-03-03
-standing decision current src/archive.py
+.venv/bin/standing history vendor.acme.retention_days
+.venv/bin/standing condition vendor.acme.retention_days --valid-as-of 2026-03-03
+.venv/bin/standing condition vendor.acme.retention_days --known-as-of 2026-03-03
+.venv/bin/standing decision current src/archive.py
 ```
 
 ## Disclosure
