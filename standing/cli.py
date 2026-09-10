@@ -41,6 +41,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             tools = ReviewerTools(store)
             if args.command == "boot":
                 payload = _boot(tools)
+            elif args.command == "demo-seed":
+                payload = _demo_seed(store)
             elif args.command == "review":
                 payload = _review(tools, args)
             elif args.command == "condition":
@@ -94,13 +96,21 @@ def _build_parser() -> argparse.ArgumentParser:
     commands = parser.add_subparsers(dest="command", required=True)
 
     commands.add_parser("boot", help="load the remembered standing journal")
+    commands.add_parser(
+        "demo-seed",
+        help="write the controlled post-change proof to configured Sibyl memory and exit",
+    )
 
     review = commands.add_parser("review", help="review changed repository paths")
     review.add_argument("paths", nargs="*", help="changed paths; defaults to the current git diff")
     review_sources = review.add_mutually_exclusive_group()
     review_sources.add_argument("--base", help="review paths changed from a git base")
     review_sources.add_argument("--commit", help="review paths changed in one commit")
-    review_sources.add_argument("--pr", type=int, help="read a preloaded config/demo/pr-N.json change set")
+    review_sources.add_argument(
+        "--demo-pr",
+        type=int,
+        help="read a preloaded config/demo/pr-N.json change set (not a live GitHub PR)",
+    )
     review.add_argument(
         "--revalidate",
         action="store_true",
@@ -200,6 +210,28 @@ def _boot(tools: ReviewerTools) -> dict[str, Any]:
     }
 
 
+def _demo_seed(store: Any) -> dict[str, Any]:
+    """Persist the controlled scenario so a later OS process must recall it."""
+
+    from .dashboard import DemoController
+
+    controller = DemoController.create(store)
+    controller.break_assumption()
+    reviews = controller.tools.review_paths(["src/archive.py"])
+    if len(reviews) != 1:
+        raise ReviewerToolError("controlled proof did not create exactly one governed review")
+    review = reviews[0]
+    return {
+        "command": "demo-seed",
+        "process_boundary": "seed complete; this process can now exit",
+        "decision_id": review.decision_id,
+        "changed_path": "src/archive.py",
+        "state": review.evaluation.state.value,
+        "action": "BLOCK" if review.blocks else "ALLOW",
+        "next": "start a new process with the same --memory-path and run boot or review",
+    }
+
+
 def _review(tools: ReviewerTools, args: argparse.Namespace) -> dict[str, Any]:
     paths = tuple(args.paths) if args.paths else _changed_paths(args)
     if args.revalidate:
@@ -260,8 +292,8 @@ def _review(tools: ReviewerTools, args: argparse.Namespace) -> dict[str, Any]:
 
 
 def _changed_paths(args: argparse.Namespace) -> tuple[str, ...]:
-    if args.pr is not None:
-        fixture = ROOT / "config" / "demo" / f"pr-{args.pr}.json"
+    if args.demo_pr is not None:
+        fixture = ROOT / "config" / "demo" / f"pr-{args.demo_pr}.json"
         with fixture.open("r", encoding="utf-8") as handle:
             raw = json.load(handle)
         if not isinstance(raw, Mapping) or not isinstance(raw.get("changed_paths"), list):

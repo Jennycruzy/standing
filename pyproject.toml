@@ -24,7 +24,7 @@ Repository = "https://github.com/Jennycruzy/standing"
 Documentation = "https://github.com/Jennycruzy/standing/tree/main/docs"
 
 [tool.setuptools]
-packages = ["standing"]
+packages = ["standing", "scripts"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

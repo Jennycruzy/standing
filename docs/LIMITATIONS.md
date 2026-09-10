@@ -12,14 +12,12 @@ submission.
   genuinely fetches and extracts the source, but that demonstrates extraction
   integrity, not independent factual accuracy.
 - The checked-in real-world evaluation manifest
-  [`docs/evaluation/cases.json`](evaluation/cases.json) contains one
-  source-linked GitHub Actions retirement candidate, but it is explicitly
-  `human_reviewed: false`. It is not counted in release metrics and no
-  aggregate real-world accuracy number is published.
-- A release-eligible real vendor case still requires independent human review
-  of the historical source, current source, effective dates, captured hashes,
-  repository decision artifact, governed path, and expected state. Those facts
-  cannot be invented from the controlled demo.
+  [`docs/evaluation/cases.json`](evaluation/cases.json) contains three
+  source-linked, human-reviewed cases. The first is classified as a stale
+  dependency finding because its decision artifact is a later repository
+  review; the other two contain explicit historical compatibility or runtime
+  requirements. No aggregate real-world accuracy number is published from
+  only three cases.
 - No external second operator has yet been recorded. The existing live
   observer history is same-owner evidence and remains contested under the
   configured policy.
@@ -46,8 +44,12 @@ submission.
 
 ## Product and operations
 
-- The dashboard is a local Python HTTP surface, not a deployed live URL. It
-  uses an isolated temporary store in `--demo` mode.
+- The dashboard is deployable through `render.yaml`; the public deployment URL
+  is an external submission artifact. It uses an isolated temporary store in
+  `--demo` mode.
+- **BREAK DEMO ASSUMPTION** is a deterministic local replay. It does not create
+  a new ACP job or EAS attestation. The completed live ACP → extraction → EAS
+  path is separately linked from the dashboard and README.
 - Dashboard actions are fixed and constrained. There is no arbitrary signing
   API, but production deployment still needs authentication, rate limiting,
   spend controls, audit monitoring, and key rotation around any future chain
@@ -70,6 +72,5 @@ submission.
   no flattering score is reported until a hand-verified corpus and prediction
   files exist. Every miss must be published with its case, expected result,
   actual result, cause, and fix status.
-- No maintainer or design partner has publicly confirmed a real Standing
-  finding in this workspace. PMF evidence, public outreach, demo video, and
-  submission links remain external tasks.
+- Maintainer/design-partner confirmation, a demo video, and final public
+  submission URLs are external artifacts and are not claimed by this repo.

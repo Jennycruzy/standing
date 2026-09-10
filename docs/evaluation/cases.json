@@ -13,7 +13,7 @@
       "source_sha256": "3c8873632b08b9b52711618046ea000b217af23026111aadb7ae397a3bc9cee4",
       "expected_state": "EXPIRED",
       "synthetic": false,
-      "notes": "Source-linked public case: the repository review identifies actions/upload-artifact@v3 in .github/workflows/security.yml, and GitHub's published retirement makes the v3-dependent decision expired for GitHub.com. Operator-reviewed; this is not maintainer confirmation, independent evaluation, or PMF evidence.",
+      "notes": "Human-reviewed stale dependency finding: a later repository review identifies actions/upload-artifact@v3 in .github/workflows/security.yml, and GitHub's published retirement makes that dependency expired for GitHub.com. This is not presented as an original historical rationale, maintainer confirmation, independent evaluation, or PMF evidence.",
       "historical_ground_truth_url": "https://github.blog/changelog/2024-04-16-deprecation-notice-v3-of-the-artifact-actions/",
       "historical_ground_truth_effective_at": 1713311709,
       "historical_source_sha256": "e6aa542274211ec6b22d40fd47e5dc7a40e05cbfcf03e565dca6f13139709873",

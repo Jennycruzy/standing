@@ -37,13 +37,17 @@ remain true.” Start a fresh terminal and run:
 ```sh
 date -u
 git rev-parse --short HEAD
-.venv/bin/standing boot
+PROOF_DB=./standing-proof.db
+.venv/bin/standing --memory-path "$PROOF_DB" demo-seed
+.venv/bin/standing --memory-path "$PROOF_DB" boot
+.venv/bin/standing --memory-path "$PROOF_DB" review src/archive.py
 .venv/bin/standing dashboard --demo
 ```
 
-Explain that the fresh process recalls ACME-001 and its governed code through
-Sibyl-backed memory. Keep the UTC timestamp or commit hash visible in the same
-continuous, unedited recording; this is part of the hackathon gate.
+Each `standing` invocation exits before the next starts. Point out that the
+second and third processes recall ACME-001 and its governed code from the same
+Sibyl-backed store. Keep the UTC timestamp or commit hash visible in the same
+continuous, unedited recording.
 
 ### 0:20–0:50 — Original decision and time travel
 
@@ -54,11 +58,16 @@ answers: what Standing now believes was true, and what Standing knew then.
 ### 0:50–1:30 — Break, observe, and block
 
 Point to the **CONTROLLED FICTIONAL DEMO** disclosure, then click **BREAK DEMO
-ASSUMPTION**. Run the preloaded review. Explain the causal chain:
+ASSUMPTION**. Explain exactly what is happening: this safe control
+deterministically replays the source-change path locally. Then show the live
+partner-proof links, which separately prove the completed verifier transport:
 
 ```text
-stale evidence → verifier reads source → observation → temporal acceptance
-→ 90 days becomes canonical → ACME-001 expires → exact governed path blocks
+dashboard replay: source change → temporal acceptance → canonical 90 days
+→ ACME-001 expires → exact governed path blocks
+
+live proof: ACP job → verifier source extraction → Base EAS observation
+→ readback → Sibyl update → ERC-8004 feedback
 ```
 
 Open evidence provenance and show the source, extraction method, effective
@@ -129,7 +138,8 @@ Code: https://github.com/Jennycruzy/standing
 - [ ] Deploy `render.yaml` and verify `/api/state` returns HTTP 200.
 - [ ] Replace all four placeholders at the top of this file.
 - [ ] Record the demo in one continuous 2–5 minute take.
-- [ ] Use a fresh process for the memory-recall opening.
+- [ ] Run `demo-seed`, `boot`, and `review` as separate CLI processes against
+      the same proof database.
 - [ ] Show `date -u` or `git rev-parse --short HEAD` in that same unedited shot.
 - [ ] Keep the controlled-demo disclosure visible during the mutation.
 - [ ] Show memory on/off and replacement/allow; do not stop at BLOCKED.

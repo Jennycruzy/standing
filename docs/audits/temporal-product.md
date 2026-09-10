@@ -71,8 +71,10 @@ promoting it automatically.
 
 The `standing` console entry point is declared in
 [`pyproject.toml`](../../pyproject.toml) and provides `boot`, `review`,
-`condition`, `history`, `decision`, `waiver`, `dashboard`, and
-`deletion-test`. The dashboard is a local isolated controlled demo with a
+`condition`, `history`, `decision`, `waiver`, `demo-seed`, `dashboard`, and
+`deletion-test`. `demo-seed`, `boot`, and `review` can run as separate OS
+processes against one persistent proof store. The dashboard is an isolated
+controlled demo with a
 landing finding, clickable decision graph, bitemporal time travel, provenance,
 fixed PR review, memory on/off comparison, source break/restore, replacement
 decision, human-confirmation controls, waiver inspection, and a visible
@@ -80,42 +82,44 @@ real-world candidate panel. It contains no arbitrary transaction-signing
 surface.
 
 The demo source is explicitly Fictional Acme Corporation data operated by
-Standing. The verifier genuinely reads and extracts it, but it is not vendor
-evidence and is not counted as independent factual proof.
+Standing. The dashboard mutation is a deterministic local replay and is
+labelled as such. Genuine verifier extraction and the live ACP → Base EAS path
+are proven separately by the linked completed records.
 
 ## Evaluation and release status
 
 [`docs/evaluation/cases.json`](../evaluation/cases.json) and
 [`docs/evaluation/adversarial.json`](../evaluation/adversarial.json) are
-separate. The former contains three source-linked public candidates pending
-human review; the latter contains 17 controlled adversarial fixtures. The
+separate. The former contains three source-linked, human-reviewed public cases;
+the latter contains 17 controlled adversarial fixtures. The first real case is
+classified as a stale dependency finding rather than an original historical
+decision rationale. The
 multi-arm harness has Standing, no-memory, grep, stateless-model, and
-current-docs-only arms, with per-case miss explanations. No real-world metric
-is published while the real corpus has no reviewed ground truth.
+current-docs-only arms, with per-case miss explanations. No aggregate real-world
+accuracy is published from only three cases.
 
 The current release check reports:
 
 ```text
-1 pending real candidate
-0 reviewed real cases
-0 real vendor-expiry cases
-1 supplied operator identity
+0 pending real candidates
+3 reviewed real cases
+3 source-linked expiry cases
+0 independent operator identities supplied to the strict release check
 release ready: false
 ```
 
-Those remaining gates require independent human review, at least two more
-genuine reviewed cases, a genuinely external second operator with a fresh
-source-derived observation, and human approval where configured. Maintainer
-PMF confirmation, a deployed URL, video, and public submission evidence are
-also external deliverables. The failed ACP job `77515` remains retained and
-labelled as a diagnostic failure.
+The strict production gate remains closed on external operator independence.
+Maintainer/design-partner confirmation, a deployed URL, video, and public
+submission evidence are external artifacts rather than implementation gaps.
+The failed ACP job `77515` remains retained and labelled as a diagnostic
+failure.
 
 ## Validation
 
 The following checks pass in the current workspace:
 
 - `.preflight-venv/bin/python -m unittest discover -s tests -p 'test_*.py'` —
-  151 tests passed;
+  the full Python suite passed;
 - `.preflight-venv/bin/python -m mypy --strict standing` — no issues;
 - `npm test` in `acp-adapter/` — 9 tests passed;
 - `npm run typecheck -- --pretty false` in `acp-adapter/` — passed;

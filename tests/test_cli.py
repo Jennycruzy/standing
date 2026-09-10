@@ -1,5 +1,7 @@
 import io
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import redirect_stdout
@@ -10,6 +12,34 @@ from standing.memory import create_memory_store
 
 
 class CliTests(unittest.TestCase):
+    def test_demo_seed_is_recalled_and_blocks_from_new_cli_invocations(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            memory_path = Path(directory) / "fresh-process-proof.db"
+            common = [
+                "--memory-path",
+                str(memory_path),
+                "--tenant-id",
+                "fresh-process-proof",
+            ]
+
+            def invoke(*arguments: str) -> dict[str, object]:
+                completed = subprocess.run(
+                    [sys.executable, "-m", "standing", *common, *arguments],
+                    cwd=Path(__file__).resolve().parents[1],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                return json.loads(completed.stdout)
+
+            self.assertEqual(invoke("demo-seed")["action"], "BLOCK")
+            self.assertGreater(invoke("boot")["journal_entries"], 0)
+
+            recalled = invoke("review", "src/archive.py")
+            self.assertEqual(recalled["decisions_found"], 1)
+            self.assertTrue(recalled["blocked"])
+            self.assertEqual(recalled["decisions"][0]["decision_id"], "ACME-001")
+
     def test_condition_query_defaults_to_accepted_evidence(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             memory_path = Path(directory) / "memory.db"

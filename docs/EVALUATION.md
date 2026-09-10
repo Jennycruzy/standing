@@ -13,11 +13,11 @@ captured source snapshot. `synthetic: false` is mandatory.
 
 The manifest contains three source-linked real cases, including GitHub's
 retirement of `actions/upload-artifact@v3` and AWS Lambda's Node.js 16
-deprecation. Jennycruzy reviewed each decision, path, historical/current chain,
-and expected state. This is operator review, not maintainer confirmation or
-independent evaluation. Scores remain unpublished until predictions for the
-defined evaluation arms are recorded. The release checker remains blocked on
-independent verifier evidence even though the real-case gates now pass.
+deprecation. The first is explicitly a stale dependency finding based on a
+later repository review, not an original historical rationale. The other two
+contain explicit historical compatibility or runtime requirements. Jennycruzy
+reviewed each path, evidence chain, and expected state. Scores remain
+unpublished until predictions for the defined evaluation arms are recorded.
 
 ## Controlled adversarial corpus
 

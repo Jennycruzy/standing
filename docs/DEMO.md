@@ -11,12 +11,19 @@ From the repository root:
 ```sh
 date -u
 git rev-parse --short HEAD
-.venv/bin/standing boot
+PROOF_DB=./standing-proof.db
+.venv/bin/standing --memory-path "$PROOF_DB" demo-seed
+.venv/bin/standing --memory-path "$PROOF_DB" boot
+.venv/bin/standing --memory-path "$PROOF_DB" review src/archive.py
 .venv/bin/standing dashboard --demo
 ```
 
-Open `http://127.0.0.1:8787/`. The demo database is temporary and isolated; it
-does not mutate the configured project memory.
+The first command writes the controlled state and exits. The next two commands
+are new OS processes that must recall the decision and block from the same
+Sibyl-backed database. The dashboard then uses a separate temporary database;
+it does not mutate the proof database.
+
+Open `http://127.0.0.1:8787/`.
 
 The page begins with:
 
@@ -30,14 +37,17 @@ The page always displays:
 
 ```text
 CONTROLLED DEMO — Fictional Acme Corporation.
-Source operated by Standing for deterministic demonstration; not vendor evidence.
+This control replays the source-change path locally; the separately completed
+ACP → source extraction → Base EAS path is linked below.
 ```
 
 ## Walkthrough
 
 1. Use the time-travel slider to compare `valid_as_of` and `known_as_of`.
-2. Press **BREAK DEMO ASSUMPTION**. The fixed source changes from 365 to 90
-   days, and the evidence chain retains both effective periods.
+2. Press **BREAK DEMO ASSUMPTION**. This constrained control deterministically
+   replays the source change from 365 to 90 days locally, and the evidence
+   chain retains both effective periods. It does not claim to start a new live
+   ACP job.
 3. Inspect the decision graph and provenance entries. The evaluator changes
    ACME-001 to `EXPIRED`; the exact `src/archive.py` path is shown as blocked.
 4. Toggle **MEMORY OFF**. The external fact remains visible, but no governing
@@ -50,7 +60,8 @@ Source operated by Standing for deterministic demonstration; not vendor evidence
    history.
 7. Press **RUN REVIEW AGAIN** and inspect the replacement's `STANDS` result.
 8. Open **Live partner proof** and follow the completed Virtuals ACP job, Base
-   EAS observation, and ERC-8004 feedback links.
+   EAS observation, and ERC-8004 feedback links. Those records prove the
+   separate live source-extraction and onchain transport path.
 
 **RESTORE DEMO** is a reset control for another run. It is not needed after the
 replacement decision completes the story.

@@ -22,7 +22,8 @@ from .temporal import TemporalObservationError, observation_evidence_hash, parse
 
 CONTROLLED_DISCLOSURE = (
     "CONTROLLED DEMO — Fictional Acme Corporation. "
-    "Source operated by Standing for deterministic demonstration; not vendor evidence."
+    "This control replays the source-change path locally; the separately completed "
+    "ACP → source extraction → Base EAS path is linked below."
 )
 DEMO_CONDITION = "sandbox.demo.retention_days"
 DEMO_PATH = "src/archive.py"
@@ -518,56 +519,71 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title}</title>
   <style>
-    :root {{ color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #09111f; color: #e5edf8; }}
-    body {{ margin: 0; background: radial-gradient(circle at top right, #152b49, #09111f 55%); min-height: 100vh; }}
-    main {{ max-width: 1220px; margin: 0 auto; padding: 28px; }}
-    .eyebrow {{ color: #8ca9c9; text-transform: uppercase; letter-spacing: .14em; font-size: .72rem; font-weight: 800; }}
+    :root {{ color-scheme: dark; font-family: Inter, ui-sans-serif, system-ui, sans-serif; background: #070b0d; color: #e7eee9; --green:#65e6ad; --amber:#f3bd61; --red:#ff667d; --line:#24312c; --panel:#0d1412; }}
+    * {{ box-sizing: border-box; }}
+    body {{ margin: 0; background-color: #070b0d; background-image: linear-gradient(rgba(101,230,173,.025) 1px, transparent 1px), linear-gradient(90deg, rgba(101,230,173,.025) 1px, transparent 1px); background-size: 32px 32px; min-height: 100vh; }}
+    body::before {{ content:''; position:fixed; inset:0; pointer-events:none; background:radial-gradient(circle at 80% 0, rgba(32,104,76,.16), transparent 34%); }}
+    main {{ position:relative; max-width: 1220px; margin: 0 auto; padding: 30px 28px 64px; }}
+    .topbar {{ position:sticky; top:0; z-index:10; display:flex; flex-wrap:wrap; align-items:center; gap:14px; padding:12px 20px; border-bottom:1px solid var(--line); background:rgba(7,11,13,.92); backdrop-filter:blur(14px); font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }}
+    .brand {{ color:var(--green); font-weight:900; letter-spacing:.12em; }}
+    .system {{ display:flex; align-items:center; gap:7px; color:#9cafaa; font-size:.76rem; }}
+    .pulse {{ width:7px; height:7px; border-radius:50%; background:var(--green); box-shadow:0 0 12px var(--green); }}
+    nav {{ margin-left:auto; display:flex; flex-wrap:wrap; gap:12px; }}
+    nav a {{ color:#9cafaa; text-decoration:none; font-size:.72rem; }} nav a:hover {{ color:var(--green); }}
+    .hero {{ padding:44px 0 14px; }}
+    .thesis {{ max-width:760px; color:#9cafaa; font-size:1.05rem; line-height:1.65; }}
+    .eyebrow {{ color: var(--green); text-transform: uppercase; letter-spacing: .16em; font: 800 .7rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
     h1, h2, h3 {{ margin: .35rem 0 .8rem; }}
     h1 {{ font-size: clamp(2rem, 5vw, 4.5rem); max-width: 850px; line-height: .98; }}
     h2 {{ font-size: 1.25rem; }}
-    .muted {{ color: #91a4bc; }}
-    .disclosure {{ border: 1px solid #db9b35; background: #30220d; color: #ffd78a; padding: 12px 15px; border-radius: 10px; font-weight: 700; margin: 14px 0; }}
-    .card {{ background: rgba(16, 29, 49, .92); border: 1px solid #263e5d; border-radius: 16px; padding: 20px; margin-top: 16px; box-shadow: 0 15px 50px rgba(0,0,0,.16); }}
-    .finding {{ border-color: #bb3d55; background: linear-gradient(135deg, rgba(84, 24, 43, .92), rgba(16, 29, 49, .95)); }}
-    .finding.stands {{ border-color: #267d68; background: linear-gradient(135deg, rgba(17, 67, 58, .9), rgba(16, 29, 49, .95)); }}
+    .muted {{ color: #8fa19a; }}
+    .disclosure {{ border: 1px solid #735b2c; border-left:3px solid var(--amber); background: #1b160c; color: #eacb8d; padding: 12px 15px; border-radius: 5px; margin: 14px 0; }}
+    .card {{ background: rgba(13,20,18,.94); border: 1px solid var(--line); border-radius: 8px; padding: 20px; margin-top: 16px; box-shadow: 0 18px 60px rgba(0,0,0,.22); }}
+    .card > h2, .toolbar > h2 {{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; letter-spacing:-.02em; }}
+    .finding {{ border-color: #7d2f40; background: linear-gradient(135deg, rgba(66,19,30,.86), rgba(13,20,18,.97)); }}
+    .finding.stands {{ border-color: #256a50; background: linear-gradient(135deg, rgba(14,55,40,.88), rgba(13,20,18,.97)); }}
     .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }}
-    .metric {{ background: #0b1729; border: 1px solid #203752; border-radius: 10px; padding: 13px; }}
-    .label {{ color: #8ca9c9; text-transform: uppercase; letter-spacing: .08em; font-size: .68rem; font-weight: 800; }}
+    .metric {{ background: #09100e; border: 1px solid #202d28; border-radius: 5px; padding: 13px; }}
+    .label {{ color: #81948c; text-transform: uppercase; letter-spacing: .1em; font: 800 .65rem ui-monospace, SFMono-Regular, Menlo, monospace; }}
     .value {{ margin-top: 5px; font-size: 1.15rem; font-weight: 800; overflow-wrap: anywhere; }}
-    .expired, .blocked {{ color: #ff8090; }} .stands, .allow {{ color: #70e0bd; }} .unknown, .contested {{ color: #ffd78a; }}
-    button {{ border: 1px solid #3d6590; border-radius: 8px; background: #173458; color: #f0f6ff; padding: 9px 12px; cursor: pointer; font-weight: 750; margin: 4px 4px 0 0; }}
-    button:hover {{ background: #235181; }} button.danger {{ border-color: #bb3d55; background: #64243a; }} button.safe {{ border-color: #267d68; background: #145342; }}
+    .expired, .blocked {{ color: var(--red); }} .stands, .allow {{ color: var(--green); }} .unknown, .contested {{ color: var(--amber); }}
+    button {{ border: 1px solid #365248; border-radius: 4px; background: #13241e; color: #e8f5ee; padding: 9px 12px; cursor: pointer; font: 750 .78rem ui-monospace, SFMono-Regular, Menlo, monospace; margin: 4px 4px 0 0; }}
+    button:hover {{ border-color:var(--green); background:#19352b; }} button.danger {{ border-color:#8b3447; background:#431b25; }} button.safe {{ border-color:#277255; background:#123c2e; }}
     .toolbar {{ display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }}
     .graph {{ display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }}
-    .node {{ padding: 12px; background: #10223a; border: 1px solid #3a5b80; border-radius: 10px; min-width: 120px; }}
+    .node {{ padding: 12px; background: #0b1713; border: 1px solid #2d493f; border-radius: 5px; min-width: 120px; }}
     button.node {{ text-align: left; color: #e5edf8; font: inherit; }}
     button.node:focus-visible {{ outline: 2px solid #70e0bd; outline-offset: 2px; }}
-    .arrow {{ color: #7591b2; font-size: 1.3rem; }}
-    .timeline {{ width: 100%; accent-color: #70e0bd; }}
-    .timeline-row {{ display: flex; justify-content: space-between; color: #8ca9c9; font-size: .8rem; }}
-    details {{ border-top: 1px solid #263e5d; padding: 10px 0; }} summary {{ cursor: pointer; font-weight: 750; }}
-    pre {{ white-space: pre-wrap; overflow-wrap: anywhere; color: #b8cbe1; font-size: .78rem; }}
-    table {{ width: 100%; border-collapse: collapse; }} th, td {{ text-align: left; padding: 9px; border-bottom: 1px solid #263e5d; vertical-align: top; }} th {{ color: #8ca9c9; font-size: .7rem; text-transform: uppercase; }}
+    .arrow {{ color: var(--green); font-size: 1.3rem; }}
+    .timeline {{ width: 100%; accent-color: var(--green); }}
+    .timeline-row {{ display: flex; justify-content: space-between; color: #8fa19a; font-size: .8rem; }}
+    details {{ border-top: 1px solid var(--line); padding: 10px 0; }} summary {{ cursor: pointer; font-weight: 750; }}
+    pre, code {{ font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }}
+    pre {{ white-space: pre-wrap; overflow-wrap: anywhere; color: #b4c8bf; font-size: .78rem; }}
+    table {{ width: 100%; border-collapse: collapse; }} th, td {{ text-align: left; padding: 9px; border-bottom: 1px solid var(--line); vertical-align: top; }} th {{ color: #8fa19a; font-size: .7rem; text-transform: uppercase; }}
+    a {{ color:var(--green); }}
+    blockquote {{ margin-left:0; border-left:2px solid #365248; padding-left:14px; color:#b7c8c0; }}
+    @media (max-width:680px) {{ main {{ padding:18px 14px 44px; }} .topbar {{ padding:10px 14px; }} nav {{ width:100%; margin-left:0; }} h1 {{ font-size:2.45rem; }} }}
     .off {{ opacity: .58; }}
   </style>
 </head>
 <body>
+<header class="topbar"><div class="brand">STANDING</div><div class="system"><span class="pulse"></span>SYSTEM ONLINE · TEMPORAL DECISION CONTROL</div><nav><a href="#finding">FINDING</a><a href="#timeline">TIME TRAVEL</a><a href="#review">REVIEW</a><a href="#memory">MEMORY</a><a href="#proof">PROOF</a></nav></header>
 <main>
-  <div class="eyebrow">Standing / temporal engineering intent</div>
-  <h1 id="summary">Loading remembered reasoning…</h1>
+  <div class="hero"><div class="eyebrow">Temporal system of record / engineering intent</div><h1 id="summary">Loading remembered reasoning…</h1><p class="thesis">A software decision has standing only while the facts that justified it remain true.</p></div>
   <div id="disclosure"></div>
   <section id="finding" class="card finding"></section>
   <section class="card">
     <div class="toolbar"><h2 style="margin-right:auto">Decision graph</h2><span class="muted">Code → decision → assumption → evidence → standing</span></div>
     <div id="graph" class="graph"></div>
   </section>
-  <section class="card">
+  <section id="timeline" class="card">
     <div class="toolbar"><h2 style="margin-right:auto">Bitemporal time travel</h2><span id="selectedDate" class="muted"></span></div>
     <input id="timeSlider" class="timeline" type="range" min="0" max="1" value="1" step="1">
     <div class="timeline-row"><span>Decision made</span><span>World changed</span><span>Today</span></div>
     <div id="timeTravel" class="grid" style="margin-top:12px"></div>
   </section>
-  <section class="card">
+  <section id="review" class="card">
     <div class="toolbar"><h2 style="margin-right:auto">Interactive PR review</h2><span id="reviewResult" class="muted"></span></div>
     <p class="muted">The review uses the exact stored governed path. Full-text matches alone never block.</p>
     <div id="prReview"></div>
@@ -576,7 +592,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     <div class="toolbar"><h2 style="margin-right:auto">Human confirmation</h2><span class="muted">Model proposals never govern code automatically</span></div>
     <div id="proposals"></div>
   </section>
-  <section class="card">
+  <section id="memory" class="card">
     <div class="toolbar"><h2 style="margin-right:auto">Memory comparison</h2><button id="memoryToggle">MEMORY OFF</button></div>
     <div id="memoryComparison"></div>
   </section>
@@ -597,7 +613,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     <div id="actionResult" class="muted" style="margin-top:10px"></div>
   </section>
   <section class="card"><h2>Real-world proof</h2><div id="realWorld"></div></section>
-  <section class="card"><h2>Live partner proof</h2><div id="partnerProof"></div></section>
+  <section id="proof" class="card"><h2>Live partner proof</h2><div id="partnerProof"></div></section>
   <section class="card"><h2>Evidence provenance</h2><div id="provenance"></div></section>
 </main>
 <script>
@@ -688,7 +704,10 @@ def serve_dashboard(app: DashboardApp, *, host: str = "127.0.0.1", port: int = 8
 
     server = ThreadingHTTPServer((host, port), Handler)
     try:
-        server.serve_forever()
+        try:
+            server.serve_forever()
+        except KeyboardInterrupt:
+            return
     finally:
         server.server_close()
 

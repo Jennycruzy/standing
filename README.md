@@ -99,6 +99,19 @@ Start the isolated interactive demonstration:
 
 Open `http://127.0.0.1:8787/`.
 
+Prove recall across separate processes with one persistent proof database:
+
+```sh
+PROOF_DB=./standing-proof.db
+.venv/bin/standing --memory-path "$PROOF_DB" demo-seed
+.venv/bin/standing --memory-path "$PROOF_DB" boot
+.venv/bin/standing --memory-path "$PROOF_DB" review src/archive.py
+```
+
+Each invocation exits before the next begins. The final process blocks
+`src/archive.py` using the decision and temporal evidence recalled from the
+same Sibyl-backed store.
+
 The dashboard provides:
 
 - the highest-priority current engineering finding;
@@ -111,9 +124,11 @@ The dashboard provides:
 - direct Virtuals ACP, Base EAS, and ERC-8004 proof links.
 
 The Acme interaction is visibly labelled as a controlled fictional scenario.
-Its verifier genuinely extracts the value from the published source. The fixed
-controls make the workflow safe and repeatable; they do not expose keys,
-arbitrary URLs, transaction destinations, calldata, or spend amounts.
+The dashboard control replays the source change locally; it does not pretend to
+start a new live transaction. Genuine verifier source extraction and the
+ACP → Base EAS → Sibyl path are proven separately by the linked live records.
+The fixed controls do not expose keys, arbitrary URLs, transaction destinations,
+calldata, or spend amounts.
 
 ## The load-bearing memory proof
 
@@ -153,6 +168,7 @@ on conversation context.
 ```sh
 .venv/bin/standing review
 .venv/bin/standing review --base main
+.venv/bin/standing review --demo-pr 12
 .venv/bin/standing history vendor.acme.retention_days
 .venv/bin/standing condition vendor.acme.retention_days --valid-as-of 2026-03-03
 .venv/bin/standing condition vendor.acme.retention_days --known-as-of 2026-03-03
@@ -223,7 +239,7 @@ npm --prefix acp-adapter test
 npm --prefix acp-adapter run typecheck
 ```
 
-Current verified result: **151 Python tests and 9 TypeScript tests pass**, and
+Current verified result: **152 Python tests and 9 TypeScript tests pass**, and
 the TypeScript adapter passes `tsc --noEmit`.
 
 ## Documentation
