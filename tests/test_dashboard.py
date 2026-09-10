@@ -82,12 +82,15 @@ class DashboardTests(unittest.TestCase):
             "CONFIRM PROPOSAL",
             "Evidence provenance",
             "Real-world proof",
+            "Live partner proof",
             "What we now believe was true",
             "What Standing knew then",
         ):
             self.assertIn(label, html)
         self.assertIn("data-graph-target", html)
         self.assertIn(CONTROLLED_DISCLOSURE, html)
+        self.assertEqual(self.app.state()["partner_proof"]["acp_job_id"], "77748")
+        self.assertIn("basescan.org/tx/", html)
         self.assertNotIn("destination address", html.lower())
         self.assertNotIn("private key", html.lower())
 

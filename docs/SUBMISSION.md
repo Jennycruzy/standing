@@ -35,12 +35,15 @@ Say: “A software decision has standing only while the facts that justified it
 remain true.” Start a fresh terminal and run:
 
 ```sh
+date -u
+git rev-parse --short HEAD
 standing boot
 standing dashboard --demo
 ```
 
 Explain that the fresh process recalls ACME-001 and its governed code through
-Sibyl-backed memory.
+Sibyl-backed memory. Keep the UTC timestamp or commit hash visible in the same
+continuous, unedited recording; this is part of the hackathon gate.
 
 ### 0:20–0:50 — Original decision and time travel
 
@@ -73,9 +76,12 @@ Click **RECORD REPLACEMENT DECISION**, then rerun review. Show ACME-001 as
 SUPERSEDED, STORAGE-002 as current, and the result as ALLOW. Emphasize that
 Standing does not end at detection and never erases the old reasoning.
 
-### 2:35–3:00 — Real-world proof and honest boundary
+### 2:35–3:15 — Partner and real-world proof
 
-Show the real-world evaluation packet and one official vendor source. Say:
+Open **Live partner proof** in the dashboard. Click the completed Virtuals ACP
+job and the Base EAS transaction so judges can see the integrations doing the
+product's verification work. Then show the real-world evaluation packet and
+one official vendor source. Say:
 “The controlled flow is deterministic, and these three human-reviewed public
 cases test the same temporal model against genuine engineering decisions and
 vendor changes.” Close with the thesis.
@@ -96,7 +102,7 @@ Demo: LIVE_URL
 Code: https://github.com/Jennycruzy/standing
 Video: VIDEO_URL
 
-#SibylHackathon #BuildInPublic
+@sibylcap @base @virtuals_io #SibylHackathon #BuildInPublic
 ```
 
 ## Public post 2 — technical proof
@@ -114,6 +120,8 @@ the trust model, onchain evidence, and three human-reviewed real-world cases.
 
 Demo: LIVE_URL
 Code: https://github.com/Jennycruzy/standing
+
+@sibylcap @base @virtuals_io
 ```
 
 ## Final checklist
@@ -122,9 +130,11 @@ Code: https://github.com/Jennycruzy/standing
 - [ ] Replace all four placeholders at the top of this file.
 - [ ] Record the demo in one continuous 2–5 minute take.
 - [ ] Use a fresh process for the memory-recall opening.
+- [ ] Show `date -u` or `git rev-parse --short HEAD` in that same unedited shot.
 - [ ] Keep the controlled-demo disclosure visible during the mutation.
 - [ ] Show memory on/off and replacement/allow; do not stop at BLOCKED.
 - [ ] Open at least one genuine public vendor source.
+- [ ] Open the completed ACP job and Base EAS transaction from the dashboard.
 - [ ] Publish two public posts and save their URLs.
 - [ ] Confirm the GitHub repository is public and the MIT license is visible.
 - [ ] Run the validation commands immediately before submission.

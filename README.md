@@ -14,6 +14,48 @@ Standing is a temporal system of record for engineering intent. It separates
 what was true from what Standing knew at the time, preserves supersession and
 conflict history, and records what eventually replaced an expired decision.
 
+## Judge it in three minutes
+
+```sh
+git clone https://github.com/Jennycruzy/standing.git
+cd standing
+uv venv --python 3.12 .venv
+uv pip install --python .venv/bin/python .
+date -u
+git rev-parse --short HEAD
+.venv/bin/standing boot
+.venv/bin/standing dashboard --demo
+```
+
+Then open `http://127.0.0.1:8787/` and follow one story:
+
+1. A fresh process recalls ACME-001 and the code it governs.
+2. **BREAK DEMO ASSUMPTION** changes the observed retention from 365 to 90.
+3. Standing identifies the exact dependent path and blocks the PR.
+4. **MEMORY OFF** removes the decision and its protection while the external
+   fact remains—proving memory is load-bearing.
+5. **RECORD REPLACEMENT DECISION** supersedes ACME-001 and restores ALLOW.
+6. **Live partner proof** links the completed Virtuals ACP job, Base EAS
+   observation, and ERC-8004 feedback used by the verification path.
+
+### Why Sibyl Memory makes this possible
+
+Current vendor documentation can reveal a fact, but it cannot explain why a
+particular file depends on that fact or what engineers knew when they approved
+the decision. Sibyl persists that engineering intent, governed-path mapping,
+accepted evidence references, standing changes, waivers, and supersession
+history across fresh processes. Delete it and Standing can no longer connect
+the changed fact to the code, so the expiry protection disappears.
+
+### Team and partner stacks
+
+- Builder: **Jennycruzy** / **Jenny builds**.
+- **Sibyl Memory:** critical-path decision, condition, journal, and reference
+  persistence.
+- **Virtuals ACP:** completed verifier jobs that acquire fresh observations.
+- **Base EAS:** immutable observation records and schema registrations.
+- **ERC-8004:** verifier outcome feedback.
+
 ## Try the product
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Jennycruzy/standing)

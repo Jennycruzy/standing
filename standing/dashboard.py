@@ -31,6 +31,14 @@ DEMO_PROPOSAL_ARTIFACT = "docs/decisions/0001-acp-adapter.md"
 DEMO_EFFECTIVE_INITIAL = 1767225600  # 2026-01-01T00:00:00Z
 DEMO_EFFECTIVE_CHANGED = 1788739200  # 2026-09-07T00:00:00Z
 EVALUATION_CASES_PATH = Path(__file__).resolve().parents[1] / "docs" / "evaluation" / "cases.json"
+PARTNER_PROOF = {
+    "acp_job_id": "77748",
+    "acp_job_url": "https://api.acp.virtuals.io/jobs/8453/77748",
+    "eas_uid": "0x70675af1277c400c155de2e32684cfb264be8061578fb9afa17c6fcdd001bf5e",
+    "eas_transaction_url": "https://basescan.org/tx/0xfa23b10158da3723d28508d51c8acd6916696cd0a609e4fce741c989e5573eff",
+    "erc8004_transaction_url": "https://basescan.org/tx/0xb12f670d1c643556b7bb6c45cec12462f9c7f7e41775681b4c1f9b0278146954",
+    "summary": "Completed ACP verification → Base EAS observation → Sibyl update → ERC-8004 feedback",
+}
 
 
 @dataclass
@@ -413,6 +421,7 @@ def build_dashboard_payload(tools: ReviewerTools, *, demo: bool = False) -> dict
         "proposals": proposals,
         "waivers": waivers,
         "real_world": _real_world_payload(),
+        "partner_proof": dict(PARTNER_PROOF),
         "demo": {
             "condition_key": DEMO_CONDITION,
             "source_url": DEMO_SOURCE_URL,
@@ -580,6 +589,7 @@ def render_dashboard_html(payload: Mapping[str, Any], *, page_title: str = "Stan
     <div id="actionResult" class="muted" style="margin-top:10px"></div>
   </section>
   <section class="card"><h2>Real-world proof</h2><div id="realWorld"></div></section>
+  <section class="card"><h2>Live partner proof</h2><div id="partnerProof"></div></section>
   <section class="card"><h2>Evidence provenance</h2><div id="provenance"></div></section>
 </main>
 <script>
@@ -601,7 +611,7 @@ function render() {{
     $('finding').className = 'card finding ' + String(ev.state || '').toLowerCase();
     $('finding').innerHTML = `<div class="eyebrow">Primary engineering finding</div><h2>${{esc(finding.body.title || finding.decision_id)}}</h2><div class="grid"><div class="metric"><div class="label">Decision</div><div class="value">${{esc(finding.decision_id)}}</div></div><div class="metric"><div class="label">Required</div><div class="value">${{esc(condition.predicate || '—')}}</div></div><div class="metric"><div class="label">Current</div><div class="value">${{esc(condition.accepted_value ?? 'unknown')}}</div></div><div class="metric"><div class="label">Affected</div><div class="value">${{(finding.body.governed_paths || []).length}} files</div></div><div class="metric"><div class="label">Status</div><div class="value ${{String(ev.state || '').toLowerCase()}}">${{esc(ev.state || 'UNKNOWN')}}</div></div></div><p class="muted">${{esc(finding.body.description || '')}}</p>`;
   }}
-  renderGraph(finding); renderTimeTravel(finding); renderPr(finding); renderProposals(); renderMemory(finding); renderWaivers(); renderRealWorld(); renderProvenance(finding);
+  renderGraph(finding); renderTimeTravel(finding); renderPr(finding); renderProposals(); renderMemory(finding); renderWaivers(); renderRealWorld(); renderPartnerProof(); renderProvenance(finding);
 }}
 function renderGraph(finding) {{
   if (!finding) {{ $('graph').innerHTML = '<span class="muted">No graph available.</span>'; return; }}
@@ -626,6 +636,7 @@ function renderProposals() {{ const proposals = model.proposals || []; if (!prop
 function renderMemory(finding) {{ if (!memoryOn) {{ $('memoryComparison').innerHTML = `<div class="grid"><div class="metric"><div class="label">External fact</div><div class="value">${{esc(model.demo?.current_value ?? 'unknown')}} days</div></div><div class="metric"><div class="label">Governing decision</div><div class="value">None</div></div><div class="metric"><div class="label">Original assumption</div><div class="value">Missing</div></div><div class="metric"><div class="label">Protection</div><div class="value unknown">Historical protection unavailable</div></div></div>`; return; }} $('memoryComparison').innerHTML = `<div class="grid"><div class="metric"><div class="label">Memory ON</div><div class="value">${{esc(finding?.decision_id || 'None')}}</div></div><div class="metric"><div class="label">Assumption recovered</div><div class="value">${{esc((finding?.conditions || [])[0]?.rule?.predicate || 'None')}}</div></div><div class="metric"><div class="label">Expiry detected</div><div class="value ${{finding && finding.evaluation?.state !== 'STANDS' ? 'blocked' : 'stands'}}">${{finding && finding.evaluation?.state !== 'STANDS' ? 'Yes' : 'No'}}</div></div><div class="metric"><div class="label">Protection</div><div class="value">${{finding && finding.evaluation?.state !== 'STANDS' ? 'BLOCK' : 'ALLOW'}}</div></div></div>`; }}
 function renderWaivers() {{ const waivers = model.waivers || []; if (!waivers.length) {{ $('waivers').innerHTML = '<p class="muted">No human waiver is recorded. A non-standing result remains blocked.</p>'; return; }} $('waivers').innerHTML = waivers.map((w) => `<div class="metric"><div class="label">${{esc(w.status || 'WAIVER')}}</div><div class="value">${{esc(w.waiver_id || '—')}} · ${{esc(w.decision_id || '—')}}</div><p class="muted">Approved by ${{esc(w.issued_by || '—')}} · expires ${{esc(formatDate(w.expires_at))}} · ${{esc(w.reason || '')}}</p></div>`).join(''); }}
 function renderRealWorld() {{ const proof = model.real_world || {{}}; const cases = proof.cases || []; $('realWorld').innerHTML = `<div class="grid"><div class="metric"><div class="label">Status</div><div class="value unknown">${{esc(proof.status || 'PENDING')}}</div></div><div class="metric"><div class="label">Reviewed cases</div><div class="value">${{esc(proof.reviewed_case_count ?? 0)}}</div></div><div class="metric"><div class="label">Pending candidates</div><div class="value">${{esc(proof.pending_case_count ?? cases.length)}}</div></div></div>${{cases.length ? cases.map((c) => `<details><summary>${{esc(c.case_id)}} — ${{esc(c.review_status || 'PENDING HUMAN REVIEW')}}</summary><p class="muted">${{esc(c.repository || '')}}</p><p><a href="${{esc(c.decision_url)}}" target="_blank" rel="noreferrer">Decision artifact</a> · <a href="${{esc(c.historical_ground_truth_url)}}" target="_blank" rel="noreferrer">Historical source</a> · <a href="${{esc(c.current_ground_truth_url)}}" target="_blank" rel="noreferrer">Current source</a></p><p class="muted">${{esc(c.disclosure || '')}}</p></details>`).join('') : '<p class="muted">No source-linked real-world candidate is recorded.</p>'}}`; }}
+function renderPartnerProof() {{ const proof = model.partner_proof || {{}}; $('partnerProof').innerHTML = `<p>${{esc(proof.summary || 'No live partner proof recorded.')}}</p><div class="grid"><div class="metric"><div class="label">Virtuals ACP</div><div class="value">Job ${{esc(proof.acp_job_id || '—')}}</div><p><a href="${{esc(proof.acp_job_url || '#')}}" target="_blank" rel="noreferrer">Open completed job</a></p></div><div class="metric"><div class="label">Base EAS</div><div class="value">Observation recorded</div><p><a href="${{esc(proof.eas_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open Base transaction</a></p></div><div class="metric"><div class="label">ERC-8004</div><div class="value">Feedback recorded</div><p><a href="${{esc(proof.erc8004_transaction_url || '#')}}" target="_blank" rel="noreferrer">Open feedback transaction</a></p></div></div><details><summary>Evidence identity</summary><pre>${{esc(JSON.stringify({{eas_uid: proof.eas_uid, acp_job_id: proof.acp_job_id}}, null, 2))}}</pre></details>`; }}
 function renderProvenance(finding) {{ const rows = allObservations(finding); $('provenance').innerHTML = rows.length ? rows.map((x) => `<details><summary>${{esc(x.observation_uid)}} — ${{esc(x.value)}} ${{esc(x.unit || '')}}</summary><pre>${{esc(JSON.stringify(x, null, 2))}}</pre></details>`).join('') : '<p class="muted">No temporal observations are recorded.</p>'; }}
 async function action(name) {{ try {{ const response = await fetch('/api/demo/' + name, {{method:'POST'}}); const body = await response.json(); if (!response.ok) throw new Error(body.error || 'action failed'); if (name === 'waiver') {{ $('actionResult').textContent = body.disclosure + ' ' + body.status; return; }} model = body; selectedTime = null; $('actionResult').textContent = name === 'break' ? 'Controlled source changed: 365 → 90 days.' : name === 'restore' ? 'Controlled source restored: 90 → 365 days.' : name === 'resolve' ? 'ACME-001 superseded by STORAGE-002.' : name === 'confirm-proposal' ? 'Human confirmation recorded; the proposal is now a decision.' : name === 'reject-proposal' ? 'Human rejection recorded; no decision was created.' : 'Review completed.'; render(); }} catch (error) {{ $('actionResult').textContent = String(error); }} }}
 $('timeSlider').addEventListener('input', () => {{ selectedTime = Number($('timeSlider').value); render(); }}); $('memoryToggle').addEventListener('click', () => {{ memoryOn = !memoryOn; $('memoryToggle').textContent = memoryOn ? 'MEMORY OFF' : 'MEMORY ON'; render(); }}); $('break').addEventListener('click', () => action('break')); $('restore').addEventListener('click', () => action('restore')); $('resolve').addEventListener('click', () => action('resolve')); $('reviewAgain').addEventListener('click', () => action('review')); $('waiver').addEventListener('click', () => action('waiver')); render();
